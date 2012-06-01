@@ -65,3 +65,4 @@ obj-y			+= int_sqrt.o
 obj-y			+= parseopt.o
 obj-y			+= clz_ctz.o
 obj-$(CONFIG_CRC_CCITT) += crc-ccitt.o
+obj-$(CONFIG_KEXEC)	+= kexec/
