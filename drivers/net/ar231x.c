@@ -393,10 +393,8 @@ static int ar231x_eth_probe(struct device_d *dev)
 	priv->dma_regs = (void *)(priv->eth_regs + 0x1000);
 
 	priv->phy_regs = dev_request_mem_region(dev, 1);
-	if (priv->phy_regs == NULL) {
-		dev_err(dev, "No phy_regs!!\n");
-		return -ENODEV;
-	}
+	if (priv->phy_regs == NULL)
+		priv->phy_regs = priv->eth_regs;
 
 	priv->cfg = pdata;
 	edev->init = ar231x_eth_init;
