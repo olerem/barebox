@@ -14,6 +14,8 @@
 #ifndef __AR2315_REG_H
 #define __AR2315_REG_H
 
+#include <asm/addrspace.h>
+
 /*
  * IRQs
  */
@@ -36,6 +38,8 @@
 #define AR2315_UART0            0x11100003      /* UART MMR */
 #define AR2315_SPI              0x11300000      /* SPI FLASH MMR */
 #define AR2315_PCIEXT           0x80000000      /* pci external */
+
+#define AR2315_UART_SHIFT	2
 
 /*
  * Reset Register
