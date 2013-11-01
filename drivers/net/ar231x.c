@@ -256,11 +256,13 @@ static int ar231x_eth_send(struct eth_device *edev, void *packet,
 
 	/* We can't do match here. If it is still in progress,
 	 * then engine is probably stalled or we wait not enough. */
-	if (txdsc->status & DMA_TX_OWN)
-		dev_err(&edev->dev, "Frame is still in progress.\n");
-
-	if (txdsc->status & DMA_TX_ERROR)
-		dev_err(&edev->dev, "Frame was aborted by engine\n");
+	if ((txdsc->status & DMA_TX_OWN) &&
+			!(txdsc->status & DMA_TX_ERR_MASK)) {
+		dev_err(&edev->dev, "Frame is still in progress. "
+			"DMA status: 0x%x\n", dma_readl(priv, AR231X_DMA_STATUS));
+	} else if (txdsc->status & DMA_TX_ERR_MASK)
+		dev_err(&edev->dev, "TX error: 0x%x. DMA status: 0x%x\n",
+			txdsc->status, dma_readl(priv, AR231X_DMA_STATUS));
 
 	/* Ready or not. Stop it. */
 	txdsc->status = 0;
