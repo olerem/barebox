@@ -22,6 +22,7 @@
  * we clear rx_buffer transmit some package.
  */
 
+#include <asm/addrspace.h>
 #include <common.h>
 #include <net.h>
 #include <init.h>
@@ -96,8 +97,8 @@ static void ar231x_reset_regs(struct eth_device *edev)
 
 	/* FIXME: priv->{t,r}x_ring are virtual addresses,
 	 * use virt-to-phys convertion */
-	dma_writel(priv, (u32)priv->tx_ring, AR231X_DMA_TX_RING);
-	dma_writel(priv, (u32)priv->rx_ring, AR231X_DMA_RX_RING);
+	dma_writel(priv, ((u32)priv->tx_ring & 0x0fffffff), AR231X_DMA_TX_RING);
+	dma_writel(priv, ((u32)priv->rx_ring & 0x0fffffff), AR231X_DMA_RX_RING);
 
 	dma_writel(priv, (DMA_CONTROL_SR | DMA_CONTROL_ST | DMA_CONTROL_SF),
 			AR231X_DMA_CONTROL);
@@ -144,9 +145,9 @@ static void ar231x_allocate_dma_descriptors(struct eth_device *edev)
 	for (i = 0; i < AR2313_RXDSC_ENTRIES; i++) {
 		struct ar231x_descr *rxdsc = &priv->rx_ring[i];
 		ar231x_flash_rxdsc(rxdsc);
-		rxdsc->buffer_ptr =
+		rxdsc->buffer_ptr = 0x0fffffff &
 			(u32)(priv->rx_buffer + AR2313_RX_BUFSIZE * i);
-		rxdsc->next_dsc_ptr = (u32)&priv->rx_ring[DSC_NEXT(i)];
+		rxdsc->next_dsc_ptr = 0x0fffffff & (u32)&priv->rx_ring[DSC_NEXT(i)];
 	}
 	/* set initial position of ring descriptor */
 	priv->next_rxdsc = &priv->rx_ring[0];
@@ -217,10 +218,10 @@ static int ar231x_eth_recv(struct eth_device *edev)
 			u16 length =
 				((status >> DMA_RX_LEN_SHIFT) & 0x3fff)
 				- CRC_LEN;
-			net_receive((void *)rxdsc->buffer_ptr, length);
+			net_receive((void *)KSEG1ADDR(rxdsc->buffer_ptr), length);
 		}
 		/* Clean descriptor. now it is owned by DMA. */
-		priv->next_rxdsc = (struct ar231x_descr *)rxdsc->next_dsc_ptr;
+		priv->next_rxdsc = (struct ar231x_descr *)KSEG1ADDR(rxdsc->next_dsc_ptr);
 		ar231x_flash_rxdsc(rxdsc);
 	}
 	priv->kill_rx_ring = 0;
@@ -244,7 +245,7 @@ static int ar231x_eth_send(struct eth_device *edev, void *packet,
 
 	/* Setup the transmit descriptor. */
 	txdsc->devcs = ((length << DMA_TX1_BSIZE_SHIFT) | DMA_TX1_DEFAULT);
-	txdsc->buffer_ptr = (uint)packet;
+	txdsc->buffer_ptr = ((uint)packet & 0x0fffffff);
 	txdsc->status = DMA_TX_OWN;
 
 	/* Trigger transmission */
