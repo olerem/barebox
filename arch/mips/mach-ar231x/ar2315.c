@@ -118,27 +118,59 @@ static void flash_init(void)
 	ar231x_find_config((char *)KSEG1ADDR(AR2315_FLASH +
 					     AR2315_MAX_FLASH_SIZE));
 }
+#endif
+
+u8 macc[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+
+static void enable_ethernet(void)
+{
+	unsigned int mask = AR2315_RESET_ENET0 | AR2315_RESET_EPHY0;
+	unsigned int regtmp;
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_AHB_ARB_CTL));
+	regtmp |= AR2315_ARB_ETHERNET;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_AHB_ARB_CTL));
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_RESET));
+	__raw_writel(regtmp | mask, (char *)KSEG1ADDR(AR2315_RESET));
+	udelay(10000);
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_RESET));
+	__raw_writel(regtmp & ~mask, (char *)KSEG1ADDR(AR2315_RESET));
+	udelay(10000);
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_IF_CTL));
+	regtmp |= AR2315_IF_TS_LOCAL;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_IF_CTL));
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_ENDIAN_CTL));
+	regtmp &= ~AR2315_CONFIG_ETHERNET;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_ENDIAN_CTL));
+}
 
 static int ether_init(void)
 {
 	static struct resource res[2];
 	struct ar231x_eth_platform_data *eth = &ar231x_board.eth_pdata;
 
+	enable_ethernet();
+
 	/* Base ETH registers  */
-	res[0].start = KSEG1ADDR(AR2315_ENET1);
-	res[0].end = res[0].start + 0x100000 - 1;
+	res[0].start = KSEG1ADDR(AR2315_ENET0);
+	res[0].end = res[0].start + 0x2000 - 1;
 	res[0].flags = IORESOURCE_MEM;
 	/* Base PHY registers */
 	res[1].start = KSEG1ADDR(AR2315_ENET0);
-	res[1].end = res[1].start + 0x100000 - 1;
+	res[1].end = res[1].start + 0x2000 - 1;
 	res[1].flags = IORESOURCE_MEM;
 
 	/* MAC address located in atheros config on flash. */
-	eth->mac = ar231x_board.config->enet0_mac;
+	eth->mac = (u8 *)&macc[0];
+	//eth->mac = ar231x_board.config->enet0_mac;
 
-	eth->reset_mac = AR2315_RESET_ENET0 | AR2315_RESET_ENET1;
-	eth->reset_phy = AR2315_RESET_EPHY0 | AR2315_RESET_EPHY1;
+	eth->reset_mac = AR2315_RESET_ENET0;
+	eth->reset_phy = AR2315_RESET_EPHY0;
 
+	// TODO: 
 	eth->reset_bit = ar231x_reset_bit;
 
 	/* FIXME: base_reset should be replaced with reset driver */
@@ -153,14 +185,13 @@ static int platform_init(void)
 	add_generic_device("ar231x_reset", DEVICE_ID_SINGLE, NULL,
 			KSEG1ADDR(AR2315_RESET), 0x4,
 			IORESOURCE_MEM, NULL);
-	watchdog_init();
-	flash_init();
+//	watchdog_init();
+//	flash_init();
 	ether_init();
 	return 0;
 }
 late_initcall(platform_init);
 
-#endif
 
 static struct NS16550_plat serial_plat = {
 	.shift = AR2315_UART_SHIFT,
