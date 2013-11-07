@@ -223,27 +223,6 @@ static inline int write_disable(struct ar2315sf_priv *priv)
 	return 0;
 }
 
-#if 0
-/*
- * Enable/disable 4-byte addressing mode.
- */
-// TODO: do we need this?
-static inline int set_4byte(struct ar2315sf_priv *priv, u32 jedec_id, int enable)
-{
-	switch (JEDEC_MFR(jedec_id)) {
-	case CFI_MFR_MACRONIX:
-		priv->command[0] = enable ? OPCODE_EN4B : OPCODE_EX4B;
-		return spi_write(priv->spi, priv->command, 1);
-	default:
-		/* Spansion style */
-		priv->command[0] = OPCODE_BRWR;
-		priv->command[1] = enable << 7;
-		return spi_write(priv->spi, priv->command, 2);
-	}
-}
-#endif
-
-
 /*
  * Service routine to read status register until ready, or timeout occurs.
  * Returns non-zero if error.
@@ -289,13 +268,6 @@ static int erase_chip(struct ar2315sf_priv *priv)
 
 	return ar2315sf_write_then_read(priv, &tx_buf, 1, NULL, 0);
 }
-
-#if 0
-static int ar2315_cmdsz(struct ar2315sf_priv *priv)
-{
-	return 1 + priv->addr_width;
-}
-#endif
 
 /*
  * Erase one sector of flash memory at offset ``offset'' which is any
@@ -498,99 +470,6 @@ static int ar2315_write(struct mtd_info *mtd, loff_t to, size_t len,
 	return 0;
 }
 
-#if 0
-static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
-		size_t *retlen, const u_char *buf)
-{
-	struct ar2315sf_priv *priv = mtd_to_ar2315sf(mtd);
-	struct spi_transfer t[2];
-	struct spi_message m;
-	size_t actual;
-	int cmd_sz, ret;
-
-	dev_dbg(&priv->spi->dev, "%s to 0x%08x, len %zd\n",
-			__func__, (u32)to, len);
-
-	spi_message_init(&m);
-	memset(t, 0, (sizeof t));
-
-	t[0].tx_buf = priv->command;
-	t[0].len = ar2315_cmdsz(priv);
-	spi_message_add_tail(&t[0], &m);
-
-	t[1].tx_buf = buf;
-	spi_message_add_tail(&t[1], &m);
-
-	/* Wait until finished previous write command. */
-	ret = wait_till_ready(priv);
-	if (ret)
-		goto time_out;
-
-	write_enable(priv);
-
-	actual = to % 2;
-	/* Start write from odd address. */
-	if (actual) {
-		priv->command[0] = OPCODE_BP;
-		ar2315_addr2cmd(priv, to, priv->command);
-
-		/* write one byte. */
-		t[1].len = 1;
-		spi_sync(priv->spi, &m);
-		ret = wait_till_ready(priv);
-		if (ret)
-			goto time_out;
-		*retlen += m.actual_length - ar2315_cmdsz(priv);
-	}
-	to += actual;
-
-	priv->command[0] = OPCODE_AAI_WP;
-	ar2315_addr2cmd(priv, to, priv->command);
-
-	/* Write out most of the data here. */
-	cmd_sz = ar2315_cmdsz(priv);
-	for (; actual < len - 1; actual += 2) {
-		t[0].len = cmd_sz;
-		/* write two bytes. */
-		t[1].len = 2;
-		t[1].tx_buf = buf + actual;
-
-		spi_sync(priv->spi, &m);
-		ret = wait_till_ready(priv);
-		if (ret)
-			goto time_out;
-		*retlen += m.actual_length - cmd_sz;
-		cmd_sz = 1;
-		to += 2;
-	}
-	write_disable(priv);
-	ret = wait_till_ready(priv);
-	if (ret)
-		goto time_out;
-
-	/* Write out trailing byte if it exists. */
-	if (actual != len) {
-		write_enable(priv);
-		priv->command[0] = OPCODE_BP;
-		ar2315_addr2cmd(priv, to, priv->command);
-		t[0].len = ar2315_cmdsz(priv);
-		t[1].len = 1;
-		t[1].tx_buf = buf + actual;
-
-		spi_sync(priv->spi, &m);
-		ret = wait_till_ready(priv);
-		if (ret)
-			goto time_out;
-		*retlen += m.actual_length - ar2315_cmdsz(priv);
-		write_disable(priv);
-	}
-
-time_out:
-	return ret;
-}
-#endif
-
-
 /****************************************************************************/
 
 /*
@@ -731,11 +610,7 @@ static int ar2315_probe(struct device_d *dev)
 	priv->mtd.erase = ar2315_erase;
 	priv->mtd.read = ar2315_read;
 
-	/* sst flash chips use AAI word program */
-//	if (IS_ENABLED(CONFIG_MTD_SST25L) && JEDEC_MFR(info->jedec_id) == CFI_MFR_SST)
-//		priv->mtd.write = sst_write;
-//	else
-		priv->mtd.write = ar2315_write;
+	priv->mtd.write = ar2315_write;
 
 	/* prefer "small sector" erase if possible */
 	if (info->flags & SECT_4K) {
@@ -750,7 +625,6 @@ static int ar2315_probe(struct device_d *dev)
 	if (info->flags & M25P_NO_ERASE)
 		priv->mtd.flags |= MTD_NO_ERASE;
 
-//	priv->mtd.parent = &spi->dev;
 	priv->page_size = info->page_size;
 	priv->sector_size = info->sector_size;
 
@@ -759,7 +633,8 @@ static int ar2315_probe(struct device_d *dev)
 	else {
 		/* enable 4-byte addressing if the device exceeds 16MiB */
 		if (priv->mtd.size > 0x1000000)
-			dev_info(dev, "Detected 4Byte device on 3Byte bus. Use bus default.\n");
+			dev_info(dev, "Detected 4Byte device on 3Byte bus. "
+				      "Use bus default.\n");
 
 		priv->addr_width = 3;
 	}
@@ -768,7 +643,7 @@ static int ar2315_probe(struct device_d *dev)
 			(long long)priv->mtd.size >> 10);
 
 	dev_dbg(dev, "mtd .name = %s, .size = 0x%llx (%lldMiB) "
-			".erasesize = 0x%.8x (%uKiB) .numeraseregions = %d\n",
+		     ".erasesize = 0x%.8x (%uKiB) .numeraseregions = %d\n",
 		priv->mtd.name,
 		(long long)priv->mtd.size, (long long)(priv->mtd.size >> 20),
 		priv->mtd.erasesize, priv->mtd.erasesize / 1024,
