@@ -151,7 +151,7 @@ static int ar2315sf_write_then_read(struct ar2315sf_priv *priv,
 		return ret;
 
 	/* TODO, recheck endians or do endian conversation */
-	rx_tmp[0] = reg_readl(priv, SPI_FLASH_DATA);
+	rx_tmp[0] = le32_to_cpu(reg_readl(priv, SPI_FLASH_DATA));
 	/* opcode regiser can be used for data on read */
 	rx_tmp[1] = reg_readl(priv, SPI_FLASH_OPCODE);
 
