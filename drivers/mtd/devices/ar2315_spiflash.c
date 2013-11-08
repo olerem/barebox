@@ -402,18 +402,16 @@ static int ar2315_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (!len)
 		return 0;
 
-	if ((from + len > mtd->size) || (len > 8))
+	if (from + len > mtd->size)
 		return -EINVAL;
+
+	*retlen = (len > 8) ? 8 : len;
 
 	tx_buf.opcode = OPCODE_NORM_READ;
 	// TODO: convert offset to correct value
 	ar2315_addr2cmd(priv, from, &tx_buf);
 
-	/* we can't validate readed data. it will be always equal the requested 
-	 * lenght */
-	*retlen = len;
-
-	return ar2315sf_write_then_read(priv, &tx_buf, 4, buf, len);
+	return ar2315sf_write_then_read(priv, &tx_buf, 4, buf, *retlen);
 }
 
 /*
