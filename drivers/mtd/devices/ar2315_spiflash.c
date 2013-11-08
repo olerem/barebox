@@ -146,6 +146,10 @@ static int ar2315sf_write_then_read(struct ar2315sf_priv *priv,
 	if (!rx_size || !rx_buf)
 		return 0;
 
+	ret = ar2315sf_wait_busy(priv);
+	if (ret < 0)
+		return ret;
+
 	/* TODO, recheck endians or do endian conversation */
 	rx_tmp[0] = reg_readl(priv, SPI_FLASH_DATA);
 	/* opcode regiser can be used for data on read */
