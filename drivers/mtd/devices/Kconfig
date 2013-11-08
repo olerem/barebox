@@ -58,4 +58,10 @@ config MTD_DOCG3
 	  M-Systems and now Sandisk. The support is very experimental,
 	  and doesn't give access to any write operations.
 
+config MTD_AR2315
+	tristate "Atheros AR2315+ SPI Flash support"
+#	depends on ATHEROS_AR2315
+	help
+	  This provides SPI Flash driver for Atheros AR231[5,6,7] WiSoCs.
+
 endmenu
