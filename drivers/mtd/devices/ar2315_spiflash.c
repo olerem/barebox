@@ -529,7 +529,7 @@ static int ar2315_probe(struct device_d *dev)
 
 	priv = xzalloc(sizeof *priv);
 //	priv->command = xmalloc(MAX_CMD_SIZE);
-	priv->spiflash_regs = (void __iomem *)0xb1300000;
+	priv->spiflash_regs = dev_request_mem_region(dev, 0);
 
 	dev->priv = (void *)priv;
 	priv->dev = dev;
