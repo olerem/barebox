@@ -12,6 +12,19 @@ config BOARD_NETGEAR_WG102
 	select HAVE_PBL_IMAGE
 	select HAVE_IMAGE_COMPRESSION
 
+endchoice
+
+endif #MACH_MIPS_AR231X
+
+if MACH_MIPS_AR2315
+
+config ARCH_TEXT_BASE
+	hex
+	default 0xa0800000
+
+choice
+	prompt "Board type"
+
 config BOARD_FONERA_FON2200
 	bool "Fonera FON2200"
 	select HAVE_PBL_IMAGE
@@ -19,4 +32,4 @@ config BOARD_FONERA_FON2200
 
 endchoice
 
-endif
+endif #MACH_MIPS_AR2315
