@@ -50,6 +50,13 @@
 	.set	pop
 	.endm
 
+	.macro	pbl_get_cpuid reg
+	.set push
+	.set noreorder
+	mfc0    \reg, CP0_PRID
+	.set	pop
+	.endm
+
 	/*
 	 * ADR macro instruction (inspired by ARM)
 	 *
