@@ -1,8 +1,10 @@
 #ifndef __ASM_MACH_AR2312_PBL_MACROS_H
 #define __ASM_MACH_AR2312_PBL_MACROS_H
 
+#include <asm/pbl_macros.h>
 #include <asm/regdef.h>
 #include <mach/ar2312_regs.h>
+#include <mach/ar2315_regs.h>
 
 .macro	pbl_ar2312_pll
 	.set	push
@@ -48,6 +50,84 @@ pllskip:
 	.set	pop
 .endm
 
+
+.macro	pbl_ar2315_pll
+	.set	push
+	.set	noreorder
+
+	/* Configure PLLC for 184 MHz CPU and 92 MHz AMBA */
+
+	/* Set PLLC_CTL */
+	li	a0, KSEG1 | AR2315_PLLC_CTL
+	lw	t0, 0(a0)
+
+	/* Choose Ref Div to 5 hence val to be 3 */
+	and	t0, ~AR2315_PLLC_REF_DIV_M
+	or	t0, 0x3 << AR2315_PLLC_REF_DIV_S
+
+	/* Choose Div value to 23 */
+	and	t0, ~AR2315_PLLC_FDBACK_DIV_M
+	or	t0, 0x17 << AR2315_PLLC_FDBACK_DIV_S
+
+	/* Choose Divby2 value to be 0 */
+	and	t0, ~AR2315_PLLC_ADD_FDBACK_DIV_M
+	or	t0, 0 << AR2315_PLLC_ADD_FDBACK_DIV_S
+
+	/* Choose clkc value to be 368 % 2 = 184 Mhz */
+	and	t0, ~AR2315_PLLC_CLKC_DIV_M
+	or	t0, 0 << AR2315_PLLC_CLKC_DIV_S
+
+	/* Choose clkm value to be 368 % 2 = 184 Mhz */
+	and	t0, ~AR2315_PLLC_CLKM_DIV_M
+	or	t0, 0 << AR2315_PLLC_CLKM_DIV_S
+
+	/* 2c25 for 180 -- 2c5f for 184 */
+	/* Store the PLLc Control to be 40/5 * 2 * (0 + 1) * 23= 368 Mhz */
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t2, 10
+
+	/* Set CPUCLK_CTL to use clkm / 1 = 184 */
+	li	a0, KSEG1 | AR2315_CPUCLK
+	lw	t0, 0(a0)
+
+	# Choose CLKm
+	and	t0, ~AR2315_CPUCLK_CLK_SEL_M
+	or	t0, 0  << AR2315_CPUCLK_CLK_SEL_S
+
+	and	t0, ~AR2315_CPUCLK_CLK_DIV_M
+	or	t0, 0 << AR2315_CPUCLK_CLK_DIV_S   # Choose div % 1
+
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t0, 10
+
+	/* Set AMBACLK_CTL to use clkm / 2 = 92MHz */
+	li	a0, KSEG1 | AR2315_AMBACLK
+	lw	t0, 0(a0)
+
+	and	t0, ~AR2315_AMBACLK_CLK_SEL_M
+	or	t0, 0 << AR2315_AMBACLK_CLK_SEL_S
+
+	and	t0, ~AR2315_AMBACLK_CLK_DIV_M
+	or	t0, 1 << AR2315_AMBACLK_CLK_DIV_S
+
+	sw	t0, 0(a0)
+	sync
+
+	/* disable PLL bypass */
+	li	a0, KSEG1 | AR2315_MISCCLK
+	li	t0, 0x0
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t0, 10
+
+	.set	pop
+.endm
+
 .macro	pbl_ar2312_rst_uart0
 	.set	push
 	.set	noreorder
@@ -68,6 +148,23 @@ pllskip:
 	lw	t0, 0(a0)
 	and	t0, ~AR2312_CLOCKCTL_UART0
 	sw	t0, 0(a0)
+
+	.set	pop
+.endm
+
+.macro	pbl_ar2315_rst_uart0
+	.set	push
+	.set	noreorder
+
+	li	a0, KSEG1 | AR2315_RESET
+	lw	t0, 0(a0)
+	or	t0, AR2315_RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)	/* flush */
+
+	and	t0, ~AR2315_RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)	/* flush */
 
 	.set	pop
 .endm
