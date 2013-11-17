@@ -28,6 +28,7 @@
 /*
  * Address map
  */
+#define AR2315_SDRAM0		0x00000000
 #define AR2315_SPI_READ         0x08000000      /* SPI FLASH */
 #define AR2315_WLAN0            0x10000000      /* Wireless MMR */
 #define AR2315_PCI              0x10100000      /* PCI MMR */
@@ -194,6 +195,12 @@
 #define AR2315_WDC_RESET                   0x00000002               /* reset on watchdog */
 
 /*
+ * Cobra-specific memory controller parameters
+ */
+#define AR2315_RST_MEMCTL	(AR2315_DSLBASE + 0x0040)
+#define AR2315_RST_MEMCTL_EXT_FB	0x00000008
+
+/*
  * CPU Performance Counters
  */
 #define AR2315_PERFCNT0         (AR2315_DSLBASE + 0x0048)
@@ -259,28 +266,28 @@
 #define AR2315_DSL_SLEEP_DUR    (AR2315_DSLBASE + 0x0084)
 
 /* PLLc Control fields */
-#define PLLC_REF_DIV_M              0x00000003
-#define PLLC_REF_DIV_S              0
-#define PLLC_FDBACK_DIV_M           0x0000007C
-#define PLLC_FDBACK_DIV_S           2
-#define PLLC_ADD_FDBACK_DIV_M       0x00000080
-#define PLLC_ADD_FDBACK_DIV_S       7
-#define PLLC_CLKC_DIV_M             0x0001c000
-#define PLLC_CLKC_DIV_S             14
-#define PLLC_CLKM_DIV_M             0x00700000
-#define PLLC_CLKM_DIV_S             20
+#define AR2315_PLLC_REF_DIV_M              0x00000003
+#define AR2315_PLLC_REF_DIV_S              0
+#define AR2315_PLLC_FDBACK_DIV_M           0x0000007C
+#define AR2315_PLLC_FDBACK_DIV_S           2
+#define AR2315_PLLC_ADD_FDBACK_DIV_M       0x00000080
+#define AR2315_PLLC_ADD_FDBACK_DIV_S       7
+#define AR2315_PLLC_CLKC_DIV_M             0x0001c000
+#define AR2315_PLLC_CLKC_DIV_S             14
+#define AR2315_PLLC_CLKM_DIV_M             0x00700000
+#define AR2315_PLLC_CLKM_DIV_S             20
 
 /* CPU CLK Control fields */
-#define CPUCLK_CLK_SEL_M            0x00000003
-#define CPUCLK_CLK_SEL_S            0
-#define CPUCLK_CLK_DIV_M            0x0000000c
-#define CPUCLK_CLK_DIV_S            2
+#define AR2315_CPUCLK_CLK_SEL_M            0x00000003
+#define AR2315_CPUCLK_CLK_SEL_S            0
+#define AR2315_CPUCLK_CLK_DIV_M            0x0000000c
+#define AR2315_CPUCLK_CLK_DIV_S            2
 
 /* AMBA CLK Control fields */
-#define AMBACLK_CLK_SEL_M           0x00000003
-#define AMBACLK_CLK_SEL_S           0
-#define AMBACLK_CLK_DIV_M           0x0000000c
-#define AMBACLK_CLK_DIV_S           2
+#define AR2315_AMBACLK_CLK_SEL_M           0x00000003
+#define AR2315_AMBACLK_CLK_SEL_S           0
+#define AR2315_AMBACLK_CLK_DIV_M           0x0000000c
+#define AR2315_AMBACLK_CLK_DIV_S           2
 
 /*
  * GPIO
@@ -349,21 +356,32 @@
  * SDRAM Controller
  *   - No read or write buffers are included.
  */
-#define AR2315_MEM_CFG          (AR2315_SDRAMCTL + 0x00)
-#define AR2315_MEM_CTRL         (AR2315_SDRAMCTL + 0x0c)
-#define AR2315_MEM_REF          (AR2315_SDRAMCTL + 0x10)
+#define AR2315_MEM_CFG		(AR2315_SDRAMCTL + 0x00)
+#define AR2315_MEM_STMG0R	(AR2315_SDRAMCTL + 0x04) /* timing register 0 */
+#define AR2315_MEM_STMG1R	(AR2315_SDRAMCTL + 0x08) /* timing register 1 */
+#define AR2315_MEM_CTRL		(AR2315_SDRAMCTL + 0x0c)
+#define AR2315_MEM_REF		(AR2315_SDRAMCTL + 0x10)
 
-#define SDRAM_DATA_WIDTH_M          0x00006000
-#define SDRAM_DATA_WIDTH_S          13
+#define AR2315_SDRAM_DATA_WIDTH_M	0x00006000
+#define AR2315_SDRAM_DATA_WIDTH_S	13
+#define		AR2315_SDRAM_16BIT	0x00
+#define		AR2315_SDRAM_32BIT	0x01
 
-#define SDRAM_COL_WIDTH_M           0x00001E00
-#define SDRAM_COL_WIDTH_S           9
+#define AR2315_SDRAM_COL_WIDTH_M	0x00001E00
+#define AR2315_SDRAM_COL_WIDTH_S	9
 
-#define SDRAM_ROW_WIDTH_M           0x000001E0
-#define SDRAM_ROW_WIDTH_S           5
+#define AR2315_SDRAM_ROW_WIDTH_M	0x000001E0
+#define AR2315_SDRAM_ROW_WIDTH_S	5
 
-#define SDRAM_BANKADDR_BITS_M       0x00000018
-#define SDRAM_BANKADDR_BITS_S       3
+#define AR2315_SDRAM_BANKADDR_BITS_M	0x00000018
+#define AR2315_SDRAM_BANKADDR_BITS_S	3
+
+#define AR2315_SDRAM_8M		(((8 - 1) << AR2315_SDRAM_COL_WIDTH_S) | \
+				((12 - 1) << AR2315_SDRAM_ROW_WIDTH_S))
+#define AR2315_SDRAM_16M	(((9 - 1) << AR2315_SDRAM_COL_WIDTH_S) | \
+				((12 - 1) << AR2315_SDRAM_ROW_WIDTH_S))
+#define AR2315_SDRAM_32M	(((9 - 1) << AR2315_SDRAM_COL_WIDTH_S) | \
+				((13 - 1) << AR2315_SDRAM_ROW_WIDTH_S))
 
 /*
  * SPI Flash Interface Registers
