@@ -18,9 +18,13 @@
 
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
-#include <mach/ar2312_regs.h>
+#include <mach/ar2315_regs.h>
 
 #include <mach/debug_ll.h>
+
+#define PRID_MASK	0xff00
+#define PRID_4KC	0x8000
+#define PRID_4KECR2	0x9000
 
 	.macro	board_pbl_start
 	.set	push
@@ -30,9 +34,22 @@
 
 	mips_disable_interrupts
 
-	pbl_ar2312_pll
+	/* We have only one common way to identify WiSoC, MIPS CPU ID
+	 * ar[2,5]312	- R4000
+	 * ar2313	- MIPS 4Kc
+	 * ar231[5,6,7] - MIPS 4KEc (r2) */
+	pbl_get_cpuid t0
+	and     t0, PRID_MASK
+	beq     t0, PRID_4KC, cpu_mips_4kc
+	 nop
+	beq     t0, PRID_4KECR2, cpu_mips_4kecr2
+	 nop
 
+/* ar2313 */
+cpu_mips_4kc:
+	pbl_ar2312_pll
 	pbl_ar2312_rst_uart0
+
 	debug_ll_ns16550_init
 
 	debug_ll_ns16550_outc 'a'
@@ -57,12 +74,29 @@
 
 	/* check one more time. if some thing wrong,
 	 * we don't need to continue */
+	b test_sdram
+	 nop
+
+/* ar2315, ar2316, ar2317 */
+cpu_mips_4kecr2:
+	pbl_ar2315_pll
+	pbl_ar2315_rst_uart0
+
+	debug_ll_ns16550_init
+
+	debug_ll_ns16550_outc 'A'
+	debug_ll_ns16550_outnl
+
+	/* start SDRAM configuration */
+	pbl_ar2315_x16_sdram
+
+test_sdram:
 	pbl_probe_mem t0, t1, KSEG1
 	beq t0, t1, sdram_configured
 	 nop
+
 	debug_ll_ns16550_outc '#'
 	debug_ll_ns16550_outnl
-
 1:
 	b	1b /* dead end */
 	 nop
