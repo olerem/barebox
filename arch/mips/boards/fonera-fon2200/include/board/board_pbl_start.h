@@ -65,7 +65,7 @@ cpu_mips_4kc:
 	 nop
 
 	pbl_probe_mem t0, t1, KSEG1
-	beq t0, t1, sdram_configured
+	beq t0, t1, test_sdram
 	 nop
 
 1:
