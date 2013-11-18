@@ -29,7 +29,7 @@ source "drivers/net/phy/Kconfig"
 
 config DRIVER_NET_AR231X
 	bool "AR231X Ethernet support"
-	depends on MACH_MIPS_AR231X
+	#depends on MACH_MIPS_AR231X && MACH_MIPS_AR2315
 	select PHYLIB
 	help
 	  Support for the AR231x/531x ethernet controller
