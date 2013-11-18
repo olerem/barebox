@@ -32,34 +32,58 @@ static int __initdata PLLC_DIVIDE_TABLE[5] = { 2, 3, 4, 6, 3 };
 static unsigned int __init
 ar2315_sys_clk(unsigned int clockCtl)
 {
-	unsigned int pllcCtrl,cpuDiv;
-	unsigned int pllcOut,refdiv,fdiv,divby2;
+	unsigned int clock_ctl1,cpuDiv;
+	unsigned int pllcOut, pre_divide_select, pre_divisor, multiplier, divby2;
 	unsigned int clkDiv;
+	unsigned int predivide_mask, predivide_shift;
+	unsigned int multiplier_mask, multiplier_shift;
+	unsigned int doubler_mask, doubler_shift;
+	int doubler;
 
-	pllcCtrl = __raw_readl((char *)KSEG1ADDR(AR2315_PLLC_CTL));
-	refdiv = (pllcCtrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
-	refdiv = CLOCKCTL1_PREDIVIDE_TABLE[refdiv];
-	fdiv = (pllcCtrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
-	divby2 = (pllcCtrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
-	divby2 += 1;
-	pllcOut = (40000000/refdiv)*(2*divby2)*fdiv;
+	predivide_mask = AR2315_PLLC_REF_DIV_M;
+	predivide_shift = AR2315_PLLC_REF_DIV_S;
+	multiplier_mask = AR2315_PLLC_FDBACK_DIV_M;
+	multiplier_shift = AR2315_PLLC_FDBACK_DIV_S;
+	doubler_mask = AR2315_PLLC_ADD_FDBACK_DIV_M;
+	doubler_shift = AR2315_PLLC_ADD_FDBACK_DIV_S;
+//	doubler = 1;
+
+	//todo replace with some thing generic AR2315_PLLC_CTL
+	clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2315_PLLC_CTL));
+	//identical
+	pre_divide_select = (clock_ctl1 & predivide_mask) >> predivide_shift;
+	pre_divisor = CLOCKCTL1_PREDIVIDE_TABLE[pre_divide_select];
+	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
+
+	// doubler_mask
+//	if (doubler) {
+		divby2 = (clock_ctl1 & doubler_mask) >> doubler_shift;
+		divby2 += 1;
+//	}
+
+	pllcOut = (40000000 / pre_divisor) * (2*divby2) * multiplier;
 
 
 	/* clkm input selected */
-	switch(clockCtl & CPUCLK_CLK_SEL_M) {
+	switch(clockCtl & AR2315_CPUCLK_CLK_SEL_M) {
 		case 0:
 		case 1:
-			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
+			clkDiv = PLLC_DIVIDE_TABLE[
+				(clock_ctl1 & AR2315_PLLC_CLKM_DIV_M)
+				>> AR2315_PLLC_CLKM_DIV_S];
 			break;
 		case 2:
-			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
+			clkDiv = PLLC_DIVIDE_TABLE[
+				(clock_ctl1 & AR2315_PLLC_CLKC_DIV_M)
+				>> AR2315_PLLC_CLKC_DIV_S];
 			break;
 		default:
 			pllcOut = 40000000;
 			clkDiv = 1;
 			break;
 	}
-	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;
+	cpuDiv = (clockCtl & AR2315_CPUCLK_CLK_DIV_M)
+		>> AR2315_CPUCLK_CLK_DIV_S;
 	cpuDiv = cpuDiv * 2 ?: 1;
 	return (pllcOut/(clkDiv * cpuDiv));
 }
@@ -211,6 +235,7 @@ static int ar2315_console_init(void)
 	serial_plat.clock = ar2315_apb_frequency();
 	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR2315_UART0),
 		8 << AR2315_UART_SHIFT, IORESOURCE_MEM_8BIT, &serial_plat);
+	printf("-- %i\n", ar2315_apb_frequency());
 	return 0;
 }
 console_initcall(ar2315_console_init);
