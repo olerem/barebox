@@ -29,11 +29,14 @@
 #define PRID_COMP_INGENIC	0xd00000
 
 #define PRID_IMP_UNKNOWN	0xff00
+#define PRID_IMP_MASK		0xff00
 
 /*
  * These are the PRID's for when 23:16 == PRID_COMP_MIPS
  */
 
+#define PRID_IMP_4KC		0x8000
+#define PRID_IMP_4KECR2		0x9000
 #define PRID_IMP_24K		0x9300
 #define PRID_IMP_24KE		0x9600
 
