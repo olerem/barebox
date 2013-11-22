@@ -17,8 +17,11 @@
 #include <init.h>
 #include <io.h>
 #include <ns16550.h>
+#include <asm/cpu.h>
+#include <asm/mipsregs.h>
 #include <mach/ar231x_platform.h>
 #include <mach/ar2315_regs.h>
+#include <mach/ar2312_regs.h>
 
 struct ar231x_board_data ar231x_board;
 
@@ -219,6 +222,25 @@ static int platform_init(void)
 }
 late_initcall(platform_init);
 
+static void ar231x_set_chip_id(void)
+{
+	unsigned int cpuid = read_c0_prid() & PRID_IMP_MASK;
+
+	if (cpuid == PRID_IMP_4KC) {
+		u32 devid;
+		devid = __raw_readl((char *)KSEG1ADDR(AR2312_REV));
+		devid &= AR2312_REV_MAJ;
+		devid >>= AR2312_REV_MAJ_S;
+		if (devid == AR2312_REV_MAJ_AR2313)
+			ar231x_board.chip_id = AR2313;
+		else	/* AR5312 and AR2312 */
+			ar231x_board.chip_id = AR2312;
+
+	} else if (cpuid == PRID_IMP_4KECR2)
+		ar231x_board.chip_id = AR2315;
+	else
+		ar231x_board.chip_id = UNKNOWN;
+}
 
 static struct NS16550_plat serial_plat = {
 	.shift = AR2315_UART_SHIFT,
@@ -227,6 +249,8 @@ static struct NS16550_plat serial_plat = {
 static int ar2315_console_init(void)
 {
 	u32 reset;
+
+	ar231x_set_chip_id();
 
 	__raw_writel(AR2315_WDC_IGNORE_EXPIRATION,
 			(char *)KSEG1ADDR(AR2315_WDC));
