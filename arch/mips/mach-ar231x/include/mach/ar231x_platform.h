@@ -78,6 +78,17 @@ enum reset_state {
 	REMOVE,
 };
 
+#define IS_AR2312	(ar231x_board.chip_id == AR2312)
+#define IS_AR2313	(ar231x_board.chip_id == AR2313)
+#define IS_AR2315	(ar231x_board.chip_id == AR2315)
+
+enum chip_id {
+	AR2312,
+	AR2313,
+	AR2315,
+	UNKNOWN,
+};
+
 struct ar231x_eth_platform_data {
 	u32 base_reset;
 	u32 reset_mac;
@@ -90,6 +101,7 @@ struct ar231x_eth_platform_data {
 
 struct ar231x_board_data {
 	u16 devid;
+	enum chip_id chip_id;
 
 	/* board config data */
 	struct ar231x_board_config *config;
