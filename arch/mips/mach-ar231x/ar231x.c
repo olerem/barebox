@@ -196,3 +196,25 @@ static int ar2312_console_init(void)
 	return 0;
 }
 console_initcall(ar2312_console_init);
+
+static int ar231x_set_chip_id(void)
+{
+	unsigned int cpuid = read_c0_prid() & PRID_IMP_MASK;
+
+	if (cpuid == PRID_IMP_4KC) {
+		u32 devid;
+		devid = __raw_readl((char *)KSEG1ADDR(AR2312_REV));
+		devid &= AR2312_REV_MAJ;
+		devid >>= AR2312_REV_MAJ_S;
+		if (devid == AR2312_REV_MAJ_AR2313)
+			ar231x_board.chip_id = AR2313;
+		else	/* AR5312 and AR2312 */
+			ar231x_board.chip_id = AR2312;
+
+	} else if (cpuid == PRID_IMP_4KECR2)
+		ar231x_board.chip_id = AR2315;
+	else
+		ar231x_board.chip_id = UNKNOWN;
+	return 0;
+}
+postcore_initcall(ar231x_set_chip_id);
