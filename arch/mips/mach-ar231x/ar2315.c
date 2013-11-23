@@ -33,42 +33,64 @@ static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
 static int __initdata PLLC_DIVIDE_TABLE[5] = { 2, 3, 4, 6, 3 };
 
 static unsigned int __init
-ar2315_sys_clk(unsigned int clockCtl)
+ar231x_sys_clk(void)
 {
-	unsigned int clock_ctl1,cpuDiv;
-	unsigned int pllcOut, pre_divide_select, pre_divisor, multiplier, divby2;
+	unsigned int clock_ctl1, clock_ctl2, cpuDiv;
+	unsigned int pllc_out, pre_divide_select, pre_divisor, multiplier, div;
 	unsigned int clkDiv;
 	unsigned int predivide_mask, predivide_shift;
 	unsigned int multiplier_mask, multiplier_shift;
-	unsigned int doubler_mask, doubler_shift;
-	int doubler;
 
-	predivide_mask = AR2315_PLLC_REF_DIV_M;
-	predivide_shift = AR2315_PLLC_REF_DIV_S;
-	multiplier_mask = AR2315_PLLC_FDBACK_DIV_M;
-	multiplier_shift = AR2315_PLLC_FDBACK_DIV_S;
-	doubler_mask = AR2315_PLLC_ADD_FDBACK_DIV_M;
-	doubler_shift = AR2315_PLLC_ADD_FDBACK_DIV_S;
-//	doubler = 1;
+	switch (ar231x_board.chip_id) {
+	case AR2312:
+		predivide_mask = AR2312_CLOCKCTL1_PREDIVIDE_MASK;
+		predivide_shift = AR2312_CLOCKCTL1_PREDIVIDE_SHIFT;
+		multiplier_mask = AR2312_CLOCKCTL1_MULTIPLIER_MASK;
+		multiplier_shift = AR2312_CLOCKCTL1_MULTIPLIER_SHIFT;
 
-	//todo replace with some thing generic AR2315_PLLC_CTL
-	clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2315_PLLC_CTL));
-	//identical
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2312_CLOCKCTL1));
+		if (clock_ctl1 & AR2312_CLOCKCTL1_DOUBLER_MASK)
+			div = 2;
+		break;
+	case AR2313:
+		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
+		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
+		multiplier_mask = AR2313_CLOCKCTL1_MULTIPLIER_MASK;
+		multiplier_shift = AR2313_CLOCKCTL1_MULTIPLIER_SHIFT;
+
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2312_CLOCKCTL1));
+		div = 1;
+		break;
+	case AR2315:
+		predivide_mask = AR2315_PLLC_REF_DIV_M;
+		predivide_shift = AR2315_PLLC_REF_DIV_S;
+		multiplier_mask = AR2315_PLLC_FDBACK_DIV_M;
+		multiplier_shift = AR2315_PLLC_FDBACK_DIV_S;
+
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2315_PLLC_CTL));
+		div = (clock_ctl1 & AR2315_PLLC_ADD_FDBACK_DIV_M)
+			>> AR2315_PLLC_ADD_FDBACK_DIV_S;
+		div = (div + 1) * 2;
+		break;
+	case UNKNOWN:
+	default:
+		return 0;
+	}
+
 	pre_divide_select = (clock_ctl1 & predivide_mask) >> predivide_shift;
 	pre_divisor = CLOCKCTL1_PREDIVIDE_TABLE[pre_divide_select];
 	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
 
-	// doubler_mask
-//	if (doubler) {
-		divby2 = (clock_ctl1 & doubler_mask) >> doubler_shift;
-		divby2 += 1;
-//	}
-
-	pllcOut = (40000000 / pre_divisor) * (2*divby2) * multiplier;
+	pllc_out = (40000000 / pre_divisor) * div * multiplier;
 
 
+	if (ar231x_board.chip_id == AR2312 || ar231x_board.chip_id == AR2313)
+		return pllc_out / 4;
+
+
+	clock_ctl2 = __raw_readl((char *)KSEG1ADDR(AR2315_AMBACLK));
 	/* clkm input selected */
-	switch(clockCtl & AR2315_CPUCLK_CLK_SEL_M) {
+	switch(clock_ctl2 & AR2315_CPUCLK_CLK_SEL_M) {
 		case 0:
 		case 1:
 			clkDiv = PLLC_DIVIDE_TABLE[
@@ -81,28 +103,15 @@ ar2315_sys_clk(unsigned int clockCtl)
 				>> AR2315_PLLC_CLKC_DIV_S];
 			break;
 		default:
-			pllcOut = 40000000;
+			pllc_out = 40000000;
 			clkDiv = 1;
 			break;
 	}
-	cpuDiv = (clockCtl & AR2315_CPUCLK_CLK_DIV_M)
+	cpuDiv = (clock_ctl2 & AR2315_CPUCLK_CLK_DIV_M)
 		>> AR2315_CPUCLK_CLK_DIV_S;
 	cpuDiv = cpuDiv * 2 ?: 1;
-	return (pllcOut/(clkDiv * cpuDiv));
+	return (pllc_out/(clkDiv * cpuDiv));
 }
-
-static inline unsigned int
-ar2315_cpu_frequency(void)
-{
-    return ar2315_sys_clk(__raw_readl((char *)KSEG1ADDR(AR2315_CPUCLK)));
-}
-
-static inline unsigned int
-ar2315_apb_frequency(void)
-{
-    return ar2315_sys_clk(__raw_readl((char *)KSEG1ADDR(AR2315_AMBACLK)));
-}
-
 
 #if 0
 
@@ -256,10 +265,10 @@ static int ar2315_console_init(void)
 			(char *)KSEG1ADDR(AR2315_WDC));
 
 	/* Register the serial port */
-	serial_plat.clock = ar2315_apb_frequency();
+	serial_plat.clock = ar231x_sys_clk();
 	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR2315_UART0),
 		8 << AR2315_UART_SHIFT, IORESOURCE_MEM_8BIT, &serial_plat);
-	printf("-- %i\n", ar2315_apb_frequency());
+	printf("-- %i\n", ar231x_sys_clk());
 	return 0;
 }
 console_initcall(ar2315_console_init);
