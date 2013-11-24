@@ -194,11 +194,7 @@ static int platform_init(void)
 }
 late_initcall(platform_init);
 
-static struct NS16550_plat serial_plat = {
-	.shift = AR2312_UART_SHIFT,
-};
-
-static int ar2312_console_init(void)
+static void ar2312_reset_uart(void)
 {
 	u32 reset;
 
@@ -209,14 +205,29 @@ static int ar2312_console_init(void)
 
 	reset &= ~AR2312_RESET_UART0;
 	__raw_writel(reset, (char *)KSEG1ADDR(AR2312_RESET));
+}
+
+static struct NS16550_plat serial_plat = {
+	.shift = AR2312_UART_SHIFT,
+};
+
+static int ar231x_console_init(void)
+{
+	u32 uart_addr;
+
+	if (IS_AR2312 || IS_AR2313) {
+		ar2312_reset_uart();
+		uart_addr = AR2312_UART0;
+	} else
+		uart_addr = AR2315_UART0;
 
 	/* Register the serial port */
 	serial_plat.clock = ar231x_sys_clk();
-	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR2312_UART0),
+	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(uart_addr),
 		8 << AR2312_UART_SHIFT, IORESOURCE_MEM_8BIT, &serial_plat);
 	return 0;
 }
-console_initcall(ar2312_console_init);
+console_initcall(ar231x_console_init);
 
 static int ar231x_set_chip_id(void)
 {
