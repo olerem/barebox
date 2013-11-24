@@ -162,25 +162,29 @@ static int ether_init(void)
 	static struct resource res[2];
 	struct ar231x_eth_platform_data *eth = &ar231x_board.eth_pdata;
 
-	/* Base ETH registers  */
-	res[0].start = KSEG1ADDR(AR2312_ENET1);
-	res[0].end = res[0].start + 0x100000 - 1;
-	res[0].flags = IORESOURCE_MEM;
-	/* Base PHY registers */
-	res[1].start = KSEG1ADDR(AR2312_ENET0);
-	res[1].end = res[1].start + 0x100000 - 1;
-	res[1].flags = IORESOURCE_MEM;
-
 	/* MAC address located in atheros config on flash. */
 	eth->mac = ar231x_board.config->enet0_mac;
 
-	eth->reset_mac = AR2312_RESET_ENET0 | AR2312_RESET_ENET1;
-	eth->reset_phy = AR2312_RESET_EPHY0 | AR2312_RESET_EPHY1;
+	if (IS_AR2312 || IS_AR2313) {
+		res[0].start = KSEG1ADDR(AR2312_ENET1);
+		res[1].start = KSEG1ADDR(AR2312_ENET0);
+		eth->reset_mac = AR2312_RESET_ENET0 | AR2312_RESET_ENET1;
+		eth->reset_phy = AR2312_RESET_EPHY0 | AR2312_RESET_EPHY1;
+	} else {
+		res[0].start = KSEG1ADDR(AR2315_ENET0);
+		res[1].start = KSEG1ADDR(AR2315_ENET0);
+		eth->reset_mac = AR2315_RESET_ENET0;
+		eth->reset_phy = AR2315_RESET_EPHY0;
+	}
+
+	/* Base ETH registers  */
+	res[0].end = res[0].start + 0x2000 - 1;
+	res[0].flags = IORESOURCE_MEM;
+	/* Base PHY registers */
+	res[1].end = res[1].start + 0x2000 - 1;
+	res[1].flags = IORESOURCE_MEM;
 
 	eth->reset_bit = ar231x_reset_bit;
-
-	/* FIXME: base_reset should be replaced with reset driver */
-	eth->base_reset = KSEG1ADDR(AR2312_RESET);
 
 	add_generic_device_res("ar231x_eth", DEVICE_ID_DYNAMIC, res, 2, eth);
 	return 0;
