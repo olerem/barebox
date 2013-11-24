@@ -184,11 +184,20 @@ static int ether_init(void)
 
 static int platform_init(void)
 {
-	add_generic_device("ar231x_reset", DEVICE_ID_SINGLE, NULL,
-			KSEG1ADDR(AR2312_RESET), 0x4,
-			IORESOURCE_MEM, NULL);
+	if (IS_AR2312 || IS_AR2313) {
+		add_generic_device("ar231x_reset", DEVICE_ID_SINGLE, NULL,
+				KSEG1ADDR(AR2312_RESET), 0x4, IORESOURCE_MEM,
+				NULL);
+		flash_init();
+	} else {
+		add_generic_device("ar231x_reset", DEVICE_ID_SINGLE, NULL,
+				KSEG1ADDR(AR2315_RESET), 0x4, IORESOURCE_MEM,
+				NULL);
+		add_generic_device("ar2315_sf", DEVICE_ID_DYNAMIC, NULL,
+				0xb1300000, 0xc, IORESOURCE_MEM, NULL);
+	}
+
 	watchdog_init();
-	flash_init();
 	ether_init();
 	return 0;
 }
