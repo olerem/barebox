@@ -18,10 +18,25 @@
 #ifndef __MACH_AR231X_DEBUG_LL__
 #define __MACH_AR231X_DEBUG_LL__
 
+#include <mach/ar2312_regs.h>
+#include <mach/ar2315_regs.h>
+
 /** @file
  *  This File contains declaration for early output support
  */
-#include <board/debug_ll.h>
-#include <asm/debug_ll_ns16550.h>
 
+#ifdef CONFIG_AR231X_DEBUG_LL_UART0
+#define DEBUG_LL_UART_ADDR      KSEG1ADDR(AR2312_UART0)
+#define DEBUG_LL_UART_CLK   (45000000 / 16)
+#else
+#define DEBUG_LL_UART_ADDR      KSEG1ADDR(AR2315_UART0)
+#define DEBUG_LL_UART_CLK   (92000000 / 16)
+#endif
+
+#define DEBUG_LL_UART_SHIFT     AR2312_UART_SHIFT
+
+#define DEBUG_LL_UART_BPS   CONFIG_BAUDRATE
+#define DEBUG_LL_UART_DIVISOR   (DEBUG_LL_UART_CLK / DEBUG_LL_UART_BPS)
+
+#include <asm/debug_ll_ns16550.h>
 #endif /* __MACH_AR231X_DEBUG_LL__ */
