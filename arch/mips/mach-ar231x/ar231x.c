@@ -189,6 +189,31 @@ static void flash_init(void)
 					     AR2312_MAX_FLASH_SIZE));
 }
 
+static void ar2315_enable_ethernet(void)
+{
+	unsigned int mask = AR2315_RESET_ENET0 | AR2315_RESET_EPHY0;
+	unsigned int regtmp;
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_AHB_ARB_CTL));
+	regtmp |= AR2315_ARB_ETHERNET;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_AHB_ARB_CTL));
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_RESET));
+	__raw_writel(regtmp | mask, (char *)KSEG1ADDR(AR2315_RESET));
+	udelay(10000);
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_RESET));
+	__raw_writel(regtmp & ~mask, (char *)KSEG1ADDR(AR2315_RESET));
+	udelay(10000);
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_IF_CTL));
+	regtmp |= AR2315_IF_TS_LOCAL;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_IF_CTL));
+
+	regtmp = __raw_readl((char *)KSEG1ADDR(AR2315_ENDIAN_CTL));
+	regtmp &= ~AR2315_CONFIG_ETHERNET;
+	__raw_writel(regtmp, (char *)KSEG1ADDR(AR2315_ENDIAN_CTL));
+}
+
 static int ether_init(void)
 {
 	static struct resource res[2];
@@ -235,6 +260,7 @@ static int platform_init(void)
 				NULL);
 		add_generic_device("ar2315_sf", DEVICE_ID_DYNAMIC, NULL,
 				0xb1300000, 0xc, IORESOURCE_MEM, NULL);
+		ar2315_enable_ethernet();
 	}
 
 	watchdog_init();
