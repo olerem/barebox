@@ -8,11 +8,12 @@
 #include <mach/ath79.h>
 #include <mach/ar71xx_regs.h>
 
-static unsigned int ar933x_clocks_init(void)
+unsigned long ar933x_cpu_rate;
+unsigned long ar933x_ahb_rate;
+
+static int ar933x_clocks_init(void)
 {
 	unsigned long ref_rate;
-	unsigned long cpu_rate;
-	unsigned long ahb_rate;
 	u32 clock_ctrl;
 	u32 cpu_config;
 	u32 freq;
@@ -26,8 +27,8 @@ static unsigned int ar933x_clocks_init(void)
 
 	clock_ctrl = ath79_pll_rr(AR933X_PLL_CLOCK_CTRL_REG);
 	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
-		cpu_rate = ref_rate;
-		ahb_rate = ref_rate;
+		ar933x_cpu_rate = ref_rate;
+		ar933x_ahb_rate = ref_rate;
 	} else {
 		cpu_config = ath79_pll_rr(AR933X_PLL_CPU_CONFIG_REG);
 
@@ -46,22 +47,17 @@ static unsigned int ar933x_clocks_init(void)
 
 		freq >>= t;
 
-#if 1
 		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT) &
 		     AR933X_PLL_CLOCK_CTRL_CPU_DIV_MASK) + 1;
-		cpu_rate = freq / t;
-#endif
+		ar933x_cpu_rate = freq / t;
+
 		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT) &
 		     AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK) + 1;
-		ahb_rate = freq / t;
+		ar933x_ahb_rate = freq / t;
 	}
-
-	return ahb_rate;
+	return 0;
 }
-
-//static struct NS16550_plat serial_plat = {
-//	.shift = AR2312_UART_SHIFT,
-//};
+postcore_initcall(ar933x_clocks_init);
 
 static int ar933x_console_init(void)
 {
@@ -83,7 +79,6 @@ static int ar933x_console_init(void)
 	add_generic_device("ar933x_serial", DEVICE_ID_DYNAMIC, NULL,
 				KSEG1ADDR(AR71XX_UART_BASE), 0x100,
 				IORESOURCE_MEM | IORESOURCE_MEM_32BIT, NULL);
-	printk("clock: %u\n", ar933x_clocks_init());
 	return 0;
 }
 console_initcall(ar933x_console_init);
