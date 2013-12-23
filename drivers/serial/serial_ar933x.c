@@ -21,32 +21,102 @@
 #include <init.h>
 #include <malloc.h>
 #include <io.h>
+#include <asm-generic/div64.h>
+#include <linux/clk.h>
+#include <linux/err.h>
+
+#include "serial_ar933x.h"
+#include <mach/ath79.h>
+
+#define AR933X_UART_MAX_SCALE	0xff
+#define AR933X_UART_MAX_STEP	0xffff
 
 #define AR933X_UART_DATA_REG            0x00
 #define AR933X_UART_DATA_TX_RX_MASK     0xff
 #define AR933X_UART_DATA_RX_CSR         BIT(8)
 #define AR933X_UART_DATA_TX_CSR         BIT(9)
 
+struct ar933x_uart_priv {
+	void		*base;
+	struct clk	*clk;
+};
+
 static inline void ar933x_serial_writel(struct console_device *cdev,
 	u32 b, int offset)
 {
-	void *serial_base = cdev->dev->priv;
+	struct ar933x_uart_priv *priv = cdev->dev->priv;
 
-	cpu_writel(b, serial_base + offset);
+	cpu_writel(b, priv->base + offset);
 }
 
 static inline u32 ar933x_serial_readl(struct console_device *cdev,
 	int offset)
 {
-	void *serial_base = cdev->dev->priv;
+	struct ar933x_uart_priv *priv = cdev->dev->priv;
 
-	return cpu_readl(serial_base + offset);
+	return cpu_readl(priv->base + offset);
+}
+
+/*
+ * baudrate = (clk / (scale + 1)) * (step * (1 / 2^17))
+ * take from linux.
+ */
+static unsigned long ar933x_uart_get_baud(unsigned int clk,
+					  unsigned int scale,
+					  unsigned int step)
+{
+	u64 t;
+	u32 div;
+
+	div = (2 << 16) * (scale + 1);
+	t = clk;
+	t *= step;
+	t += (div / 2);
+	do_div(t, div);
+
+	return t;
+}
+
+static void ar933x_uart_get_scale_step(unsigned int clk,
+				       unsigned int baud,
+				       unsigned int *scale,
+				       unsigned int *step)
+{
+	unsigned int tscale;
+	long min_diff;
+
+	*scale = 0;
+	*step = 0;
+
+	min_diff = baud;
+	for (tscale = 0; tscale < AR933X_UART_MAX_SCALE; tscale++) {
+		u64 tstep;
+		int diff;
+
+		tstep = baud * (tscale + 1);
+		tstep *= (2 << 16);
+		do_div(tstep, clk);
+
+		if (tstep > AR933X_UART_MAX_STEP)
+			break;
+
+		diff = abs(ar933x_uart_get_baud(clk, tscale, tstep) - baud);
+		if (diff < min_diff) {
+			min_diff = diff;
+			*scale = tscale;
+			*step = tstep;
+		}
+	}
 }
 
 static int ar933x_serial_setbaudrate(struct console_device *cdev, int baudrate)
 {
-	/* FIXME: empty */
+	struct ar933x_uart_priv *priv = cdev->dev->priv;
+	unsigned int scale, step;
 
+	ar933x_uart_get_scale_step(clk_get_rate(priv->clk), baudrate, &scale, &step);
+	ar933x_serial_writel(cdev, (scale << AR933X_UART_CLOCK_SCALE_S) | step,
+			AR933X_UART_CLOCK_REG);
 	return 0;
 }
 
@@ -92,15 +162,30 @@ static int ar933x_serial_getc(struct console_device *cdev)
 static int ar933x_serial_probe(struct device_d *dev)
 {
 	struct console_device *cdev;
+	struct ar933x_uart_priv	*priv;
+	u32 uart_cs;
 
 	cdev = xzalloc(sizeof(struct console_device));
-	dev->priv = dev_request_mem_region(dev, 0);
+	priv = xzalloc(sizeof(struct ar933x_uart_priv));
+	priv->base = dev_request_mem_region(dev, 0);
+	dev->priv = priv;
+
 	cdev->dev = dev;
 	cdev->tstc = ar933x_serial_tstc;
 	cdev->putc = ar933x_serial_putc;
 	cdev->getc = ar933x_serial_getc;
 	cdev->setbrg = ar933x_serial_setbaudrate;
 
+	priv->clk = clk_get(dev, "uart");
+	if (IS_ERR(priv->clk)) {
+		dev_err(dev, "unable to get UART clock\n");
+		return PTR_ERR(priv->clk);
+	}
+
+	uart_cs = (AR933X_UART_CS_IF_MODE_DCE << AR933X_UART_CS_IF_MODE_S)
+		| AR933X_UART_CS_TX_READY_ORIDE
+		| AR933X_UART_CS_RX_READY_ORIDE;
+	ar933x_serial_writel(cdev, uart_cs, AR933X_UART_CS_REG);
 	/* FIXME: need ar933x_serial_init_port(cdev); */
 
 	console_register(cdev);
