@@ -22,6 +22,9 @@
 
 #include <mach/ar71xx_regs.h>
 
+extern unsigned long ar933x_cpu_rate;
+extern unsigned long ar933x_ahb_rate;
+
 #if 0
 enum ath79_soc_type {
 	ATH79_SOC_UNKNOWN,
