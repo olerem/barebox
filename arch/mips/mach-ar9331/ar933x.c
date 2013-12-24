@@ -78,6 +78,8 @@ static int ar933x_console_init(void)
 	/* Register the serial port */
 	//serial_plat.clock = ar2312_sys_frequency();
 #endif
+	/* FIXME: make it more readable */
+	__raw_writel(0x48002, 0xb8040028);
 
 	add_generic_device("ar933x_serial", DEVICE_ID_DYNAMIC, NULL,
 				KSEG1ADDR(AR71XX_UART_BASE), 0x100,
