@@ -10,6 +10,7 @@
 
 unsigned long ar933x_cpu_rate;
 unsigned long ar933x_ahb_rate;
+unsigned long ar933x_ref_rate;
 
 static int ar933x_clocks_init(void)
 {
@@ -25,6 +26,7 @@ static int ar933x_clocks_init(void)
 	else
 		ref_rate = (25 * 1000 * 1000);
 
+	ar933x_ref_rate = ref_rate;
 	clock_ctrl = ath79_pll_rr(AR933X_PLL_CLOCK_CTRL_REG);
 	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
 		ar933x_cpu_rate = ref_rate;
@@ -53,7 +55,8 @@ static int ar933x_clocks_init(void)
 
 		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT) &
 		     AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK) + 1;
-		ar933x_ahb_rate = freq / t;
+		//ar933x_ahb_rate = freq / t;
+		ar933x_ahb_rate = (25 * 1000 * 1000);
 	}
 	return 0;
 }
@@ -79,6 +82,7 @@ static int ar933x_console_init(void)
 	add_generic_device("ar933x_serial", DEVICE_ID_DYNAMIC, NULL,
 				KSEG1ADDR(AR71XX_UART_BASE), 0x100,
 				IORESOURCE_MEM | IORESOURCE_MEM_32BIT, NULL);
+	printk("refrate: %u\n", ar933x_ref_rate);
 	return 0;
 }
 console_initcall(ar933x_console_init);
