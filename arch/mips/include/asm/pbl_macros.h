@@ -28,12 +28,12 @@
 #include <generated/compile.h>
 #include <generated/utsrelease.h>
 
-	.macro	pbl_reg_writel val addr reg1 reg2
+	.macro	pbl_reg_writel val addr
 	.set push
 	.set noreorder
-	li	reg1, addr
-	li	reg2, val
-	sw	reg2, 0(reg1)
+	li	t7, \addr
+	li	t8, \val
+	sw	t7, 0(t8)
 	.set	pop
 	.endm
 
