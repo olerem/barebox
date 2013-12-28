@@ -27,6 +27,7 @@
 #define DEF_25MHZ_PLL_CONFIG	( 1 << AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT \
 				| 1 << AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT \
 				| 32 << AR933X_PLL_CPU_CONFIG_NINT_SHIFT)
+
 .macro	pbl_ar9331_pll
 	.set	push
 	.set	noreorder
@@ -48,30 +49,45 @@
 	.set	pop
 .endm
 
+#define DDR_BASE		(KSEG1 | AR71XX_DDR_CTRL_BASE)
+#define	DDR_REG_CONFIG		(DDR_BASE | AR933X_DDR_REG_CONFIG)
+#define	DDR_REG_CONFIG2		(DDR_BASE | AR933X_DDR_REG_CONFIG2)
+#define	DDR_REG_MODE		(DDR_BASE | AR933X_DDR_REG_MODE)
+#define	DDR_REG_MODE_EXT	(DDR_BASE | AR933X_DDR_REG_MODE_EXT)
+#define	DDR_REG_CTRL		(DDR_BASE | AR933X_DDR_REG_CTRL)
+#define	DDR_REG_REFRESH		(DDR_BASE | AR933X_DDR_REG_REFRESH)
+#define	DDR_REG_RD_DAT		(DDR_BASE | AR933X_DDR_REG_RD_DAT)
+#define	DDR_REG_TAP_CTRL0	(DDR_BASE | AR933X_DDR_REG_TAP_CTRL0)
+#define	DDR_REG_TAP_CTRL1	(DDR_BASE | AR933X_DDR_REG_TAP_CTRL1)
+
+#define DDR_CTRL_EMR3		BIT(5)
+#define DDR_CTRL_EMR2		BIT(4)
+#define DDR_CTRL_PREA		BIT(3) /* Forces a PRECHARGE ALL cycle */
+#define DDR_CTRL_REF		BIT(2) /* Forces an AUTO REFRESH cycle */
+#define DDR_CTRL_EMRS		BIT(1)
+#define DDR_CTRL_MRS		BIT(0)
 
 .macro	pbl_ar9331_ram
 	.set	push
 	.set	noreorder
 
-#if 0
-	pbl_reg_writel(0x7fbc8cd0, 0xb8000000)
-	pbl_reg_writel(0x9dd0e6a8, 0xb8000004)
+	pbl_reg_writel	0x7fbc8cd0, DDR_REG_CONFIG
+	pbl_reg_writel	0x9dd0e6a8, DDR_REG_CONFIG2
 
-	pbl_reg_writel(0x8, 0xb8000010)
-	pbl_reg_writel(0x133, 0xb8000008)
-	pbl_reg_writel(0x1, 0xb8000010)
-	pbl_reg_writel(0x2, 0xb800000c)
+	pbl_reg_writel	0x8, DDR_REG_CTRL
+	pbl_reg_writel	0x133, DDR_REG_MODE
+	pbl_reg_writel	DDR_CTRL_MRS, DDR_REG_CTRL
+	pbl_reg_writel	0x2, DDR_REG_MODE_EXT
 
-	pbl_reg_writel(0x2, 0xb8000010)
-	pbl_reg_writel(0x8, 0xb8000010)
-	pbl_reg_writel(0x33, 0xb8000008)
-	pbl_reg_writel(0x1, 0xb8000010)
-	pbl_reg_writel(0x4186, 0xb8000014)
-	pbl_reg_writel(0x8, 0xb800001c)
+	pbl_reg_writel	DDR_CTRL_EMRS, DDR_REG_CTRL
+	pbl_reg_writel	DDR_CTRL_PREA, DDR_REG_CTRL
+	pbl_reg_writel	0x33, DDR_REG_MODE
+	pbl_reg_writel	DDR_CTRL_MRS, DDR_REG_CTRL
+	pbl_reg_writel	0x4186, DDR_REG_REFRESH
+	pbl_reg_writel	0x8, DDR_REG_TAP_CTRL0
 
-	pbl_reg_writel(0x9, 0xb8000020)
-	pbl_reg_writel(0xff, 0xb8000018)
-#endif
+	pbl_reg_writel	0x9, DDR_REG_TAP_CTRL1
+	pbl_reg_writel	0xff, DDR_REG_RD_DAT
 
 	.set	pop
 .endm
