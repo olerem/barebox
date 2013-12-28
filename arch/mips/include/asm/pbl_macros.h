@@ -28,13 +28,12 @@
 #include <generated/compile.h>
 #include <generated/utsrelease.h>
 
-	/* write immidiat value to addr */
 	.macro	pbl_reg_writel val addr
 	.set push
 	.set noreorder
-	li	t7, \addr
+	li	t9, \addr
 	li	t8, \val
-	sw	t7, 0(t8)
+	sw	t8, 0(t9)
 	.set	pop
 	.endm
 
