@@ -1,8 +1,12 @@
 #ifndef __ASM_MACH_AR9331_PBL_MACROS_H
 #define __ASM_MACH_AR9331_PBL_MACROS_H
 
+#include <asm/addrspace.h>
 #include <asm/regdef.h>
 #include <mach/ar71xx_regs.h>
+
+/* FIXME: find proper place */
+#define BIT(nr)  (1 << (nr))
 
 #define	PLL_CPU_CONFIG_REG	(KSEG1 | AR71XX_PLL_BASE | \
 		AR933X_PLL_CPU_CONFIG_REG)
@@ -15,18 +19,29 @@
 #define PLL_DITHER_REG		(KSEG1 | AR71XX_PLL_BASE | \
 		AR933X_PLL_DITHER_REG)
 
+#define DEF_25MHZ_PLL_CLOCK_CTRL \
+				((2 - 1) << AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT \
+				| (1 - 1) << AR933X_PLL_CLOCK_CTRL_DDR_DIV_SHIFT \
+				| (1 - 1) << AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT)
+#define DEF_25MHZ_SETTLE_TIME	(34000 / 40)
+#define DEF_25MHZ_PLL_CONFIG	( 1 << AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT \
+				| 1 << AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT \
+				| 32 << AR933X_PLL_CPU_CONFIG_NINT_SHIFT)
 .macro	pbl_ar9331_pll
 	.set	push
 	.set	noreorder
 
 	/* 25MHz config */
-	pbl_reg_writel 0x00018004, PLL_CLOCK_CTRL_REG
-	pbl_reg_writel 0x00000352, PLL_CPU_CONFIG2_REG
-	pbl_reg_writel 0x40818000, PLL_CPU_CONFIG_REG
+	pbl_reg_writel (DEF_25MHZ_PLL_CLOCK_CTRL | AR933X_PLL_CLOCK_CTRL_BYPASS), \
+		PLL_CLOCK_CTRL_REG
+	pbl_reg_writel DEF_25MHZ_SETTLE_TIME, PLL_CPU_CONFIG2_REG
+	pbl_reg_writel (DEF_25MHZ_PLL_CONFIG | AR933X_PLL_CPU_CONFIG_PLLPWD), \
+		PLL_CPU_CONFIG_REG
 
-	pbl_reg_writel 0x001003e8, PLL_DITHER_FRAC_REG
-	pbl_reg_writel 0x00818000, PLL_CPU_CONFIG_REG
-	pbl_reg_writel 0x00008000, PLL_CLOCK_CTRL_REG
+	/* power on CPU PLL */
+	pbl_reg_clr	AR933X_PLL_CPU_CONFIG_PLLPWD, PLL_CPU_CONFIG_REG
+	/* disable PLL bypass */
+	pbl_reg_clr	AR933X_PLL_CLOCK_CTRL_BYPASS, PLL_CLOCK_CTRL_REG
 
 	pbl_sleep	t2, 40
 
