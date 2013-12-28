@@ -28,12 +28,51 @@
 #include <generated/compile.h>
 #include <generated/utsrelease.h>
 
+	/* write immidiat value to addr */
 	.macro	pbl_reg_writel val addr
 	.set push
 	.set noreorder
 	li	t7, \addr
 	li	t8, \val
 	sw	t7, 0(t8)
+	.set	pop
+	.endm
+
+	.macro	pbl_reg_set val addr
+	.set push
+	.set noreorder
+	li	t9, \addr
+	li	t8, \val
+	lw	t7, 0(t9)
+	or	t7, t8
+	sw	t7, 0(t9)
+	.set	pop
+	.endm
+
+	.macro	pbl_reg_clr clr addr
+	.set push
+	.set noreorder
+	li	t9, \addr
+	li	t8, \clr
+	lw	t7, 0(t9)
+	not	t8, t8
+	and	t7, t8
+	sw	t7, 0(t9)
+	.set	pop
+	.endm
+
+	/* clr and remove immidiate vlaues on addr */
+	.macro	pbl_reg_rmw clr set addr
+	.set push
+	.set noreorder
+	li	t9, \addr
+	li	t8, \clr
+	lw	t7, 0(t9)
+	not	t8, t8
+	and	t7, t8
+	li	t8, \set
+	or	t7, t8
+	sw	t7, 0(t9)
 	.set	pop
 	.endm
 
