@@ -75,6 +75,20 @@
 	.set	pop
 	.endm
 
+	/* branch if not 0xbfc0000 */
+	.macro	pbl_bne_bfc label tmp1 tmp2
+	.set	push
+	.set	noreorder
+	move	\tmp1, ra			# preserve ra beforehand
+	bal	253f
+	 nop
+253:	and	\tmp2, ra, 0xfff00000
+	bne	\tmp2, 0xbfc00000, \label
+	 move	ra, \tmp1
+	.set	pop
+	.endm
+
+
 	.macro	pbl_sleep reg count
 	.set push
 	.set noreorder
