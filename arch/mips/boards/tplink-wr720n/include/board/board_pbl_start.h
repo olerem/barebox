@@ -27,10 +27,15 @@
 
 	mips_disable_interrupts
 
+	/* Do addres test, if we on flash, it is safe to
+	 * do PLL and RAM config. If we in RAM,
+	 * then it is already configured. */
+	pbl_bne_bfc ar933x_pbl_end t8 t9
 
 	pbl_ar9331_pll
 	pbl_ar9331_ram
 
+ar933x_pbl_end:
 	copy_to_link_location	pbl_start
 
 	.set	pop
