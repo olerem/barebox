@@ -8,16 +8,15 @@
 /* replicated define because linux/bitops.h cannot be included in assembly */
 #define BIT(nr)  (1 << (nr))
 
-#define	PLL_CPU_CONFIG_REG	(KSEG1 | AR71XX_PLL_BASE | \
-		AR933X_PLL_CPU_CONFIG_REG)
-#define PLL_CPU_CONFIG2_REG	(KSEG1 | AR71XX_PLL_BASE | \
-		AR933X_PLL_CPU_CONFIG2_REG)
-#define PLL_CLOCK_CTRL_REG	(KSEG1 | AR71XX_PLL_BASE | \
-		AR933X_PLL_CLOCK_CTRL_REG)
-#define PLL_DITHER_FRAC_REG	(KSEG1 | AR71XX_PLL_BASE | \
-		AR933X_PLL_DITHER_FRAC_REG)
-#define PLL_DITHER_REG		(KSEG1 | AR71XX_PLL_BASE | \
-		AR933X_PLL_DITHER_REG)
+#define RESET_REG_BOOTSTRAP	(KSEG1 | AR71XX_RESET_BASE | \
+		AR933X_RESET_REG_BOOTSTRAP)
+
+#define PLL_BASE		(KSEG1 | AR71XX_PLL_BASE)
+#define	PLL_CPU_CONFIG_REG	(PLL_BASE | AR933X_PLL_CPU_CONFIG_REG)
+#define PLL_CPU_CONFIG2_REG	(PLL_BASE | AR933X_PLL_CPU_CONFIG2_REG)
+#define PLL_CLOCK_CTRL_REG	(PLL_BASE | AR933X_PLL_CLOCK_CTRL_REG)
+#define PLL_DITHER_FRAC_REG	(PLL_BASE | AR933X_PLL_DITHER_FRAC_REG)
+#define PLL_DITHER_REG		(PLL_BASE | AR933X_PLL_DITHER_REG)
 
 #define DEF_25MHZ_PLL_CLOCK_CTRL \
 				((2 - 1) << AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT \
@@ -32,13 +31,31 @@
 	.set	push
 	.set	noreorder
 
+	/* FIXME: should we reset chip here? */
+
+	/* Most devices have 25MHz Ref clock. Make sure to
+	 * be safe. */
+	la	t0, RESET_REG_BOOTSTRAP
+	lw	t1, 0(t0)
+	and	t1, AR933X_BOOTSTRAP_REF_CLK_40
+	bnez	t1, pbl_ar9331_pll_40M
+	 nop
+
 	/* 25MHz config */
 	pbl_reg_writel (DEF_25MHZ_PLL_CLOCK_CTRL | AR933X_PLL_CLOCK_CTRL_BYPASS), \
 		PLL_CLOCK_CTRL_REG
 	pbl_reg_writel DEF_25MHZ_SETTLE_TIME, PLL_CPU_CONFIG2_REG
 	pbl_reg_writel (DEF_25MHZ_PLL_CONFIG | AR933X_PLL_CPU_CONFIG_PLLPWD), \
 		PLL_CPU_CONFIG_REG
+	/* end of 25MHz config */
+	b pbl_ar9331_pll_main
+	 nop
 
+pbl_ar9331_pll_40M:
+	/* 40MHz config */
+	/* end of 40MHz config */
+
+pbl_ar9331_pll_main:
 	/* power on CPU PLL */
 	pbl_reg_clr	AR933X_PLL_CPU_CONFIG_PLLPWD, PLL_CPU_CONFIG_REG
 	/* disable PLL bypass */
