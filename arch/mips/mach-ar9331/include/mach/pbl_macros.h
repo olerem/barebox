@@ -42,6 +42,7 @@
 	 nop
 
 	/* 25MHz config */
+	/* FIXME. make sure we have hre 0x00018004, not 0x00018000 */
 	pbl_reg_writel (DEF_25MHZ_PLL_CLOCK_CTRL | AR933X_PLL_CLOCK_CTRL_BYPASS), \
 		PLL_CLOCK_CTRL_REG
 	pbl_reg_writel DEF_25MHZ_SETTLE_TIME, PLL_CPU_CONFIG2_REG
