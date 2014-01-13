@@ -46,16 +46,16 @@ static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
 {
 	ag71xx_check_reg_offset(ag, reg);
 
-	__raw_writel(value, ag->mac_base + reg);
+	__raw_writel(value, ag->eth_regs + reg);
 	/* flush write */
-	(void) __raw_readl(ag->mac_base + reg);
+	(void) __raw_readl(ag->eth_regs + reg);
 }
 
 static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
 {
 	ag71xx_check_reg_offset(ag, reg);
 
-	return __raw_readl(ag->mac_base + reg);
+	return __raw_readl(ag->eth_regs + reg);
 }
 
 static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
@@ -64,7 +64,7 @@ static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
 
 	ag71xx_check_reg_offset(ag, reg);
 
-	r = ag->mac_base + reg;
+	r = ag->eth_regs + reg;
 	__raw_writel(__raw_readl(r) | mask, r);
 	/* flush write */
 	(void)__raw_readl(r);
@@ -76,7 +76,7 @@ static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
 
 	ag71xx_check_reg_offset(ag, reg);
 
-	r = ag->mac_base + reg;
+	r = ag->eth_regs + reg;
 	__raw_writel(__raw_readl(r) & ~mask, r);
 	/* flush write */
 	(void) __raw_readl(r);
