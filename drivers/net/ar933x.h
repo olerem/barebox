@@ -1,5 +1,5 @@
 /*
- * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
+ * ar933x.h: Linux driver for the Atheros AR933x Ethernet device.
  * Based on Linux driver:
  *		Copyright (C) 2004 by Sameer Dekate <sdekate@arubanetworks.com>
  *		Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
@@ -16,174 +16,201 @@
  * (at your option) any later version.
  */
 
-#ifndef _AR2313_2_H_
-#define _AR2313_2_H_
+#ifndef _AR9333_2_H_
+#define _AR9333_2_H_
+
+/* FIXME after cleaning recheck */
+#include <common.h>
+#include <net.h>
+#include <init.h>
+#include <io.h>
+/* end FIXME */
 
 #include <net.h>
-#include <mach/ar231x_platform.h>
+#include <mach/ath79.h>
+#include <linux/bitops.h>
 
 /* Allocate 64 RX buffers. This will reduce packet loss, until we will start
  * processing them. It is important in noisy network with lots of broadcasts. */
-#define AR2313_RXDSC_ENTRIES	64
-#define DSC_NEXT(idx)		(((idx) + 1) & (AR2313_RXDSC_ENTRIES - 1))
+#define AR9333_RXDSC_ENTRIES	64
+#define DSC_NEXT(idx)		(((idx) + 1) & (AR9333_RXDSC_ENTRIES - 1))
 
 /* Use system default buffers size. At the moment of writing it was 1518 */
-#define AR2313_RX_BUFSIZE	PKTSIZE
+#define AR9333_RX_BUFSIZE	PKTSIZE
 #define CRC_LEN			4
+#define ETH_FCS_LEN	4		/* Octets in the FCS		 */
 
-/**
- * DMA controller
- */
-#define AR231X_DMA_BUS_MODE		0x00 /* (CSR0) */
-#define AR231X_DMA_TX_POLL		0x04 /* (CSR1) */
-#define AR231X_DMA_RX_POLL		0x08 /* (CSR2) */
-#define AR231X_DMA_RX_RING		0x0c /* (CSR3) */
-#define AR231X_DMA_TX_RING		0x10 /* (CSR4) */
-#define AR231X_DMA_STATUS		0x14 /* (CSR5) */
-#define AR231X_DMA_CONTROL		0x18 /* (CSR6) */
-#define AR231X_DMA_INTR_ENA		0x1c /* (CSR7) */
-#define AR231X_DMA_RX_MISSED		0x20 /* (CSR8) */
-/* reserverd 0x24-0x4c (CSR9-19) */
-#define AR231X_DMA_CUR_TX_BUF_ADDR	0x50 /* (CSR20) */
-#define AR231X_DMA_CUR_RX_BUF_ADDR	0x54 /* (CSR21) */
+/* Register offsets */
+#define AG71XX_REG_MAC_CFG1	0x0000
+#define AG71XX_REG_MAC_CFG2	0x0004
+#define AG71XX_REG_MAC_IPG	0x0008
+#define AG71XX_REG_MAC_HDX	0x000c
+#define AG71XX_REG_MAC_MFL	0x0010
+#define AG71XX_REG_MII_CFG	0x0020
+#define AG71XX_REG_MII_CMD	0x0024
+#define AG71XX_REG_MII_ADDR	0x0028
+#define AG71XX_REG_MII_CTRL	0x002c
+#define AG71XX_REG_MII_STATUS	0x0030
+#define AG71XX_REG_MII_IND	0x0034
+#define AG71XX_REG_MAC_IFCTL	0x0038
+#define AG71XX_REG_MAC_ADDR1	0x0040
+#define AG71XX_REG_MAC_ADDR2	0x0044
+#define AG71XX_REG_FIFO_CFG0	0x0048
+#define AG71XX_REG_FIFO_CFG1	0x004c
+#define AG71XX_REG_FIFO_CFG2	0x0050
+#define AG71XX_REG_FIFO_CFG3	0x0054
+#define AG71XX_REG_FIFO_CFG4	0x0058
+#define AG71XX_REG_FIFO_CFG5	0x005c
+#define AG71XX_REG_FIFO_RAM0	0x0060
+#define AG71XX_REG_FIFO_RAM1	0x0064
+#define AG71XX_REG_FIFO_RAM2	0x0068
+#define AG71XX_REG_FIFO_RAM3	0x006c
+#define AG71XX_REG_FIFO_RAM4	0x0070
+#define AG71XX_REG_FIFO_RAM5	0x0074
+#define AG71XX_REG_FIFO_RAM6	0x0078
+#define AG71XX_REG_FIFO_RAM7	0x007c
 
-/**
- * Ethernet controller
- */
-#define AR231X_ETH_MAC_CONTROL		0x00
-#define AR231X_ETH_MAC_ADDR1		0x04
-#define AR231X_ETH_MAC_ADDR2		0x08
-#define AR231X_ETH_MCAST_TABLE1		0x0c
-#define AR231X_ETH_MCAST_TABLE2		0x10
-#define AR231X_ETH_MII_ADDR		0x14
-#define AR231X_ETH_MII_DATA		0x18
-#define AR231X_ETH_FLOW_CONTROL		0x1c
-#define AR231X_ETH_VLAN_TAG		0x20
-/* pad 0x24 - 0x3c */
-/* ucast_table 0x40-0x5c */
+#define AG71XX_REG_TX_CTRL	0x0180
+#define AG71XX_REG_TX_DESC	0x0184
+#define AG71XX_REG_TX_STATUS	0x0188
+#define AG71XX_REG_RX_CTRL	0x018c
+#define AG71XX_REG_RX_DESC	0x0190
+#define AG71XX_REG_RX_STATUS	0x0194
+#define AG71XX_REG_INT_ENABLE	0x0198
+#define AG71XX_REG_INT_STATUS	0x019c
 
-/**
- * RX descriptor status bits. ar231x_descr.status
- */
-#define DMA_RX_ERR_CRC		BIT(1)
-#define DMA_RX_ERR_DRIB		BIT(2)
-#define DMA_RX_ERR_MII		BIT(3)
-#define DMA_RX_EV2		BIT(5)
-#define DMA_RX_ERR_COL		BIT(6)
-#define DMA_RX_LONG		BIT(7)
-#define DMA_RX_LS		BIT(8)	/* last descriptor */
-#define DMA_RX_FS		BIT(9)	/* first descriptor */
-#define DMA_RX_MF		BIT(10)	/* multicast frame */
-#define DMA_RX_ERR_RUNT		BIT(11)	/* runt frame */
-#define DMA_RX_ERR_LENGTH	BIT(12)	/* length error */
-#define DMA_RX_ERR_DESC		BIT(14)	/* descriptor error */
-#define DMA_RX_ERROR		BIT(15)	/* error summary */
-#define DMA_RX_LEN_MASK		0x3fff0000
-#define DMA_RX_LEN_SHIFT	16
-#define DMA_RX_FILT		BIT(30)
-#define DMA_RX_OWN		BIT(31)	/* desc owned by DMA controller */
-#define DMA_RX_FSLS		(DMA_RX_LS | DMA_RX_FS)
-#define DMA_RX_MASK		(DMA_RX_FSLS | DMA_RX_MF | DMA_RX_ERROR)
+#define AG71XX_REG_FIFO_DEPTH	0x01a8
+#define AG71XX_REG_RX_SM	0x01b0
+#define AG71XX_REG_TX_SM	0x01b4
 
-/**
- * RX descriptor configuration bits. ar231x_descr.devcs
- */
-#define DMA_RX1_BSIZE_MASK	0x000007ff
-#define DMA_RX1_BSIZE_SHIFT	0
-#define DMA_RX1_CHAINED		BIT(24)
-#define DMA_RX1_RER		BIT(25)
+#define MAC_CFG1_TXE		BIT(0)	/* Tx Enable */
+#define MAC_CFG1_STX		BIT(1)	/* Synchronize Tx Enable */
+#define MAC_CFG1_RXE		BIT(2)	/* Rx Enable */
+#define MAC_CFG1_SRX		BIT(3)	/* Synchronize Rx Enable */
+#define MAC_CFG1_TFC		BIT(4)	/* Tx Flow Control Enable */
+#define MAC_CFG1_RFC		BIT(5)	/* Rx Flow Control Enable */
+#define MAC_CFG1_LB		BIT(8)	/* Loopback mode */
+#define MAC_CFG1_SR		BIT(31)	/* Soft Reset */
 
-/**
- * TX descriptor status fields. ar231x_descr.status
- */
-#define DMA_TX_ERR_UNDER	BIT(1)	/* underflow error */
-#define DMA_TX_ERR_DEFER	BIT(2)	/* excessive deferral */
-#define DMA_TX_COL_MASK		0x78
-#define DMA_TX_COL_SHIFT	3
-#define DMA_TX_ERR_HB		BIT(7)	/* hearbeat failure */
-#define DMA_TX_ERR_COL		BIT(8)	/* excessive collisions */
-#define DMA_TX_ERR_LATE		BIT(9)	/* late collision */
-#define DMA_TX_ERR_LINK		BIT(10)	/* no carrier */
-#define DMA_TX_ERR_LOSS		BIT(11)	/* loss of carrier */
-#define DMA_TX_ERR_JABBER	BIT(14)	/* transmit jabber timeout */
-#define DMA_TX_ERROR		BIT(15)	/* frame aborted */
-#define DMA_TX_OWN		BIT(31)	/* descr owned by DMA controller */
+#define MAC_CFG2_FDX		BIT(0)
+#define MAC_CFG2_CRC_EN		BIT(1)
+#define MAC_CFG2_PAD_CRC_EN	BIT(2)
+#define MAC_CFG2_LEN_CHECK	BIT(4)
+#define MAC_CFG2_HUGE_FRAME_EN	BIT(5)
+#define MAC_CFG2_IF_1000	BIT(9)
+#define MAC_CFG2_IF_10_100	BIT(8)
 
-/**
- * TX descriptor configuration bits. ar231x_descr.devcs
- */
-#define DMA_TX1_BSIZE_MASK	0x000007ff
-#define DMA_TX1_BSIZE_SHIFT	0
-#define DMA_TX1_CHAINED		BIT(24)	/* chained descriptors */
-#define DMA_TX1_TER		BIT(25)	/* transmit end of ring */
-#define DMA_TX1_FS		BIT(29)	/* first segment */
-#define DMA_TX1_LS		BIT(30)	/* last segment */
-#define DMA_TX1_IC		BIT(31)	/* interrupt on completion */
-#define DMA_TX1_DEFAULT		(DMA_TX1_FS | DMA_TX1_LS | DMA_TX1_TER)
+#define FIFO_CFG0_WTM		BIT(0)	/* Watermark Module */
+#define FIFO_CFG0_RXS		BIT(1)	/* Rx System Module */
+#define FIFO_CFG0_RXF		BIT(2)	/* Rx Fabric Module */
+#define FIFO_CFG0_TXS		BIT(3)	/* Tx System Module */
+#define FIFO_CFG0_TXF		BIT(4)	/* Tx Fabric Module */
+#define FIFO_CFG0_ALL	(FIFO_CFG0_WTM | FIFO_CFG0_RXS | FIFO_CFG0_RXF \
+			| FIFO_CFG0_TXS | FIFO_CFG0_TXF)
 
-#define MAC_CONTROL_RE		BIT(2)	/* receive enable */
-#define MAC_CONTROL_TE		BIT(3)	/* transmit enable */
-#define MAC_CONTROL_DC		BIT(5)	/* Deferral check */
-#define MAC_CONTROL_ASTP	BIT(8)	/* Auto pad strip */
-#define MAC_CONTROL_DRTY	BIT(10)	/* Disable retry */
-#define MAC_CONTROL_DBF		BIT(11)	/* Disable bcast frames */
-#define MAC_CONTROL_LCC		BIT(12)	/* late collision ctrl */
-#define MAC_CONTROL_HP		BIT(13)	/* Hash Perfect filtering */
-#define MAC_CONTROL_HASH	BIT(14)	/* Unicast hash filtering */
-#define MAC_CONTROL_HO		BIT(15)	/* Hash only filtering */
-#define MAC_CONTROL_PB		BIT(16)	/* Pass Bad frames */
-#define MAC_CONTROL_IF		BIT(17)	/* Inverse filtering */
-#define MAC_CONTROL_PR		BIT(18)	/* promiscuous mode
-					 * (valid frames only) */
-#define MAC_CONTROL_PM		BIT(19)	/* pass multicast */
-#define MAC_CONTROL_F		BIT(20)	/* full-duplex */
-#define MAC_CONTROL_DRO		BIT(23)	/* Disable Receive Own */
-#define MAC_CONTROL_HBD		BIT(28)	/* heart-beat disabled (MUST BE SET) */
-#define MAC_CONTROL_BLE		BIT(30)	/* big endian mode */
-#define MAC_CONTROL_RA		BIT(31)	/* receive all
-					 * (valid and invalid frames) */
+#define FIFO_CFG0_ENABLE_SHIFT	8
 
-#define MII_ADDR_BUSY		BIT(0)
-#define MII_ADDR_WRITE		BIT(1)
-#define MII_ADDR_REG_SHIFT	6
-#define MII_ADDR_PHY_SHIFT	11
-#define MII_DATA_SHIFT		0
+#define FIFO_CFG4_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG4_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG4_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG4_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG4_CR		BIT(4)	/* CRC error */
+#define FIFO_CFG4_LM		BIT(5)	/* Length Mismatch */
+#define FIFO_CFG4_LO		BIT(6)	/* Length out of range */
+#define FIFO_CFG4_OK		BIT(7)	/* Packet is OK */
+#define FIFO_CFG4_MC		BIT(8)	/* Multicast Packet */
+#define FIFO_CFG4_BC		BIT(9)	/* Broadcast Packet */
+#define FIFO_CFG4_DR		BIT(10)	/* Dribble */
+#define FIFO_CFG4_LE		BIT(11)	/* Long Event */
+#define FIFO_CFG4_CF		BIT(12)	/* Control Frame */
+#define FIFO_CFG4_PF		BIT(13)	/* Pause Frame */
+#define FIFO_CFG4_UO		BIT(14)	/* Unsupported Opcode */
+#define FIFO_CFG4_VT		BIT(15)	/* VLAN tag detected */
+#define FIFO_CFG4_FT		BIT(16)	/* Frame Truncated */
+#define FIFO_CFG4_UC		BIT(17)	/* Unicast Packet */
 
-#define FLOW_CONTROL_FCE	BIT(1)
+#define FIFO_CFG5_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG5_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG5_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG5_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG5_LM		BIT(4)	/* Length Mismatch */
+#define FIFO_CFG5_LO		BIT(5)	/* Length Out of Range */
+#define FIFO_CFG5_OK		BIT(6)	/* Packet is OK */
+#define FIFO_CFG5_MC		BIT(7)	/* Multicast Packet */
+#define FIFO_CFG5_BC		BIT(8)	/* Broadcast Packet */
+#define FIFO_CFG5_DR		BIT(9)	/* Dribble */
+#define FIFO_CFG5_CF		BIT(10)	/* Control Frame */
+#define FIFO_CFG5_PF		BIT(11)	/* Pause Frame */
+#define FIFO_CFG5_UO		BIT(12)	/* Unsupported Opcode */
+#define FIFO_CFG5_VT		BIT(13)	/* VLAN tag detected */
+#define FIFO_CFG5_LE		BIT(14)	/* Long Event */
+#define FIFO_CFG5_FT		BIT(15)	/* Frame Truncated */
+#define FIFO_CFG5_16		BIT(16)	/* unknown */
+#define FIFO_CFG5_17		BIT(17)	/* unknown */
+#define FIFO_CFG5_SF		BIT(18)	/* Short Frame */
+#define FIFO_CFG5_BM		BIT(19)	/* Byte Mode */
 
-#define DMA_BUS_MODE_SWR	BIT(0)	/* software reset */
-#define DMA_BUS_MODE_BLE	BIT(7)	/* big endian mode */
-#define DMA_BUS_MODE_PBL_SHIFT	8	/* programmable burst length 32 */
-#define DMA_BUS_MODE_DBO	BIT(20)	/* big-endian descriptors */
+#define AG71XX_INT_TX_PS	BIT(0)
+#define AG71XX_INT_TX_UR	BIT(1)
+#define AG71XX_INT_TX_BE	BIT(3)
+#define AG71XX_INT_RX_PR	BIT(4)
+#define AG71XX_INT_RX_OF	BIT(6)
+#define AG71XX_INT_RX_BE	BIT(7)
 
-#define DMA_STATUS_TI		BIT(0)	/* transmit interrupt */
-#define DMA_STATUS_TPS		BIT(1)	/* transmit process stopped */
-#define DMA_STATUS_TU		BIT(2)	/* transmit buffer unavailable */
-#define DMA_STATUS_TJT		BIT(3)	/* transmit buffer timeout */
-#define DMA_STATUS_UNF		BIT(5)	/* transmit underflow */
-#define DMA_STATUS_RI		BIT(6)	/* receive interrupt */
-#define DMA_STATUS_RU		BIT(7)	/* receive buffer unavailable */
-#define DMA_STATUS_RPS		BIT(8)	/* receive process stopped */
-#define DMA_STATUS_ETI		BIT(10)	/* early transmit interrupt */
-#define DMA_STATUS_FBE		BIT(13)	/* fatal bus interrupt */
-#define DMA_STATUS_ERI		BIT(14)	/* early receive interrupt */
-#define DMA_STATUS_AIS		BIT(15)	/* abnormal interrupt summary */
-#define DMA_STATUS_NIS		BIT(16)	/* normal interrupt summary */
-#define DMA_STATUS_RS_SHIFT	17	/* receive process state */
-#define DMA_STATUS_TS_SHIFT	20	/* transmit process state */
-#define DMA_STATUS_EB_SHIFT	23	/* error bits */
+#define MAC_IFCTL_SPEED		BIT(16)
 
-#define DMA_CONTROL_SR		BIT(1)	/* start receive */
-#define DMA_CONTROL_ST		BIT(13)	/* start transmit */
-#define DMA_CONTROL_SF		BIT(21)	/* store and forward */
+#define MII_CFG_CLK_DIV_4	0
+#define MII_CFG_CLK_DIV_6	2
+#define MII_CFG_CLK_DIV_8	3
+#define MII_CFG_CLK_DIV_10	4
+#define MII_CFG_CLK_DIV_14	5
+#define MII_CFG_CLK_DIV_20	6
+#define MII_CFG_CLK_DIV_28	7
+#define MII_CFG_CLK_DIV_34	8
+#define MII_CFG_CLK_DIV_42	9
+#define MII_CFG_CLK_DIV_50	10
+#define MII_CFG_CLK_DIV_58	11
+#define MII_CFG_CLK_DIV_66	12
+#define MII_CFG_CLK_DIV_74	13
+#define MII_CFG_CLK_DIV_82	14
+#define MII_CFG_CLK_DIV_98	15
+#define MII_CFG_RESET		BIT(31)
 
+#define MII_CMD_WRITE		0x0
+#define MII_CMD_READ		0x1
+#define MII_ADDR_SHIFT		8
+#define MII_IND_BUSY		BIT(0)
+#define MII_IND_INVALID		BIT(2)
 
-struct ar231x_descr {
+#define TX_CTRL_TXE		BIT(0)	/* Tx Enable */
+
+#define TX_STATUS_PS		BIT(0)	/* Packet Sent */
+#define TX_STATUS_UR		BIT(1)	/* Tx Underrun */
+#define TX_STATUS_BE		BIT(3)	/* Bus Error */
+
+#define RX_CTRL_RXE		BIT(0)	/* Rx Enable */
+
+#define RX_STATUS_PR		BIT(0)	/* Packet Received */
+#define RX_STATUS_OF		BIT(2)	/* Rx Overflow */
+#define RX_STATUS_BE		BIT(3)	/* Bus Error */
+
+struct ar933x_descr {
+	u32	buffer_ptr;	/* Pointer to packet buffer. */
+	u32	ctrl;
+#define DESC_EMPTY	BIT(31)
+#define DESC_MORE	BIT(24)
+#define DESC_PKTLEN_M	0xfff
+	u32	next_dsc_ptr;	/* Pointer to next descriptor in chain. */
+	u32	pad;
+} __attribute__((aligned(4)));
+
+#if 0
+struct ar933x_descr {
 	u32 status;		/* OWN, Device control and status. */
 	u32 devcs;		/* Packet control bitmap + Length. */
-	u32 buffer_ptr;		/* Pointer to packet buffer. */
-	u32 next_dsc_ptr;	/* Pointer to next descriptor in chain. */
 };
+#endif
+
 
 /**
  * Struct private for the Sibyte.
@@ -195,25 +222,35 @@ struct ar231x_descr {
  * Frequently accessed variables are put at the beginning of the
  * struct to help the compiler generate better/shorter code.
  */
-struct ar231x_eth_priv {
-	struct ar231x_eth_platform_data *cfg;
+struct ag71xx {
+	struct ar933x_eth_platform_data *cfg;
 	u8 *mac;
 	void __iomem *phy_regs;
 	void __iomem *eth_regs;
 	void __iomem *dma_regs;
 	void __iomem *reset_regs;
+	void __iomem *mac_base;
 
 	struct eth_device edev;
 	struct mii_bus miibus;
 
-	struct ar231x_descr *tx_ring;
-	struct ar231x_descr *rx_ring;
-	struct ar231x_descr *next_rxdsc;
+	struct ar933x_descr *tx_ring;
+	struct ar933x_descr *rx_ring;
+	struct ar933x_descr *next_rxdsc;
 	u8 kill_rx_ring;
 	void *rx_buffer;
 
+	unsigned int	link;
+	unsigned int	speed;
+	int		duplex;
+
+	unsigned int	max_frame_len;
+	unsigned int	desc_pktlen_mask;
+	unsigned int	rx_buf_size;
+
+	u32 reset_mask;
 	int oldduplex;
 	void (*reset_bit)(u32 val, enum reset_state state);
 };
 
-#endif							/* _AR2313_H_ */
+#endif							/* _AR9333_H_ */

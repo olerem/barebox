@@ -34,6 +34,14 @@ config DRIVER_NET_AR231X
 	help
 	  Support for the AR231x/531x ethernet controller
 
+config DRIVER_NET_AR933X
+	bool "AR933X Ethernet support"
+	depends on MACH_MIPS_AR9331
+	select PHYLIB
+	help
+	  Support for the AR933x ethernet controller
+
+
 config DRIVER_NET_CALXEDA_XGMAC
 	bool "Calxeda xgmac"
 

@@ -264,37 +264,6 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_dma_reset(ag);
 }
 
-static void ag71xx_fast_reset(struct ag71xx *ag)
-{
-//	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-//	struct net_device *dev = ag->dev;
-	u32 reset_mask = ag->reset_mask;
-	u32 rx_ds, tx_ds;
-	u32 mii_reg;
-
-	reset_mask &= AR71XX_RESET_GE0_MAC | AR71XX_RESET_GE1_MAC;
-
-	mii_reg = ag71xx_rr(ag, AG71XX_REG_MII_CFG);
-	rx_ds = ag71xx_rr(ag, AG71XX_REG_RX_DESC);
-	tx_ds = ag71xx_rr(ag, AG71XX_REG_TX_DESC);
-
-	ar933x_reset_bit_(ag, reset_mask, SET);
-	udelay(10);
-	ar933x_reset_bit_(ag, reset_mask, REMOVE);
-	udelay(10);
-
-	ag71xx_dma_reset(ag);
-	ag71xx_hw_setup(ag);
-
-	/* setup max frame length */
-//	ag71xx_wr(ag, AG71XX_REG_MAC_MFL,
-//		  ag71xx_max_frame_len(ag->dev->mtu));
-
-	ag71xx_wr(ag, AG71XX_REG_RX_DESC, rx_ds);
-	ag71xx_wr(ag, AG71XX_REG_TX_DESC, tx_ds);
-	ag71xx_wr(ag, AG71XX_REG_MII_CFG, mii_reg);
-}
-
 static void ag71xx_hw_start(struct ag71xx *ag)
 {
 	/* start RX engine */
@@ -304,8 +273,47 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 //	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
 }
 
-static void ag71xx_link_adjust(struct ag71xx *ag)
+
+static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr);
+
+/* ok */
+static void ar933x_flash_rxdsc(struct ar933x_descr *rxdsc)
 {
+	rxdsc->ctrl = DESC_EMPTY;
+}
+
+/* ok */
+static void ar933x_allocate_dma_descriptors(struct eth_device *edev)
+{
+	struct ag71xx *priv = edev->priv;
+	u16 ar933x_descr_size = sizeof(struct ar933x_descr);
+	u16 i;
+
+	priv->tx_ring = xmalloc(ar933x_descr_size);
+	dev_dbg(&edev->dev, "allocate tx_ring @ %p\n", priv->tx_ring);
+
+	priv->rx_ring = xmalloc(ar933x_descr_size * AR9333_RXDSC_ENTRIES);
+	dev_dbg(&edev->dev, "allocate rx_ring @ %p\n", priv->rx_ring);
+
+	priv->rx_buffer = xmalloc(AR9333_RX_BUFSIZE * AR9333_RXDSC_ENTRIES);
+	dev_dbg(&edev->dev, "allocate rx_buffer @ %p\n", priv->rx_buffer);
+
+	/* Initialize the rx Descriptors */
+	for (i = 0; i < AR9333_RXDSC_ENTRIES; i++) {
+		struct ar933x_descr *rxdsc = &priv->rx_ring[i];
+		ar933x_flash_rxdsc(rxdsc);
+		rxdsc->buffer_ptr =
+			(u32)(priv->rx_buffer + AR9333_RX_BUFSIZE * i);
+		rxdsc->next_dsc_ptr = (u32)&priv->rx_ring[DSC_NEXT(i)];
+	}
+	/* set initial position of ring descriptor */
+	priv->next_rxdsc = &priv->rx_ring[0];
+}
+
+static void ar933x_adjust_link(struct eth_device *edev)
+{
+	struct ag71xx *ag = edev->priv;
+
 	//struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	u32 cfg2;
 	u32 ifctl;
@@ -369,59 +377,6 @@ static void ag71xx_link_adjust(struct ag71xx *ag)
 
 }
 
-static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr);
-
-/* ok */
-static void ar933x_flash_rxdsc(struct ar933x_descr *rxdsc)
-{
-	rxdsc->ctrl = DESC_EMPTY;
-}
-
-/* ok */
-static void ar933x_allocate_dma_descriptors(struct eth_device *edev)
-{
-	struct ag71xx *priv = edev->priv;
-	u16 ar933x_descr_size = sizeof(struct ar933x_descr);
-	u16 i;
-
-	priv->tx_ring = xmalloc(ar933x_descr_size);
-	dev_dbg(&edev->dev, "allocate tx_ring @ %p\n", priv->tx_ring);
-
-	priv->rx_ring = xmalloc(ar933x_descr_size * AR9333_RXDSC_ENTRIES);
-	dev_dbg(&edev->dev, "allocate rx_ring @ %p\n", priv->rx_ring);
-
-	priv->rx_buffer = xmalloc(AR9333_RX_BUFSIZE * AR9333_RXDSC_ENTRIES);
-	dev_dbg(&edev->dev, "allocate rx_buffer @ %p\n", priv->rx_buffer);
-
-	/* Initialize the rx Descriptors */
-	for (i = 0; i < AR9333_RXDSC_ENTRIES; i++) {
-		struct ar933x_descr *rxdsc = &priv->rx_ring[i];
-		ar933x_flash_rxdsc(rxdsc);
-		rxdsc->buffer_ptr =
-			(u32)(priv->rx_buffer + AR9333_RX_BUFSIZE * i);
-		rxdsc->next_dsc_ptr = (u32)&priv->rx_ring[DSC_NEXT(i)];
-	}
-	/* set initial position of ring descriptor */
-	priv->next_rxdsc = &priv->rx_ring[0];
-}
-
-static void ar933x_adjust_link(struct eth_device *edev)
-{
-	struct ag71xx *priv = edev->priv;
-	u32 mc;
-
-	if (edev->phydev->duplex != priv->oldduplex) {
-		mc = eth_readl(priv, AR933X_ETH_MAC_CONTROL);
-		mc &= ~(MAC_CONTROL_F | MAC_CONTROL_DRO);
-		if (edev->phydev->duplex)
-			mc |= MAC_CONTROL_F;
-		else
-			mc |= MAC_CONTROL_DRO;
-		eth_writel(priv, mc, AR933X_ETH_MAC_CONTROL);
-		priv->oldduplex = edev->phydev->duplex;
-	}
-}
-
 static int ar933x_eth_init(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
@@ -429,8 +384,8 @@ static int ar933x_eth_init(struct eth_device *edev)
 	ar933x_allocate_dma_descriptors(edev);
 	ag71xx_hw_init(priv);
 
-	dma_writel(priv, (u32)priv->tx_ring, AG71XX_REG_TX_DESC);
-	dma_writel(priv, (u32)priv->rx_ring, AG71XX_REG_RX_DESC);
+	ag71xx_wr(priv, AG71XX_REG_TX_DESC, (u32)priv->tx_ring);
+	ag71xx_wr(priv, AG71XX_REG_RX_DESC, (u32)priv->rx_ring);
 	//ar933x_reset_regs(edev);
 	ar933x_set_ethaddr(edev, priv->mac);
 	return 0;
@@ -439,15 +394,17 @@ static int ar933x_eth_init(struct eth_device *edev)
 static int ar933x_eth_open(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
-	u32 tmp;
+	//u32 tmp;
 
 	/* Enable RX. Now the rx_buffer will be filled.
 	 * If it is full we may lose first transmission. In this case
 	 * barebox should retry it.
 	 * Or TODO: - force HW to filter some how broadcasts
 	 *			- disable RX if we do not need it. */
+#if 0
 	tmp = eth_readl(priv, AR933X_ETH_MAC_CONTROL);
 	eth_writel(priv, (tmp | MAC_CONTROL_RE), AR933X_ETH_MAC_CONTROL);
+#endif
 
 	return phy_device_connect(edev, &priv->miibus, (int)priv->phy_regs,
 			ar933x_adjust_link, 0, PHY_INTERFACE_MODE_MII);
@@ -498,7 +455,7 @@ static int ar933x_eth_send(struct eth_device *edev, void *packet,
 {
 	struct ag71xx *priv = edev->priv;
 	struct ar933x_descr *txdsc = priv->tx_ring;
-	u32 rx_missed;
+	//u32 rx_missed;
 
 	/* We do not do async work.
 	 * If rx_ring is full, there is nothing we can use. */
@@ -533,20 +490,20 @@ static int ar933x_eth_send(struct eth_device *edev, void *packet,
 
 static void ar933x_eth_halt(struct eth_device *edev)
 {
-	struct ag71xx *priv = edev->priv;
-	u32 tmp;
+//	struct ag71xx *priv = edev->priv;
+//	u32 tmp;
 
 	/* kill the MAC: disable RX and TX */
-	tmp = eth_readl(priv, AR933X_ETH_MAC_CONTROL);
-	eth_writel(priv, tmp & ~(MAC_CONTROL_RE | MAC_CONTROL_TE),
-			AR933X_ETH_MAC_CONTROL);
+//	tmp = eth_readl(priv, AR933X_ETH_MAC_CONTROL);
+//	eth_writel(priv, tmp & ~(MAC_CONTROL_RE | MAC_CONTROL_TE),
+//			AR933X_ETH_MAC_CONTROL);
 
 	/* stop DMA */
-	dma_writel(priv, 0, AR933X_DMA_CONTROL);
-	dma_writel(priv, DMA_BUS_MODE_SWR, AR933X_DMA_BUS_MODE);
+//	dma_writel(priv, 0, AR933X_DMA_CONTROL);
+//	dma_writel(priv, DMA_BUS_MODE_SWR, AR933X_DMA_BUS_MODE);
 
 	/* place PHY and MAC in reset */
-	ar933x_reset_bit_(priv, (priv->cfg->reset_mac | priv->cfg->reset_phy), SET);
+//	ar933x_reset_bit_(priv, (priv->cfg->reset_mac | priv->cfg->reset_phy), SET);
 }
 
 // OK
@@ -568,6 +525,7 @@ static int ar933x_get_ethaddr(struct eth_device *edev, unsigned char *addr)
 static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr)
 {
 	struct ag71xx *ag = edev->priv;
+	unsigned char *mac = addr;
 	u32 t;
 
 	t = (((u32) mac[5]) << 24) | (((u32) mac[4]) << 16)

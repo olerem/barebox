@@ -22,6 +22,11 @@
 
 #include <mach/ar71xx_regs.h>
 
+enum reset_state {
+	SET,
+	REMOVE,
+};
+
 static inline void ath79_pll_wr(unsigned reg, u32 val)
 {
 	__raw_writel(val, (char *)KSEG1ADDR(AR71XX_PLL_BASE + reg));
