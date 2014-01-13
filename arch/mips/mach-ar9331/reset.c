@@ -17,6 +17,9 @@
 
 #include <common.h>
 #include <io.h>
+#include <mach/ath79.h>
+
+static void __iomem *reset_base;
 
 void __noreturn reset_cpu(ulong addr)
 {
@@ -30,3 +33,48 @@ void __noreturn reset_cpu(ulong addr)
 	/*NOTREACHED*/
 }
 EXPORT_SYMBOL(reset_cpu);
+
+static u32 ar933x_reset_readl(void)
+{
+	return __raw_readl(reset_base);
+}
+
+static void ar933x_reset_writel(u32 val)
+{
+	__raw_writel(val, reset_base);
+}
+
+void ar933x_reset_bit(u32 val, enum reset_state state)
+{
+	u32 tmp;
+
+	tmp = ar933x_reset_readl();
+
+	if (state == REMOVE)
+		ar933x_reset_writel(tmp & ~val);
+	else
+		ar933x_reset_writel(tmp | val);
+}
+EXPORT_SYMBOL(ar933x_reset_bit);
+
+static int ar933x_reset_probe(struct device_d *dev)
+{
+	reset_base = dev_request_mem_region(dev, 0);
+	if (!reset_base) {
+		dev_err(dev, "could not get memory region\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static struct driver_d ar933x_reset_driver = {
+	.probe	= ar933x_reset_probe,
+	.name	= "ar933x_reset",
+};
+
+static int ar933x_reset_init(void)
+{
+	return platform_driver_register(&ar933x_reset_driver);
+}
+coredevice_initcall(ar933x_reset_init);
