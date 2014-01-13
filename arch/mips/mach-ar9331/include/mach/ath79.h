@@ -27,6 +27,18 @@ enum reset_state {
 	REMOVE,
 };
 
+struct ar933x_eth_platform_data {
+	u32 base_reset;
+	u32 reset_mac;
+	u32 reset_phy;
+
+	u8 *mac;
+
+	void (*reset_bit)(u32 val, enum reset_state state);
+};
+
+void ar933x_reset_bit(u32 val, enum reset_state state);
+
 static inline void ath79_pll_wr(unsigned reg, u32 val)
 {
 	__raw_writel(val, (char *)KSEG1ADDR(AR71XX_PLL_BASE + reg));
