@@ -85,12 +85,12 @@ static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
 static inline void dma_writel(struct ag71xx *priv,
 		u32 val, int reg)
 {
-	__raw_writel(val, priv->dma_regs + reg);
+	__raw_writel(val, priv->eth_regs + reg);
 }
 
 static inline u32 dma_readl(struct ag71xx *priv, int reg)
 {
-	return __raw_readl(priv->dma_regs + reg);
+	return __raw_readl(priv->eth_regs + reg);
 }
 
 static inline void eth_writel(struct ag71xx *priv,
@@ -233,7 +233,8 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	//struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-	u32 reset_mask = ag->reset_mask;
+	//u32 reset_mask = ag->reset_mask;
+	u32 reset_mask = 1 << 8 | 1 << 9 | 1 << 13 | 1  << 14;
 
 	ag71xx_hw_stop(ag);
 
@@ -540,6 +541,7 @@ static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr)
 	return 0;
 }
 
+#if 0
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
 
@@ -584,6 +586,7 @@ static int ar933x_mdiibus_reset(struct mii_bus *bus)
 	ar933x_reset_regs(&priv->edev);
 	return 0;
 }
+#endif
 
 static int ar933x_eth_probe(struct device_d *dev)
 {
@@ -613,6 +616,7 @@ static int ar933x_eth_probe(struct device_d *dev)
 		dev_err(dev, "No eth_regs!!\n");
 		return -ENODEV;
 	}
+#if 0
 	/* we have 0x100000 for eth, part of it are dma regs.
 	 * So they are already requested */
 	priv->dma_regs = (void *)(priv->eth_regs + 0x1000);
@@ -622,6 +626,7 @@ static int ar933x_eth_probe(struct device_d *dev)
 		dev_err(dev, "No phy_regs!!\n");
 		return -ENODEV;
 	}
+#endif
 
 	priv->cfg = pdata;
 	edev->init = ar933x_eth_init;
@@ -632,6 +637,7 @@ static int ar933x_eth_probe(struct device_d *dev)
 	edev->get_ethaddr = ar933x_get_ethaddr;
 	edev->set_ethaddr = ar933x_set_ethaddr;
 
+#if 0
 	priv->miibus.read = ar933x_miibus_read;
 	priv->miibus.write = ar933x_miibus_write;
 	priv->miibus.reset = ar933x_mdiibus_reset;
@@ -639,6 +645,7 @@ static int ar933x_eth_probe(struct device_d *dev)
 	priv->miibus.parent = dev;
 
 	mdiobus_register(miibus);
+#endif
 	eth_register(edev);
 
 	return 0;
