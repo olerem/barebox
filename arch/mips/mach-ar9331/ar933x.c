@@ -11,6 +11,8 @@
 #include <mach/ath79.h>
 #include <mach/ar71xx_regs.h>
 
+struct ar933x_eth_platform_data eth_pdata;
+
 struct clk_ar933x {
 	struct clk clk;
 	u32 div_shift;
@@ -125,6 +127,21 @@ static int __init ar933x_clocks_init(void)
 	return 0;
 }
 pure_initcall(ar933x_clocks_init);
+
+static int platform_init(void)
+{
+	add_generic_device("ar933x_reset", DEVICE_ID_SINGLE, NULL,
+			KSEG1ADDR(0x1806001C), 0x4,
+			IORESOURCE_MEM, NULL);
+	add_generic_device("ar933x_eth", DEVICE_ID_SINGLE, NULL,
+			KSEG1ADDR(0x19000000), 0x1E0,
+			IORESOURCE_MEM, &eth_pdata);
+//	watchdog_init();
+//	flash_init();
+//	ether_init();
+	return 0;
+}
+late_initcall(platform_init);
 
 static int ar933x_console_init(void)
 {
