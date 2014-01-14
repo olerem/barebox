@@ -131,6 +131,7 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 {
 	u32 val;
 	int i;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	/* stop RX and TX */
 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
@@ -196,6 +197,7 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 
 static void ag71xx_hw_stop(struct ag71xx *ag)
 {
+	printk("%s:%i\n", __func__, __LINE__);
 	/* disable all interrupts and stop the rx/tx engine */
 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
@@ -206,6 +208,7 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 {
 //	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 
+	printk("%s:%i\n", __func__, __LINE__);
 	/* setup MAC configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
 
@@ -236,6 +239,7 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	//u32 reset_mask = ag->reset_mask;
 	u32 reset_mask = 1 << 8 | 1 << 9 | 1 << 13 | 1  << 14;
 
+	printk("%s:%i\n", __func__, __LINE__);
 	ag71xx_hw_stop(ag);
 
 #if 0
@@ -267,6 +271,7 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 
 static void ag71xx_hw_start(struct ag71xx *ag)
 {
+	printk("%s:%i\n", __func__, __LINE__);
 	/* start RX engine */
 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
 
@@ -280,6 +285,7 @@ static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr);
 /* ok */
 static void ar933x_flash_rxdsc(struct ar933x_descr *rxdsc)
 {
+	printk("%s:%i\n", __func__, __LINE__);
 	rxdsc->ctrl = DESC_EMPTY;
 }
 
@@ -290,6 +296,7 @@ static void ar933x_allocate_dma_descriptors(struct eth_device *edev)
 	u16 ar933x_descr_size = sizeof(struct ar933x_descr);
 	u16 i;
 
+	printk("%s:%i\n", __func__, __LINE__);
 	priv->tx_ring = xmalloc(ar933x_descr_size);
 	dev_dbg(&edev->dev, "allocate tx_ring @ %p\n", priv->tx_ring);
 
@@ -314,6 +321,7 @@ static void ar933x_allocate_dma_descriptors(struct eth_device *edev)
 static void ar933x_adjust_link(struct eth_device *edev)
 {
 	struct ag71xx *ag = edev->priv;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	//struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	u32 cfg2;
@@ -343,6 +351,8 @@ static void ar933x_adjust_link(struct eth_device *edev)
 	fifo5 = ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5);
 	fifo5 &= ~FIFO_CFG5_BM;
 
+	ag->speed = SPEED_100;
+
 	switch (ag->speed) {
 	case SPEED_1000:
 		cfg2 |= MAC_CFG2_IF_1000;
@@ -356,6 +366,7 @@ static void ar933x_adjust_link(struct eth_device *edev)
 		cfg2 |= MAC_CFG2_IF_10_100;
 		break;
 	default:
+	printk("%s:%i\n", __func__, __LINE__);
 		BUG();
 		return;
 	}
@@ -381,6 +392,7 @@ static void ar933x_adjust_link(struct eth_device *edev)
 static int ar933x_eth_init(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	ar933x_allocate_dma_descriptors(edev);
 	ag71xx_hw_init(priv);
@@ -396,6 +408,7 @@ static int ar933x_eth_open(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 	//u32 tmp;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	/* Enable RX. Now the rx_buffer will be filled.
 	 * If it is full we may lose first transmission. In this case
@@ -407,8 +420,9 @@ static int ar933x_eth_open(struct eth_device *edev)
 	eth_writel(priv, (tmp | MAC_CONTROL_RE), AR933X_ETH_MAC_CONTROL);
 #endif
 
-	return phy_device_connect(edev, &priv->miibus, (int)priv->phy_regs,
-			ar933x_adjust_link, 0, PHY_INTERFACE_MODE_MII);
+//	return phy_device_connect(edev, &priv->miibus, (int)priv->phy_regs,
+//			ar933x_adjust_link, 0, PHY_INTERFACE_MODE_MII);
+	return 0;
 }
 
 /* mostly ok */
@@ -416,6 +430,7 @@ static int ar933x_eth_recv(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
+//	printk("%s:%i\n", __func__, __LINE__);
 #if 0
 	status = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
 	if (unlikely(status & RX_STATUS_OF)) {
@@ -470,12 +485,17 @@ static int ar933x_eth_send(struct eth_device *edev, void *packet,
 #endif
 
 	/* Setup the transmit descriptor. */
+	printk("%s:%i %p\n", __func__, __LINE__, txdsc);
+	//txdsc->buffer_ptr = 1;
 	txdsc->buffer_ptr = (uint)packet;
+	printk("%s:%i\n", __func__, __LINE__);
 	txdsc->ctrl = length & DESC_PKTLEN_M;
 
 	/* Trigger transmission */
-	dma_writel(priv, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
+//	dma_writel(priv, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
+	dma_writel(priv, TX_CTRL_TXE, AG71XX_REG_TX_CTRL);
 
+	printk("%s:%i\n", __func__, __LINE__);
 	wait_on_timeout(2000 * MSECOND,
 		!ar933x_desc_empty(txdsc));
 
@@ -487,10 +507,12 @@ static int ar933x_eth_send(struct eth_device *edev, void *packet,
 	/* Ready or not. Stop it. FIXME */
 	txdsc->ctrl = DESC_EMPTY;
 	return 0;
+	printk("%s:%i\n", __func__, __LINE__);
 }
 
 static void ar933x_eth_halt(struct eth_device *edev)
 {
+	printk("%s:%i\n", __func__, __LINE__);
 //	struct ag71xx *priv = edev->priv;
 //	u32 tmp;
 
@@ -511,6 +533,7 @@ static void ar933x_eth_halt(struct eth_device *edev)
 static int ar933x_get_ethaddr(struct eth_device *edev, unsigned char *addr)
 {
 	struct ag71xx *priv = edev->priv;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	/* MAC address is stored on flash, in some kind of atheros config
 	 * area. Platform code should read it and pass to the driver. */
@@ -528,6 +551,7 @@ static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr)
 	struct ag71xx *ag = edev->priv;
 	unsigned char *mac = addr;
 	u32 t;
+	printk("%s:%i\n", __func__, __LINE__);
 
 	t = (((u32) mac[5]) << 24) | (((u32) mac[4]) << 16)
 	  | (((u32) mac[3]) << 8) | ((u32) mac[2]);
@@ -600,6 +624,7 @@ static int ar933x_eth_probe(struct device_d *dev)
 		return -ENODEV;
 	}
 
+	printk("%s:%i\n", __func__, __LINE__);
 	pdata = dev->platform_data;
 
 	priv = xzalloc(sizeof(struct ag71xx));
