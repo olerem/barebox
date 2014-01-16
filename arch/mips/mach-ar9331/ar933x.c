@@ -133,6 +133,7 @@ static int platform_init(void)
 	add_generic_device("ar933x_reset", DEVICE_ID_SINGLE, NULL,
 			KSEG1ADDR(0x1806001C), 0x4,
 			IORESOURCE_MEM, NULL);
+	eth_pdata.reset_bit = ar933x_reset_bit;
 	add_generic_device("ar933x_eth", DEVICE_ID_SINGLE, NULL,
 			KSEG1ADDR(0x19000000), 0x1E0,
 			IORESOURCE_MEM, &eth_pdata);
