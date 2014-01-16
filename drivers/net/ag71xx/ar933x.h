@@ -25,6 +25,7 @@
 #include <init.h>
 #include <io.h>
 /* end FIXME */
+#include <driver.h>
 
 #include <net.h>
 #include <mach/ath79.h>
@@ -194,6 +195,12 @@
 #define RX_STATUS_OF		BIT(2)	/* Rx Overflow */
 #define RX_STATUS_BE		BIT(3)	/* Bus Error */
 
+#ifdef CONFIG_AG71XX_DEBUG
+#define DBG(fmt, args...)	pr_debug(fmt, ## args)
+#else
+#define DBG(fmt, args...)	do {} while (0)
+#endif
+
 struct ar933x_descr {
 	u32	buffer_ptr;	/* Pointer to packet buffer. */
 	u32	ctrl;
@@ -211,6 +218,25 @@ struct ar933x_descr {
 };
 #endif
 
+/* FIXME: should be in mach */
+struct ag71xx_mdio_platform_data {
+	u32             phy_mask;
+	u8              builtin_switch:1;
+	u8              is_ar7240:1;
+	u8              is_ar9330:1;
+	u8              is_ar934x:1;
+	unsigned long	mdio_clock;
+	unsigned long	ref_clock;
+
+	void		(*reset)(struct mii_bus *bus);
+};
+
+struct ag71xx_mdio {
+	struct mii_bus		*mii_bus;
+	int			mii_irq[PHY_MAX_ADDR];
+	void __iomem		*mdio_base;
+	struct ag71xx_mdio_platform_data *pdata;
+};
 
 /**
  * Struct private for the Sibyte.
@@ -252,5 +278,14 @@ struct ag71xx {
 	int oldduplex;
 	void (*reset_bit)(u32 val, enum reset_state state);
 };
+
+int ag71xx_mdio_mii_read(struct ag71xx *am, int phy_id, int reg);
+void ag71xx_mdio_mii_write(struct ag71xx *am, int phy_id, int reg, u16 val);
+
+u16 ar7240sw_phy_read(struct mii_bus *mii, unsigned phy_addr,
+		      unsigned reg_addr);
+int ar7240sw_phy_write(struct mii_bus *mii, unsigned phy_addr,
+		       unsigned reg_addr, u16 reg_val);
+int ar7240sw_reset(struct mii_bus *mii);
 
 #endif							/* _AR9333_H_ */

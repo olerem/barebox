@@ -29,8 +29,12 @@
 
 #include "ar933x.h"
 
+#define AG71XX_MDIO_RETRY	1000
+#define AG71XX_MDIO_DELAY	5
+
 static inline void ag71xx_check_reg_offset(struct ag71xx *ag, unsigned reg)
 {
+#if 0
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_TX_SM:
@@ -40,6 +44,7 @@ static inline void ag71xx_check_reg_offset(struct ag71xx *ag, unsigned reg)
 	default:
 		BUG();
 	}
+#endif
 }
 
 static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
@@ -107,12 +112,12 @@ static inline u32 eth_readl(struct ag71xx *priv, int reg)
 static inline void phy_writel(struct ag71xx *priv,
 		u32 val, int reg)
 {
-	__raw_writel(val, priv->phy_regs + reg);
+	__raw_writel(val, priv->eth_regs + reg);
 }
 
 static inline u32 phy_readl(struct ag71xx *priv, int reg)
 {
-	return __raw_readl(priv->phy_regs + reg);
+	return __raw_readl(priv->eth_regs + reg);
 }
 
 static void ar933x_reset_bit_(struct ag71xx *priv,
@@ -237,7 +242,8 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	//struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	//u32 reset_mask = ag->reset_mask;
-	u32 reset_mask = 1 << 8 | 1 << 9 | 1 << 13 | 1  << 14;
+	u32 reset_mask = 1 << 8 | 1 << 9 | 1 << 13 | 1  << 14 | 1 << 22 | 1 <<
+		23;
 
 	printk("%s:%i\n", __func__, __LINE__);
 	ag71xx_hw_stop(ag);
@@ -341,6 +347,7 @@ static void ar933x_adjust_link(struct eth_device *edev)
 	//	ag71xx_fast_reset(ag);
 #endif
 
+	ag->duplex = 1;
 	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
 	cfg2 &= ~(MAC_CFG2_IF_1000 | MAC_CFG2_IF_10_100 | MAC_CFG2_FDX);
 	cfg2 |= (ag->duplex) ? MAC_CFG2_FDX : 0;
@@ -420,8 +427,8 @@ static int ar933x_eth_open(struct eth_device *edev)
 	eth_writel(priv, (tmp | MAC_CONTROL_RE), AR933X_ETH_MAC_CONTROL);
 #endif
 
-//	return phy_device_connect(edev, &priv->miibus, (int)priv->phy_regs,
-//			ar933x_adjust_link, 0, PHY_INTERFACE_MODE_MII);
+	return phy_device_connect(edev, &priv->miibus, (int)priv->phy_regs,
+			ar933x_adjust_link, 0, PHY_INTERFACE_MODE_MII);
 	return 0;
 }
 
@@ -565,6 +572,180 @@ static int ar933x_set_ethaddr(struct eth_device *edev, unsigned char *addr)
 	return 0;
 }
 
+
+
+static int ag71xx_mdio_wait_busy(struct ag71xx *am)
+{
+	int i;
+
+	for (i = 0; i < AG71XX_MDIO_RETRY; i++) {
+		u32 busy;
+
+		udelay(AG71XX_MDIO_DELAY);
+
+		busy = ag71xx_rr(am, AG71XX_REG_MII_IND);
+		if (!busy)
+			return 0;
+
+		udelay(AG71XX_MDIO_DELAY);
+	}
+
+	pr_err("ag71xx_mdio: MDIO operation timed out\n");
+
+	return -ETIMEDOUT;
+}
+
+int ag71xx_mdio_mii_read(struct ag71xx *am, int phy_id, int reg)
+{
+	int err;
+	int ret;
+	printk("%s:%i\n", __func__, __LINE__);
+
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
+
+	ag71xx_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
+	ag71xx_wr(am, AG71XX_REG_MII_ADDR,
+			((phy_id & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
+	ag71xx_wr(am, AG71XX_REG_MII_CMD, MII_CMD_READ);
+
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
+
+	ret = ag71xx_rr(am, AG71XX_REG_MII_STATUS) & 0xffff;
+	ag71xx_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
+
+	printk("mii_read: addr=%04x, reg=%04x, value=%04x\n", phy_id, reg, ret);
+
+	return ret;
+}
+
+void ag71xx_mdio_mii_write(struct ag71xx *am, int phy_id,
+			       int reg, u16 val)
+{
+	//printk("%s:%i\n", __func__, __LINE__);
+	printk("mii_write: addr=%04x, reg=%04x, value=%04x\n", phy_id, reg, val);
+
+	ag71xx_wr(am, AG71XX_REG_MII_ADDR,
+			((phy_id & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
+	ag71xx_wr(am, AG71XX_REG_MII_CTRL, val);
+
+	ag71xx_mdio_wait_busy(am);
+}
+
+static const u32 ar71xx_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28,
+};
+
+static const u32 ar7240_mdio_div_table[] = {
+	2, 2, 4, 6, 8, 12, 18, 26, 32, 40, 48, 56, 62, 70, 78, 96,
+};
+
+static const u32 ar933x_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28, 34, 42, 50, 58, 66, 74, 82, 98,
+};
+
+static int ag71xx_mdio_get_divider(struct ag71xx *am, u32 *div)
+{
+	unsigned long ref_clock, mdio_clock;
+	const u32 *table;
+	int ndivs;
+	int i;
+	printk("%s:%i\n", __func__, __LINE__);
+
+	//FIXME...
+	//ref_clock = am->pdata->ref_clock;
+	//mdio_clock = am->pdata->mdio_clock;
+
+	if (!ref_clock || !mdio_clock)
+		return -EINVAL;
+
+//	if (am->pdata->is_ar9330 || am->pdata->is_ar934x) {
+		table = ar933x_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar933x_mdio_div_table);
+/*	} else if (am->pdata->is_ar7240) {
+		table = ar7240_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar7240_mdio_div_table);
+	} else {
+		table = ar71xx_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar71xx_mdio_div_table);
+	} */
+
+	for (i = 0; i < ndivs; i++) {
+		unsigned long t;
+
+		t = ref_clock / table[i];
+		if (t <= mdio_clock) {
+			*div = i;
+			return 0;
+		}
+	}
+
+//	dev_err(&am->mii_bus->dev, "no divider found for %lu/%lu\n",
+//		ref_clock, mdio_clock);
+	return -ENOENT;
+}
+
+static int ag71xx_mdio_reset(struct mii_bus *bus)
+{
+	struct ag71xx *am = bus->priv;
+	u32 t;
+	int err;
+	printk("%s:%i\n", __func__, __LINE__);
+
+	err = ag71xx_mdio_get_divider(am, &t);
+	if (err) {
+		/* fallback */
+		/* if (am->pdata->is_ar7240)
+			t = MII_CFG_CLK_DIV_6;
+		else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
+			t = MII_CFG_CLK_DIV_10;
+		else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
+			t = MII_CFG_CLK_DIV_58;
+		else */
+			t = MII_CFG_CLK_DIV_10;
+			//t = MII_CFG_CLK_DIV_28;
+	}
+
+	ag71xx_wr(am, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
+	udelay(100);
+
+	ag71xx_wr(am, AG71XX_REG_MII_CFG, t);
+	udelay(100);
+
+	ar7240sw_reset(bus);
+
+//	if (am->pdata->reset)
+//		am->pdata->reset(bus);
+
+	return 0;
+}
+
+static int ag71xx_mdio_read(struct mii_bus *bus, int addr, int reg)
+{
+	struct ag71xx *am = bus->priv;
+
+	int builtin_switch = 1;
+	if (builtin_switch)
+		return ar7240sw_phy_read(bus, addr, reg);
+	else
+		return ag71xx_mdio_mii_read(am, addr, reg);
+}
+
+static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
+{
+	struct ag71xx *am = bus->priv;
+	int builtin_switch = 1;
+
+	if (builtin_switch)
+		ar7240sw_phy_write(bus, addr, reg, val);
+	else
+		ag71xx_mdio_mii_write(am, addr, reg, val);
+	return 0;
+}
+
 #if 0
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
@@ -591,13 +772,13 @@ static int ar933x_miibus_write(struct mii_bus *bus, int phy_id,
 	struct ag71xx *priv = bus->priv;
 	uint64_t time_start = get_time_ns();
 
-	while (phy_readl(priv, AR933X_ETH_MII_ADDR) & MII_ADDR_BUSY) {
+	while (phy_readl(priv, AG71XX_REG_MII_ADDR) & MII_ADDR_BUSY) {
 		if (is_timeout(time_start, SECOND)) {
 			dev_err(&bus->dev, "miibus write timeout\n");
 			return -ETIMEDOUT;
 		}
 	}
-	phy_writel(priv, val << MII_DATA_SHIFT, AR933X_ETH_MII_DATA);
+	phy_writel(priv, val << MII_DATA_SHIFT, );
 	phy_writel(priv, MII_ADDR(phy_id, regnum) | MII_ADDR_WRITE,
 		   AR933X_ETH_MII_ADDR);
 	return 0;
@@ -662,15 +843,15 @@ static int ar933x_eth_probe(struct device_d *dev)
 	edev->get_ethaddr = ar933x_get_ethaddr;
 	edev->set_ethaddr = ar933x_set_ethaddr;
 
-#if 0
-	priv->miibus.read = ar933x_miibus_read;
-	priv->miibus.write = ar933x_miibus_write;
-	priv->miibus.reset = ar933x_mdiibus_reset;
+
+	priv->miibus.read = ag71xx_mdio_read;
+	priv->miibus.write = ag71xx_mdio_write;
+	priv->miibus.reset = ag71xx_mdio_reset;
 	priv->miibus.priv = priv;
 	priv->miibus.parent = dev;
 
 	mdiobus_register(miibus);
-#endif
+
 	eth_register(edev);
 
 	return 0;
