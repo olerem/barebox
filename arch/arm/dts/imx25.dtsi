@@ -10,6 +10,7 @@
  */
 
 #include "skeleton.dtsi"
+#include <arm/imx25.dtsi>
 #include "imx25-pinfunc.h"
 
 / {
