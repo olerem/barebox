@@ -14,4 +14,18 @@ config BOARD_NETGEAR_WG102
 
 endchoice
 
+if DEBUG_LL
+choice
+	prompt "DEBUG_LL port"
+
+config AR231X_DEBUG_LL_UART0
+	bool "AR2312 - UART0"
+
+config AR231X_DEBUG_LL_UART1
+	bool "AR2315 - UART1"
+
+endchoice
+endif # DEBUG_LL
+
+
 endif
