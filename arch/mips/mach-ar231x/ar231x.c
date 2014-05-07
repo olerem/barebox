@@ -17,7 +17,10 @@
 #include <init.h>
 #include <io.h>
 #include <ns16550.h>
+#include <asm/cpu.h>
+#include <asm/mipsregs.h>
 #include <mach/ar231x_platform.h>
+#include <mach/ar2315_regs.h>
 #include <mach/ar2312_regs.h>
 
 struct ar231x_board_data ar231x_board;
