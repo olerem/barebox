@@ -29,67 +29,88 @@ struct ar231x_board_data ar231x_board;
  * This table is indexed by bits 5..4 of the CLOCKCTL1 register
  * to determine the predevisor value.
  */
-static int CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
+static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
+static int __initdata PLLC_DIVIDE_TABLE[5] = { 2, 3, 4, 6, 3 };
 
-static unsigned int
-ar2312_cpu_frequency(void)
+static unsigned int __init
+ar231x_sys_clk(void)
 {
+	unsigned int clock_ctl1, clock_ctl2, cpuDiv;
+	unsigned int pllc_out, pre_divide_select, pre_divisor, multiplier, div;
+	unsigned int clkDiv;
 	unsigned int predivide_mask, predivide_shift;
 	unsigned int multiplier_mask, multiplier_shift;
-	unsigned int clock_ctl1, pre_divide_select, pre_divisor, multiplier;
-	unsigned int doubler_mask;
-	u32 devid;
 
-	devid = __raw_readl((char *)KSEG1ADDR(AR2312_REV));
-	devid &= AR2312_REV_MAJ;
-	devid >>= AR2312_REV_MAJ_S;
-	if (devid == AR2312_REV_MAJ_AR2313) {
-		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
-		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
-		multiplier_mask = AR2313_CLOCKCTL1_MULTIPLIER_MASK;
-		multiplier_shift = AR2313_CLOCKCTL1_MULTIPLIER_SHIFT;
-		doubler_mask = AR2313_CLOCKCTL1_DOUBLER_MASK;
-	} else { /* AR5312 and AR2312 */
+	switch (ar231x_board.chip_id) {
+	case AR2312:
 		predivide_mask = AR2312_CLOCKCTL1_PREDIVIDE_MASK;
 		predivide_shift = AR2312_CLOCKCTL1_PREDIVIDE_SHIFT;
 		multiplier_mask = AR2312_CLOCKCTL1_MULTIPLIER_MASK;
 		multiplier_shift = AR2312_CLOCKCTL1_MULTIPLIER_SHIFT;
-		doubler_mask = AR2312_CLOCKCTL1_DOUBLER_MASK;
+
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2312_CLOCKCTL1));
+		if (clock_ctl1 & AR2312_CLOCKCTL1_DOUBLER_MASK)
+			div = 2;
+		break;
+	case AR2313:
+		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
+		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
+		multiplier_mask = AR2313_CLOCKCTL1_MULTIPLIER_MASK;
+		multiplier_shift = AR2313_CLOCKCTL1_MULTIPLIER_SHIFT;
+
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2312_CLOCKCTL1));
+		div = 1;
+		break;
+	case AR2315:
+		predivide_mask = AR2315_PLLC_REF_DIV_M;
+		predivide_shift = AR2315_PLLC_REF_DIV_S;
+		multiplier_mask = AR2315_PLLC_FDBACK_DIV_M;
+		multiplier_shift = AR2315_PLLC_FDBACK_DIV_S;
+
+		clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2315_PLLC_CTL));
+		div = (clock_ctl1 & AR2315_PLLC_ADD_FDBACK_DIV_M)
+			>> AR2315_PLLC_ADD_FDBACK_DIV_S;
+		div = (div + 1) * 2;
+		break;
+	case UNKNOWN:
+	default:
+		return 0;
 	}
 
-	/*
-	 * Clocking is derived from a fixed 40MHz input clock.
-	 *
-	 *  cpuFreq = InputClock * MULT (where MULT is PLL multiplier)
-	 *  sysFreq = cpuFreq / 4	   (used for APB clock, serial,
-	 *				    flash, Timer, Watchdog Timer)
-	 *
-	 *  cntFreq = cpuFreq / 2	   (use for CPU count/compare)
-	 *
-	 * So, for example, with a PLL multiplier of 5, we have
-	 *
-	 *  cpuFreq = 200MHz
-	 *  sysFreq = 50MHz
-	 *  cntFreq = 100MHz
-	 *
-	 * We compute the CPU frequency, based on PLL settings.
-	 */
-
-	clock_ctl1 = __raw_readl((char *)KSEG1ADDR(AR2312_CLOCKCTL1));
 	pre_divide_select = (clock_ctl1 & predivide_mask) >> predivide_shift;
 	pre_divisor = CLOCKCTL1_PREDIVIDE_TABLE[pre_divide_select];
 	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
 
-	if (clock_ctl1 & doubler_mask)
-		multiplier = multiplier << 1;
+	pllc_out = (40000000 / pre_divisor) * div * multiplier;
 
-	return (40000000 / pre_divisor) * multiplier;
-}
 
-static unsigned int
-ar2312_sys_frequency(void)
-{
-	return ar2312_cpu_frequency() / 4;
+	if (IS_AR2312 || IS_AR2313)
+		return pllc_out / 4;
+
+
+	clock_ctl2 = __raw_readl((char *)KSEG1ADDR(AR2315_AMBACLK));
+	/* clkm input selected */
+	switch(clock_ctl2 & AR2315_CPUCLK_CLK_SEL_M) {
+		case 0:
+		case 1:
+			clkDiv = PLLC_DIVIDE_TABLE[
+				(clock_ctl1 & AR2315_PLLC_CLKM_DIV_M)
+				>> AR2315_PLLC_CLKM_DIV_S];
+			break;
+		case 2:
+			clkDiv = PLLC_DIVIDE_TABLE[
+				(clock_ctl1 & AR2315_PLLC_CLKC_DIV_M)
+				>> AR2315_PLLC_CLKC_DIV_S];
+			break;
+		default:
+			pllc_out = 40000000;
+			clkDiv = 1;
+			break;
+	}
+	cpuDiv = (clock_ctl2 & AR2315_CPUCLK_CLK_DIV_M)
+		>> AR2315_CPUCLK_CLK_DIV_S;
+	cpuDiv = cpuDiv * 2 ?: 1;
+	return (pllc_out/(clkDiv * cpuDiv));
 }
 
 /*
@@ -190,7 +211,7 @@ static int ar2312_console_init(void)
 	__raw_writel(reset, (char *)KSEG1ADDR(AR2312_RESET));
 
 	/* Register the serial port */
-	serial_plat.clock = ar2312_sys_frequency();
+	serial_plat.clock = ar231x_sys_clk();
 	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR2312_UART0),
 			   8 << AR2312_UART_SHIFT,
 			   IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
