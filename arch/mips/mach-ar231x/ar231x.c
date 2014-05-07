@@ -15,6 +15,8 @@
 
 #include <common.h>
 #include <init.h>
+#include <sizes.h>
+#include <asm/memory.h>
 #include <io.h>
 #include <ns16550.h>
 #include <asm/cpu.h>
@@ -24,6 +26,36 @@
 #include <mach/ar2312_regs.h>
 
 struct ar231x_board_data ar231x_board;
+
+static int mem_init(void)
+{
+	u32 memsize, memcfg;
+	barebox_set_model("Generic ar231x");
+	barebox_set_hostname("ar231x");
+
+	if (IS_AR2312 || IS_AR2313) {
+		u32 bank0_ac, bank1_ac;
+		memcfg = __raw_readl((char *)KSEG1ADDR(AR2312_MEM_CFG1));
+		bank0_ac = (memcfg & MEM_CFG1_AC0) >> MEM_CFG1_AC0_S;
+		bank1_ac = (memcfg & MEM_CFG1_AC1) >> MEM_CFG1_AC1_S;
+		memsize = (bank0_ac ? (1 << (bank0_ac+1)) : 0)
+			+ (bank1_ac ? (1 << (bank1_ac+1)) : 0);
+		memsize <<= 20;
+	} else {
+		memcfg = __raw_readl((char *)KSEG1ADDR(AR2315_MEM_CFG));
+		memsize   = 1 + ((memcfg & AR2315_SDRAM_DATA_WIDTH_M) >>
+				AR2315_SDRAM_DATA_WIDTH_S);
+		memsize <<= 1 + ((memcfg & AR2315_SDRAM_COL_WIDTH_M) >>
+				AR2315_SDRAM_COL_WIDTH_S);
+		memsize <<= 1 + ((memcfg & AR2315_SDRAM_ROW_WIDTH_M) >>
+				AR2315_SDRAM_ROW_WIDTH_S);
+		memsize <<= 3;
+	}
+
+	mips_add_ram0(memsize);
+	return 0;
+}
+mem_initcall(mem_init);
 
 /*
  * This table is indexed by bits 5..4 of the CLOCKCTL1 register
