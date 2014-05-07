@@ -1,8 +1,10 @@
 #ifndef __ASM_MACH_AR2312_PBL_MACROS_H
 #define __ASM_MACH_AR2312_PBL_MACROS_H
 
+#include <asm/pbl_macros.h>
 #include <asm/regdef.h>
 #include <mach/ar2312_regs.h>
+#include <mach/ar2315_regs.h>
 
 .macro	pbl_ar2312_pll
 	.set	push
@@ -48,6 +50,84 @@ pllskip:
 	.set	pop
 .endm
 
+
+.macro	pbl_ar2315_pll
+	.set	push
+	.set	noreorder
+
+	/* Configure PLLC for 184 MHz CPU and 92 MHz AMBA */
+
+	/* Set PLLC_CTL */
+	li	a0, KSEG1 | AR2315_PLLC_CTL
+	lw	t0, 0(a0)
+
+	/* Choose Ref Div to 5 hence val to be 3 */
+	and	t0, ~AR2315_PLLC_REF_DIV_M
+	or	t0, 0x3 << AR2315_PLLC_REF_DIV_S
+
+	/* Choose Div value to 23 */
+	and	t0, ~AR2315_PLLC_FDBACK_DIV_M
+	or	t0, 0x17 << AR2315_PLLC_FDBACK_DIV_S
+
+	/* Choose Divby2 value to be 0 */
+	and	t0, ~AR2315_PLLC_ADD_FDBACK_DIV_M
+	or	t0, 0 << AR2315_PLLC_ADD_FDBACK_DIV_S
+
+	/* Choose clkc value to be 368 % 2 = 184 Mhz */
+	and	t0, ~AR2315_PLLC_CLKC_DIV_M
+	or	t0, 0 << AR2315_PLLC_CLKC_DIV_S
+
+	/* Choose clkm value to be 368 % 2 = 184 Mhz */
+	and	t0, ~AR2315_PLLC_CLKM_DIV_M
+	or	t0, 0 << AR2315_PLLC_CLKM_DIV_S
+
+	/* 2c25 for 180 -- 2c5f for 184 */
+	/* Store the PLLc Control to be 40/5 * 2 * (0 + 1) * 23= 368 Mhz */
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t2, 10
+
+	/* Set CPUCLK_CTL to use clkm / 1 = 184 */
+	li	a0, KSEG1 | AR2315_CPUCLK
+	lw	t0, 0(a0)
+
+	# Choose CLKm
+	and	t0, ~AR2315_CPUCLK_CLK_SEL_M
+	or	t0, 0  << AR2315_CPUCLK_CLK_SEL_S
+
+	and	t0, ~AR2315_CPUCLK_CLK_DIV_M
+	or	t0, 0 << AR2315_CPUCLK_CLK_DIV_S   # Choose div % 1
+
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t0, 10
+
+	/* Set AMBACLK_CTL to use clkm / 2 = 92MHz */
+	li	a0, KSEG1 | AR2315_AMBACLK
+	lw	t0, 0(a0)
+
+	and	t0, ~AR2315_AMBACLK_CLK_SEL_M
+	or	t0, 0 << AR2315_AMBACLK_CLK_SEL_S
+
+	and	t0, ~AR2315_AMBACLK_CLK_DIV_M
+	or	t0, 1 << AR2315_AMBACLK_CLK_DIV_S
+
+	sw	t0, 0(a0)
+	sync
+
+	/* disable PLL bypass */
+	li	a0, KSEG1 | AR2315_MISCCLK
+	li	t0, 0x0
+	sw	t0, 0(a0)
+	sync
+
+	pbl_sleep	t0, 10
+
+	.set	pop
+.endm
+
 .macro	pbl_ar2312_rst_uart0
 	.set	push
 	.set	noreorder
@@ -68,6 +148,23 @@ pllskip:
 	lw	t0, 0(a0)
 	and	t0, ~AR2312_CLOCKCTL_UART0
 	sw	t0, 0(a0)
+
+	.set	pop
+.endm
+
+.macro	pbl_ar2315_rst_uart0
+	.set	push
+	.set	noreorder
+
+	li	a0, KSEG1 | AR2315_RESET
+	lw	t0, 0(a0)
+	or	t0, AR2315_RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)	/* flush */
+
+	and	t0, ~AR2315_RESET_UART0
+	sw	t0, 0(a0)
+	lw	zero, 0(a0)	/* flush */
 
 	.set	pop
 .endm
@@ -171,6 +268,181 @@ make_beefsteak:
 	/* restore original state of the first RAM word */
 	sw	a3, 0(a1)
 
+	.set	pop
+.endm
+
+.macro	pbl_calculate_sdram addr row col
+	.set	push
+	.set	noreorder
+
+	/* use col as tmp reg */
+
+	bne	\addr, 0x800000, 1f
+	li	\row, 12
+	li	\col, 8
+	b	pbl_calculate_sdram_end
+	 nop
+1:
+	bne	\addr, 0x1000000, 1f
+	li	\row, 12
+	li	\col, 9
+	b	pbl_calculate_sdram_end
+	 nop
+1:
+	bne	\addr, 0x2000000, 1f
+	li	\row, 13
+	li	\col, 9
+	b	pbl_calculate_sdram_end
+	 nop
+1:
+
+	/* if some thing is wrong use at least 8MB */
+	li	\row, 12
+	li	\col, 8
+
+pbl_calculate_sdram_end:
+
+	.set	pop
+.endm
+
+/*
+ * set 
+ */
+.macro	pbl_ar2315_sdram_cfg tmp row col
+	.set	push
+	.set	noreorder
+
+	sub	\row, 1
+	sll	\row, AR2315_SDRAM_ROW_WIDTH_S
+	sub	\col, 1
+	sll	\col, AR2315_SDRAM_COL_WIDTH_S
+	or	\col, \row
+	/* configure correct values */
+	li	\tmp, KSEG1 | AR2315_MEM_CFG
+	lw	\row, 0(\tmp)	/*  AR2315_MEM_CFG */
+	and	\row, ~(AR2315_SDRAM_DATA_WIDTH_M | AR2315_SDRAM_COL_WIDTH_M | \
+			AR2315_SDRAM_ROW_WIDTH_M | AR2315_SDRAM_BANKADDR_BITS_M)
+
+	/* Set default settigns: 2 Bank Address Bits and 16bit data bus */
+	or	\row, (((2 - 1) << AR2315_SDRAM_BANKADDR_BITS_S) | \
+			(AR2315_SDRAM_16BIT << AR2315_SDRAM_DATA_WIDTH_S))
+	or	\row, \col
+
+	sw	\row, 0(\tmp)
+	.set	pop
+.endm
+
+
+.macro	pbl_ar2315_sdram_preconf
+	.set	push
+	.set	noreorder
+
+	li	a2, KSEG1 | AR2315_RST_MEMCTL
+	lw	t0, 0(a2)
+	and	t0, ~AR2315_RST_MEMCTL_EXT_FB
+	or	t0, AR2315_RST_MEMCTL_EXT_FB
+	sw	t0, 0(a2)
+	sync
+
+	/*
+	**  Setup Memory for 2-2-2 configuration
+	*/
+	li	a2, KSEG1 | AR2315_MEM_STMG0R
+	li	t0, 0x2265655
+	sw	t0, 0(a2)
+	sync
+
+	/* Setup Memory Refresh value */
+	/*
+	 * SDRAM Memory Refresh (MEM_REF) value is computed as:
+	 * MEMCTL_SREFR = (Tr * hclk_freq) / R
+	 * where Tr is max. time of refresh of any single row
+	 * R is number of rows in the DRAM
+	 * For most 133MHz SDRAM parts, Tr=64ms, R=4096 or 8192
+	 */
+
+	li	a2, KSEG1 | AR2315_MEM_REF
+	li	t0, 0x61a
+
+	sw	t0, 0(a2)	/* AR2315_MEM_REF */
+	sync
+
+	li	a2, KSEG1 | AR2315_MEM_STMG0R
+	lw	t0, 0(a2)	/* AR2315_MEM_STMG0R */
+	and	t0, ~0x3
+	ori	t0, 0x1
+
+	sw	t0, 0(a2)	/* AR2315_MEM_STMG0R */
+	sync
+
+	/* Place SDRAM into Auto Initialize state */
+	li	a2, KSEG1 | AR2315_MEM_CTRL
+	li	t0, 0x3089
+
+	sw	t0, 0(a2)	/* AR2315_MEM_CTRL */
+	sync
+
+1:
+	lw	t0, 0(a2)	/* AR2315_MEM_CTRL */
+	andi	t1,t0,0x1
+	bnez	t1, 1b
+	 nop
+
+	.set	pop
+.endm
+
+
+.macro	pbl_ar2315_x16_sdram
+	.set	push
+	.set	noreorder
+
+	pbl_ar2315_sdram_preconf
+
+	/* */
+	li	a1, KSEG1 | AR2315_SDRAM0
+	li	a2, 0xdeadbeef
+	/* set max possible memory size */
+	li	a3, 0x2000000
+
+	/* We will write some magic word to the beginning of RAM,
+	 * and see if it appears somewhere else. If yes, we made
+	 * a travel around the world. */
+
+	/* But first of all save original state of the first RAM word. */
+	lw	v0, 0(a1)
+
+ar2315_find_the_beef:
+	/* check minimal memory size */
+	blt	a3, 0x800000, ar2315_make_beefsteak
+	 nop
+
+	/* reconfigure mememory cfg and resave test pattern */
+	pbl_calculate_sdram a3 t0 t1	/* addr row col */
+	move	t4, t1			/* copy col number, we will need it
+					   later */
+	pbl_ar2315_sdram_cfg t2 t0 t1
+	sw	a2, 0(a1)
+
+	/* see if we can find pattern on address less then configured */
+	srl	a3, 1
+	lw	t3, 0(a3)
+	beq	t3, a2, ar2315_find_the_beef
+	 nop
+
+	/* check if column addressing is ok. For example:
+	 * col = 9 = 0x200. If we have ram with 8 col, we will find
+	 * 0xdeadbeef at 0xa0000200. */
+	li	t5, 1
+	sllv	t4, t5, t4
+	or	t4, a1		/* create addres to check the pattern */
+	lw	t3, 0(t4)
+	beq	t3, a2, ar2315_find_the_beef
+	 nop
+
+	/* restore first 4 Bytes */
+	sw	v0, 0(a1)
+ar2315_make_beefsteak:
+	nop
 	.set	pop
 .endm
 
