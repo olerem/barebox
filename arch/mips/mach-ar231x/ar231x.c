@@ -119,8 +119,12 @@ ar231x_sys_clk(void)
 static int watchdog_init(void)
 {
 	pr_debug("Disable watchdog.\n");
-	__raw_writeb(AR2312_WD_CTRL_IGNORE_EXPIRATION,
-					(char *)KSEG1ADDR(AR2312_WD_CTRL));
+	if (IS_AR2312 || IS_AR2313)
+		__raw_writeb(AR2312_WD_CTRL_IGNORE_EXPIRATION,
+				(char *)KSEG1ADDR(AR2312_WD_CTRL));
+	else
+		__raw_writel(AR2315_WDC_IGNORE_EXPIRATION,
+				(char *)KSEG1ADDR(AR2315_WDC));
 	return 0;
 }
 
