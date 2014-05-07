@@ -108,6 +108,10 @@
 #define DMA_TX_ERR_JABBER	BIT(14)	/* transmit jabber timeout */
 #define DMA_TX_ERROR		BIT(15)	/* frame aborted */
 #define DMA_TX_OWN		BIT(31)	/* descr owned by DMA controller */
+#define DMA_TX_ERR_MASK		\
+	(DMA_TX_ERR_UNDER | DMA_TX_ERR_DEFER | DMA_TX_ERR_HB | \
+	 DMA_TX_ERR_COL | DMA_TX_ERR_LATE | DMA_TX_ERR_LINK | \
+	 DMA_TX_ERR_LOSS | DMA_TX_ERR_JABBER | DMA_TX_ERROR)
 
 /**
  * TX descriptor configuration bits. ar231x_descr.devcs
