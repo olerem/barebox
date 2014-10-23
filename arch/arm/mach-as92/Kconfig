@@ -1,0 +1,35 @@
+if ARCH_AS92
+
+comment "Alphascale ARM926ejs System-on-Chip"
+
+choice
+	prompt "Alphascale ARM926ejs Processors"
+
+config ARCH_ASAP1826T
+	bool "ASAP1826T"
+
+config ARCH_ASM9260T
+	bool "ASM9260T"
+
+endchoice
+
+endif
+
+
+# ----------------------------------------------------------
+
+if ARCH_AS92
+
+choice
+	prompt "ASM9260T Board Type"
+
+config MACH_ASM9260T_EVK
+	bool "Alphascale ASM9260T-EVK Evaluation Kit"
+	help
+	  Select this if you are using Alphascale's ASM9260T-EVK Evaluation Kit.
+	  <http://www.alphascale.com>
+
+endchoice
+
+endif
+# ----------------------------------------------------------
