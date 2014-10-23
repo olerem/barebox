@@ -32,14 +32,12 @@ barebox_arm_reset_vector:
 
 	
 
-	mov	r0, #'F'
+	mov	r0, #'C'
 	bl	putc
 	
 	ldr	r0, =barebox
 	bl	__puts
 
-	mov	r0, #'O'
-	bl	putc
 	bl	out
 
 
@@ -81,11 +79,11 @@ __puts:
 	mov	pc, r2
 	mov	pc, lr
 barebox:
-	.word	0x61626364
-	.word	0x65666768
+	.asciz	"Hello Barebox\r\n"
 
 /* end of __puts. */
 
+.align	4
 out:
 
 	ldr	r0, =(0x22000000-(CONFIG_STACK_SIZE+CONFIG_MALLOC_SIZE))

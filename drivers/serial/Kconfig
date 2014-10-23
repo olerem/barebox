@@ -21,6 +21,13 @@ config DRIVER_SERIAL_AR933X
 	  If you have an Atheros AR933X SOC based board and want to use the
 	  built-in UART of the SoC, say Y to this option.
 
+config DRIVER_SERIAL_AS92
+	bool "AS92 serial driver"
+	depends on ARCH_AS92
+	help
+	  If you have an Alphascale AS92 SOC based board and want to use the
+	  built-in UART of the SoC, say Y to this option.
+
 config DRIVER_SERIAL_IMX
 	depends on ARCH_IMX
 	default y

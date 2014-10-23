@@ -1,38 +1,45 @@
-CONFIG_ARCH_ALPSCALE=y
+CONFIG_ARCH_AS92=y
 CONFIG_ARCH_ASM9260T=y
-# CONFIG_CMD_ARM_CPUINFO is not set
 # CONFIG_ARM_EXCEPTIONS is not set
 # CONFIG_LOCALVERSION_AUTO is not set
 # CONFIG_BANNER is not set
 # CONFIG_MEMINFO is not set
-CONFIG_TEXT_BASE=0x20f00000
+CONFIG_TEXT_BASE=0x21000000
+CONFIG_STACK_SIZE=0x400000
 # CONFIG_ERRNO_MESSAGES is not set
 # CONFIG_TIMESTAMP is not set
 # CONFIG_DEFAULT_ENVIRONMENT is not set
-# CONFIG_CMD_TRUE is not set
-# CONFIG_CMD_FALSE is not set
-# CONFIG_CMD_LS is not set
-# CONFIG_CMD_RM is not set
-# CONFIG_CMD_CAT is not set
-# CONFIG_CMD_MKDIR is not set
-# CONFIG_CMD_RMDIR is not set
-# CONFIG_CMD_CP is not set
-# CONFIG_CMD_PWD is not set
-# CONFIG_CMD_CD is not set
+CONFIG_COMPILE_LOGLEVEL=7
+CONFIG_DEBUG_INFO=y
+CONFIG_DEBUG_LL=y
+CONFIG_DEBUG_INITCALLS=y
+# CONFIG_CMD_ARM_CPUINFO is not set
+# CONFIG_CMD_DEVINFO is not set
+# CONFIG_CMD_HELP is not set
+# CONFIG_CMD_BOOTM is not set
+# CONFIG_CMD_BOOTU is not set
 # CONFIG_CMD_MOUNT is not set
 # CONFIG_CMD_UMOUNT is not set
+# CONFIG_CMD_CAT is not set
+# CONFIG_CMD_CD is not set
+# CONFIG_CMD_CP is not set
+# CONFIG_CMD_LS is not set
+# CONFIG_CMD_MKDIR is not set
+# CONFIG_CMD_PWD is not set
+# CONFIG_CMD_RM is not set
+# CONFIG_CMD_RMDIR is not set
+# CONFIG_CMD_FALSE is not set
+# CONFIG_CMD_TEST is not set
+# CONFIG_CMD_TRUE is not set
 # CONFIG_CMD_CLEAR is not set
 # CONFIG_CMD_ECHO is not set
 # CONFIG_CMD_MD is not set
-# CONFIG_CMD_MW is not set
 # CONFIG_CMD_MEMCMP is not set
 # CONFIG_CMD_MEMCPY is not set
 # CONFIG_CMD_MEMSET is not set
-# CONFIG_CMD_BOOTM is not set
-# CONFIG_CMD_BOOTU is not set
-# CONFIG_CMD_TEST is not set
-# CONFIG_CMD_HELP is not set
-# CONFIG_CMD_DEVINFO is not set
+# CONFIG_CMD_MW is not set
+CONFIG_DRIVER_SERIAL_AS92=y
 # CONFIG_SPI is not set
+CONFIG_CLOCKSOURCE_DUMMY=y
 # CONFIG_FS_RAMFS is not set
 # CONFIG_FS_DEVFS is not set
