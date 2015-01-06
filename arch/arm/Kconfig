@@ -44,8 +44,8 @@ config ARCH_AT91
 	select HAVE_MACH_ARM_HEAD
 	select HAVE_CLK
 
-config ARCH_AS92
-	bool "Alphascale AS92"
+config ARCH_ASM9260
+	bool "Alphascale ASM9260"
 	select CPU_ARM926T
 	select HAS_DEBUG_LL
 	select HAVE_MACH_ARM_HEAD
