@@ -36,6 +36,11 @@ config BUILTIN_DTB_NAME
 choice
 	prompt "ARM system type"
 
+config ARCH_ALPHASCALE
+	bool "Alphascale"
+	select HAS_DEBUG_LL
+	select HAVE_CONFIGURABLE_TEXT_BASE
+
 config ARCH_AT91
 	bool "Atmel AT91"
 	select GPIOLIB
@@ -43,13 +48,6 @@ config ARCH_AT91
 	select HAS_DEBUG_LL
 	select HAVE_MACH_ARM_HEAD
 	select HAVE_CLK
-
-config ARCH_ASM9260
-	bool "Alphascale ASM9260"
-	select CPU_ARM926T
-	select HAS_DEBUG_LL
-	select HAVE_MACH_ARM_HEAD
-	select HAVE_CONFIGURABLE_TEXT_BASE
 
 config ARCH_BCM2835
 	bool "Broadcom BCM2835 boards"
@@ -243,7 +241,7 @@ config ARCH_ZYNQ
 endchoice
 
 source arch/arm/cpu/Kconfig
-source arch/arm/mach-as92/Kconfig
+source arch/arm/mach-alphascale/Kconfig
 source arch/arm/mach-at91/Kconfig
 source arch/arm/mach-bcm2835/Kconfig
 source arch/arm/mach-clps711x/Kconfig
