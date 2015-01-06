@@ -1,15 +1,13 @@
-if ARCH_AS92
+if ARCH_ALPHASCALE
 
 comment "Alphascale ARM926ejs System-on-Chip"
 
 choice
 	prompt "Alphascale ARM926ejs Processors"
 
-config ARCH_ASAP1826T
-	bool "ASAP1826T"
-
-config ARCH_ASM9260T
-	bool "ASM9260T"
+config SOC_ALPHASCALE_ASM9260
+	bool "ASM9260"
+	select CPU_ARM926T
 
 endchoice
 
@@ -18,7 +16,7 @@ endif
 
 # ----------------------------------------------------------
 
-if ARCH_AS92
+if ARCH_ALPHASCALE
 
 choice
 	prompt "ASM9260T Board Type"
