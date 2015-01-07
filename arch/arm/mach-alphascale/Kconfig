@@ -1,5 +1,9 @@
 if ARCH_ALPHASCALE
 
+config ARCH_TEXT_BASE
+	hex
+	default 0x20800000
+
 comment "Alphascale ARM926ejs System-on-Chip"
 
 choice
