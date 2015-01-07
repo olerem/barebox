@@ -8,5 +8,5 @@
 void __naked barebox_arm_reset_vector(void)
 {
 	arm_cpu_lowlevel_init();
-	barebox_arm_entry(0x00000000, SZ_32M, NULL);
+	barebox_arm_entry(0x20680000, SZ_32M, NULL);
 }
