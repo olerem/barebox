@@ -21,10 +21,10 @@ if ARCH_ALPHASCALE
 choice
 	prompt "ASM9260T Board Type"
 
-config MACH_ASM9260T_EVK
-	bool "Alphascale ASM9260T-EVK Evaluation Kit"
+config MACH_ASM9260_DEVKIT
+	bool "Alphascale ASM9260 Evaluation Kit"
 	help
-	  Select this if you are using Alphascale's ASM9260T-EVK Evaluation Kit.
+	  Select this if you are using Alphascale's ASM9260 Evaluation Kit.
 	  <http://www.alphascale.com>
 
 endchoice
