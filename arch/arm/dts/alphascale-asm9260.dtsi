@@ -1,0 +1,178 @@
+/*
+ * Copyright 2014 Oleksij Rempel <linux@rempel-privat.de>
+ *
+ * Licensed under the X11 license or the GPL v2 (or later)
+ */
+
+#include "skeleton.dtsi"
+#include <dt-bindings/clock/alphascale,asm9260.h>
+
+/ {
+	interrupt-parent = <&icoll>;
+
+	memory {
+		device_type = "memory";
+		reg = <0x20000000 0x2000000>;
+	};
+
+	cpus {
+		#address-cells = <0>;
+		#size-cells = <0>;
+
+		cpu {
+			compatible = "arm,arm926ej-s";
+			device_type = "cpu";
+			clocks = <&acc CLKID_SYS_CPU>;
+		};
+	};
+
+	osc24m: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-accuracy = <30000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		acc: clock-controller@80040000 {
+			compatible = "alphascale,asm9260-clock-controller";
+			#clock-cells = <1>;
+			clocks = <&osc24m>;
+			reg = <0x80040000 0x204>;
+		};
+
+		icoll: interrupt-controller@80054000 {
+			compatible = "alphascale,asm9260-icoll";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x80054000 0x200>;
+		};
+
+		dwdma0: dma@80100000 {
+			compatible = "alphascale,asm9260-dma";
+			reg = <0x80100000 0x1000>;
+			interrupts = <39>;
+			clocks = <&acc CLKID_AHB_DMA0>;
+			/* status = "disabled"; */
+
+			dma-channels = <8>;
+			#dma-cells = <3>;
+			dma-requests = <32>;
+			chan_allocation_order = <1>;
+			chan_priority = <1>;
+			block_size = <0xfff>;
+			dma-masters = <2>;
+			data_width = <3 3 0 0>;
+		};
+
+		dwdma1: dma@80200000 {
+			compatible = "alphascale,asm9260-dma";
+			reg = <0x80200000 0x1000>;
+			interrupts = <47>;
+			clocks = <&acc CLKID_AHB_DMA1>;
+			/* status = "disabled"; */
+
+			dma-channels = <8>;
+			#dma-cells = <3>;
+			dma-requests = <32>;
+			chan_allocation_order = <1>;
+			chan_priority = <1>;
+			block_size = <0xfff>;
+			dma-masters = <2>;
+			data_width = <3 3 0 0>;
+		};
+
+		uart0: serial@80000000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80000000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART0>, <&acc CLKID_AHB_UART0>;
+			interrupts = <15>;
+			status = "disabled";
+		};
+		uart1: serial@80004000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80004000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART1>, <&acc CLKID_AHB_UART1>;
+			interrupts = <16>;
+			status = "disabled";
+		};
+		uart2: serial@80008000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80008000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART2>, <&acc CLKID_AHB_UART2>;
+			interrupts = <17>;
+			status = "disabled";
+		};
+		uart3: serial@8000c000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x8000c000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART3>, <&acc CLKID_AHB_UART3>;
+			interrupts = <18>;
+			status = "disabled";
+		};
+		uart4: serial@80010000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80010000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART4>, <&acc CLKID_AHB_UART4>;
+			interrupts = <19>;
+			status = "disabled";
+		};
+		uart5: serial@80014000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80014000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART5>, <&acc CLKID_AHB_UART5>;
+			interrupts = <20>;
+			status = "disabled";
+		};
+		uart6: serial@80018000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80018000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART6>, <&acc CLKID_AHB_UART6>;
+			interrupts = <21>;
+			status = "disabled";
+		};
+		uart7: serial@8001c000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x8001c000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART7>, <&acc CLKID_AHB_UART7>;
+			interrupts = <22>;
+			status = "disabled";
+		};
+		uart8: serial@80020000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80020000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART8>, <&acc CLKID_AHB_UART8>;
+			interrupts = <23>;
+			status = "disabled";
+		};
+		uart9: serial@80024000 {
+			compatible = "alphascale,asm9260-auart";
+			reg = <0x80024000 0x4000>;
+			clocks = <&acc CLKID_SYS_UART9>, <&acc CLKID_AHB_UART9>;
+			interrupts = <24>;
+			status = "disabled";
+		};
+
+		timer0: timer@80088000 {
+			compatible = "alphascale,asm9260-timer";
+			reg = <0x80088000 0x4000>;
+			clocks = <&acc CLKID_AHB_TIMER0>;
+			interrupts = <29>;
+		};
+
+		nand_controller0: nand@80600000 {
+			compatible = "alphascale,asm9260-nand";
+			reg = <0x80600000 0x100>;
+			interrupts = <14>;
+			clocks = <&acc CLKID_SYS_NAND>, <&acc CLKID_AHB_NAND>;
+			clock-names = "mod", "ahb";
+			status = "disabled";
+		};
+
+	};
+};
