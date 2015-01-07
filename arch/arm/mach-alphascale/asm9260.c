@@ -1,6 +1,7 @@
 #include <common.h>
 #include <init.h>
 #include <sizes.h>
+#include <of.h>
 #include <asm/armlinux.h>
 #include <mach/asm9260-regs.h>
 
