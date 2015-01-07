@@ -39,6 +39,7 @@ choice
 config ARCH_ALPHASCALE
 	bool "Alphascale"
 	select HAS_DEBUG_LL
+	select OFTREE
 
 config ARCH_AT91
 	bool "Atmel AT91"
