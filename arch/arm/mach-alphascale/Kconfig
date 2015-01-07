@@ -2,7 +2,7 @@ if ARCH_ALPHASCALE
 
 config ARCH_TEXT_BASE
 	hex
-	default 0x20800000
+	default 0x21000000 if SOC_ALPHASCALE_ASM9260
 
 comment "Alphascale ARM926ejs System-on-Chip"
 
@@ -10,7 +10,7 @@ choice
 	prompt "Alphascale ARM926ejs Processors"
 
 config SOC_ALPHASCALE_ASM9260
-	bool "ASM9260"
+	bool "Alphascale ASM9260"
 	select CPU_ARM926T
 
 endchoice
@@ -20,10 +20,10 @@ endif
 
 # ----------------------------------------------------------
 
-if ARCH_ALPHASCALE
+if SOC_ALPHASCALE_ASM9260
 
 choice
-	prompt "ASM9260T Board Type"
+	prompt "ASM9260 Board Type"
 
 config MACH_ASM9260_DEVKIT
 	bool "Alphascale ASM9260 Evaluation Kit"
