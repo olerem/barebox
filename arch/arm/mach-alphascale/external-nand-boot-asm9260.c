@@ -410,20 +410,17 @@ int NandInit(void __iomem *iobase, unsigned char nChip)
 	int ret = 0;
 	nand_info *pNandInfo = GetNandInfo();
 
-	/*打开时钟*/
 	iowrite32(0x00000400, (0x80040030+4));  // open nand pclk    
 	iowrite32(0x00000008, 0x800401D4);      // set nand clk to 1/2 pclk
 
-	
-	//NandSetPinMux();				/*设置PIN Mux*/
-	NandSelectChip(nChip);		/*选择NAND芯片*/
-	ret = NandTimingConf();		/*设置NAND控制器时序*/
+	NandSelectChip(iobase, nChip);
+	ret = NandTimingConf(iobase);
 	if (ret != 0)
 	{
 		return ret;
 	}
 	
-	ret = NandFlashReset(nChip);	/*复位*/
+	ret = NandFlashReset(iobase, nChip);	/*复位*/
 
 	NandSearch(0, pNandInfo);
 
