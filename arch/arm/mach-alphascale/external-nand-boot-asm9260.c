@@ -287,7 +287,7 @@ static int NandTimingConf(void __iomem *iobase)
     trwh = 8;
     trwp = 8;
     iowrite32((trwh << 4) |     // after power on ,device is in async mode0, twh >= 50
-         (trwp), iobase + NAND_TIMINGS_ASYN);        // twp >= 50 and twhr >= 120
+         (trwp), iobase + HW_TIMING_ASYN);        // twp >= 50 and twhr >= 120
 
     ret = NandFlashReset(0);
 	if (ret != 0)
@@ -298,17 +298,17 @@ static int NandTimingConf(void __iomem *iobase)
     trwh = 1; //TWH;
     trwp = 1; //TWP;
     iowrite32((trwh << 4) |     // timing mode change to mode 5, twh >= 7
-         (trwp), iobase + NAND_TIMINGS_ASYN);      // twp >= 10
+         (trwp), iobase + HW_TIMING_ASYN);      // twp >= 10
 
     twhr = 2;
     trhw = 4;
     iowrite32((twhr << 24) |
          (trhw << 16) |
          (tadl << 8)  |
-         (tccs), iobase + NAND_TIME_SEQ_0);
+         (tccs), iobase + HW_TIM_SEQ_0);
     iowrite32((tsync << 16) |
          (trr << 9) |
-         (twb), iobase + NAND_TIME_SEQ_1);
+         (twb), iobase + HW_TIM_SEQ_1);
 
 	return ret;
 }
@@ -493,7 +493,7 @@ static int NandEccCheck(void __iomem *iobase)
 	int ret = 0;
 	u32 ecc_status = 0;
 
-	ecc_status = ioread32(iobase + NAND_ECC_CTRL);
+	ecc_status = ioread32(iobase + HW_ECC_CTRL);
 	if (ecc_status & 0x01)
 	{
 		//puts("NAND_ERR_CORRECT!!!\r\n");
@@ -526,13 +526,13 @@ static int NandReadLargePagePio(void __iomem *iobase, u32 nPage, u32 nColumn, un
 	if (nColumn == 0)
 	{
 		iowrite32(ioread32(iobase + HW_CTRL) & (~(SPARE_EN << 3)), iobase + HW_CTRL);
-		iowrite32((ecc_threshold << 8) | (ecc_cap << 5), iobase + NAND_ECC_CTRL);
-		iowrite32(pNandInfo->page_size + nand_spare_size, iobase + NAND_ECC_OFFSET);
+		iowrite32((ecc_threshold << 8) | (ecc_cap << 5), iobase + HW_ECC_CTRL);
+		iowrite32(pNandInfo->page_size + nand_spare_size, iobase + HW_ECC_OFFSET);
 	}
 	else if (nColumn == pNandInfo->page_size)
 	{
 		iowrite32((ioread32(iobase + HW_CTRL) & (~(ECC_EN << 5))) | (DATA_SIZE_CUSTOM<< 11), iobase + HW_CTRL);
-		iowrite32(nLen, iobase + NAND_SPARE_SIZE);
+		iowrite32(nLen, iobase + HW_SPARE_SIZE);
 		iowrite32(nLen, iobase + HW_DATA_SIZE);
 	}
 
