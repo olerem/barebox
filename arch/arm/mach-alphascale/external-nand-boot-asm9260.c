@@ -1,7 +1,190 @@
+/*
+ * NAND controller driver for Alphascale ASM9260, which is probably
+ * based on Evatronix NANDFLASH-CTRL IP (version unknown)
+ *
+ * Copyright (C), 2014 Oleksij Rempel <linux@rempel-privat.de>
+ *
+ * Inspired by asm9260_nand.c,
+ *	Copyright (C), 2007-2013, Alphascale Tech. Co., Ltd.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
 #include <common.h>
-#include <drivers/nand_search.h>
-#include <drivers/nand.h>
+#include <mach/nand_search.h>
+#include <mach/nand.h>
 #include <string.h>
+
+#define ASM9260_ECC_STEP		512
+#define ASM9260_ECC_MAX_BIT		16
+#define ASM9260_MAX_CHIPS		2
+
+#define HW_CMD				0x00
+#define BM_CMD_CMD2_S			24
+#define BM_CMD_CMD1_S			16
+#define BM_CMD_CMD0_S			8
+/* 0 - ADDR0, 1 - ADDR1 */
+#define BM_CMD_ADDR1			BIT(7)
+/* 0 - PIO, 1 - DMA */
+#define BM_CMD_DMA			BIT(6)
+#define BM_CMD_CMDSEQ_S			0
+/*
+ * ASM9260 Sequences:
+ * SEQ0:  single command, wait for RnB
+ * SEQ1:  send  cmd, addr, wait tWHR, fetch data
+ * SEQ2:  send  cmd, addr, wait RnB, fetch data
+ * SEQ3:  send  cmd, addr, wait tADL, send data, wait RnB
+ * SEQ4:  send  cmd, wait tWHR, fetch data
+ * SEQ5:  send  cmd, 3 x addr, wait tWHR, fetch data
+ * SEQ6:  wait tRHW, send  cmd, 2 x addr, cmd, wait tCCS, fetch data
+ * SEQ7:  wait tRHW, send  cmd, 35 x addr, cmd, wait tCCS, fetch data
+ * SEQ8:  send  cmd, 2 x addr, wait tCCS, fetch data
+ * SEQ9:  send  cmd, 5 x addr, wait RnB
+ * SEQ10: send  cmd, 5 x addr, cmd, wait RnB, fetch data
+ * SEQ11: send  cmd, wait RnB, fetch data
+ * SEQ12: send  cmd, 5 x addr, wait tADL, send data, cmd
+ * SEQ13: send  cmd, 5 x addr, wait tADL, send data
+ * SEQ14: send  cmd, 3 x addr, cmd, wait RnB
+ * SEQ15: send  cmd, 5 x addr, cmd, 5 x addr, cmd, wait RnB, fetch data
+ * SEQ17: send  cmd, 5 x addr, wait RnB, fetch data
+*/
+#define  SEQ0				0x00
+#define  SEQ1				0x21
+#define  SEQ2				0x22
+#define  SEQ3				0x03
+#define  SEQ4				0x24
+#define  SEQ5				0x25
+#define  SEQ6				0x26
+#define  SEQ7				0x27
+#define  SEQ8				0x08
+#define  SEQ9				0x29
+#define  SEQ10				0x2a
+#define  SEQ11				0x2b
+#define  SEQ12				0x0c
+#define  SEQ13				0x0d
+#define  SEQ14				0x0e
+#define  SEQ15				0x2f
+#define  SEQ17				0x15
+
+#define HW_CTRL				0x04
+#define BM_CTRL_DIS_STATUS		BIT(23)
+#define BM_CTRL_READ_STAT		BIT(22)
+#define BM_CTRL_SMALL_BLOCK_EN		BIT(21)
+#define BM_CTRL_ADDR_CYCLE1_S		18
+#define  ADDR_CYCLE_0			0x0
+#define  ADDR_CYCLE_1			0x1
+#define  ADDR_CYCLE_2			0x2
+#define  ADDR_CYCLE_3			0x3
+#define  ADDR_CYCLE_4			0x4
+#define  ADDR_CYCLE_5			0x5
+#define BM_CTRL_ADDR1_AUTO_INCR		BIT(17)
+#define BM_CTRL_ADDR0_AUTO_INCR		BIT(16)
+#define BM_CTRL_WORK_MODE		BIT(15)
+#define BM_CTRL_PORT_EN			BIT(14)
+#define BM_CTRL_LOOKU_EN		BIT(13)
+#define BM_CTRL_IO_16BIT		BIT(12)
+/* Overwrite BM_CTRL_PAGE_SIZE with HW_DATA_SIZE */
+#define BM_CTRL_CUSTOM_PAGE_SIZE	BIT(11)
+#define BM_CTRL_PAGE_SIZE_S		8
+#define BM_CTRL_PAGE_SIZE(x)		((ffs((x) >> 8) - 1) & 0x7)
+#define  PAGE_SIZE_256B			0x0
+#define  PAGE_SIZE_512B			0x1
+#define  PAGE_SIZE_1024B		0x2
+#define  PAGE_SIZE_2048B		0x3
+#define  PAGE_SIZE_4096B		0x4
+#define  PAGE_SIZE_8192B		0x5
+#define  PAGE_SIZE_16384B		0x6
+#define  PAGE_SIZE_32768B		0x7
+#define BM_CTRL_BLOCK_SIZE_S		6
+#define BM_CTRL_BLOCK_SIZE(x)		((ffs((x) >> 5) - 1) & 0x3)
+#define  BLOCK_SIZE_32P			0x0
+#define  BLOCK_SIZE_64P			0x1
+#define  BLOCK_SIZE_128P		0x2
+#define  BLOCK_SIZE_256P		0x3
+#define BM_CTRL_ECC_EN			BIT(5)
+#define BM_CTRL_INT_EN			BIT(4)
+#define BM_CTRL_SPARE_EN		BIT(3)
+/* same values as BM_CTRL_ADDR_CYCLE1_S */
+#define BM_CTRL_ADDR_CYCLE0_S		0
+
+#define HW_STATUS			0x08
+#define	BM_CTRL_NFC_BUSY		BIT(8)
+/* MEM1_RDY (BIT1) - MEM7_RDY (BIT7) */
+#define	BM_CTRL_MEM0_RDY		BIT(0)
+
+#define HW_INT_MASK			0x0c
+#define HW_INT_STATUS			0x10
+#define BM_INT_FIFO_ERROR		BIT(12)
+#define BM_INT_MEM_RDY_S		4
+/* MEM1_RDY (BIT5) - MEM7_RDY (BIT11) */
+#define BM_INT_MEM0_RDY			BIT(4)
+#define BM_INT_ECC_TRSH_ERR		BIT(3)
+#define BM_INT_ECC_FATAL_ERR		BIT(2)
+#define BM_INT_CMD_END			BIT(1)
+
+#define HW_ECC_CTRL			0x14
+/* bits per 512 bytes */
+#define	BM_ECC_CAP_S			5
+/* support ecc strength 2, 4, 6, 8, 10, 12, 14, 16. */
+#define BM_ECC_CAPn(x)			((((x) >> 1) - 1) & 0x7)
+/* Warn if some bitflip level (threshold) reached. Max 15 bits. */
+#define BM_ECC_ERR_THRESHOLD_S		8
+#define BM_ECC_ERR_THRESHOLD_M		0xf
+#define BM_ECC_ERR_OVER			BIT(2)
+/* Uncorrected error. */
+#define BM_ECC_ERR_UNC			BIT(1)
+/* Corrected error. */
+#define BM_ECC_ERR_CORRECT		BIT(0)
+
+#define HW_ECC_OFFSET			0x18
+#define HW_ADDR0_0			0x1c
+#define HW_ADDR1_0			0x20
+#define HW_ADDR0_1			0x24
+#define HW_ADDR1_1			0x28
+#define HW_SPARE_SIZE			0x30
+#define HW_DMA_ADDR			0x64
+#define HW_DMA_CNT			0x68
+
+#define HW_DMA_CTRL			0x6c
+#define BM_DMA_CTRL_START		BIT(7)
+/* 0 - to device; 1 - from device */
+#define BM_DMA_CTRL_FROM_DEVICE		BIT(6)
+/* 0 - software maneged; 1 - scatter-gather */
+#define BM_DMA_CTRL_SG			BIT(5)
+#define BM_DMA_CTRL_BURST_S		2
+#define  DMA_BURST_INCR4		0x0
+#define  DMA_BURST_STREAM		0x1
+#define  DMA_BURST_SINGLE		0x2
+#define  DMA_BURST_INCR			0x3
+#define  DMA_BURST_INCR8		0x4
+#define  DMA_BURST_INCR16		0x5
+#define BM_DMA_CTRL_ERR			BIT(1)
+#define BM_DMA_CTRL_RDY			BIT(0)
+
+#define HW_MEM_CTRL			0x80
+#define	BM_MEM_CTRL_WP_STATE_MASK	0xff00
+#define	BM_MEM_CTRL_UNWPn(x)		(1 << ((x) + 8))
+#define BM_MEM_CTRL_CEn(x)		(((x) & 7) << 0)
+
+/* BM_CTRL_CUSTOM_PAGE_SIZE should be set */
+#define HW_DATA_SIZE			0x84
+#define HW_READ_STATUS			0x88
+#define HW_TIM_SEQ_0			0x8c
+#define HW_TIMING_ASYN			0x90
+#define HW_TIMING_SYN			0x94
+
+#define HW_FIFO_DATA			0x98
+#define HW_TIME_MODE			0x9c
+#define HW_FIFO_INIT			0xb0
+/*
+ * Counter for ecc related errors.
+ * For each 512 byte block it has 5bit counter.
+ */
+#define HW_ECC_ERR_CNT			0xb8
+
+#define HW_TIM_SEQ_1			0xc8
+
 
 static unsigned char NandAddr[32];
 nand_info alp_nandinfo;
