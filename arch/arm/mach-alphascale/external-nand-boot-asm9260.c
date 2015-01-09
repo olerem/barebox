@@ -199,7 +199,7 @@ static int NandWaitForControllerReady(void)
 	int ret = 0;
 	int waittime = 0;
 	
-	while (inl(NAND_STATUS) & (1UL << 8))
+	while (ioread32(NAND_STATUS) & (1UL << 8))
 	{
 		waittime++;
 		if (waittime > 0x1000000)
@@ -216,7 +216,7 @@ static int NandWaitForDeviceReady(u8 nChip)
 	int ret = 0;
 	int waittime = 0;
 	
-	while (!(inl(NAND_STATUS) & (1UL << nChip)))
+	while (!(ioread32(NAND_STATUS) & (1UL << nChip)))
 	{
 		waittime++;
 		if (waittime > 0x1000000)
@@ -240,19 +240,19 @@ static void NandReadBuffer(unsigned char *pBuffer, u32 nLen)
 
 	for (i = 0; i < (nLen>>2); i++)
 	{
-		tmpbuf[i] = inl(NAND_FIFO_DATA);
+		tmpbuf[i] = ioread32(NAND_FIFO_DATA);
 	}
 
 	if ((nLen - i * 4) > 0)
 	{
-		tmpbuf[i] = inl(NAND_FIFO_DATA);
+		tmpbuf[i] = ioread32(NAND_FIFO_DATA);
 	}
 }
 
 int NandFlashReset(u8 nChip)
 {
-    outl((0xff00 | nChip), NAND_MEM_CTRL);
-    outl( (RESET << 8)
+    iowrite32((0xff00 | nChip), NAND_MEM_CTRL);
+    iowrite32( (RESET << 8)
         | (ADDR_SEL_0 << 7)
         | (INPUT_SEL_BIU << 6)
         | (SEQ0), NAND_COMMAND);
@@ -274,7 +274,7 @@ static int NandTimingConf(void)
 	u32 twb = TWB;
 
 	/*default config before read id*/
-	outl((ADDR_CYCLE_1 << 18) 		| (ADDR1_AUTO_INCR_DIS << 17)
+	iowrite32((ADDR_CYCLE_1 << 18) 		| (ADDR1_AUTO_INCR_DIS << 17)
 	   | (ADDR0_AUTO_INCR_DIS << 16)	| (WORK_MODE_ASYNC << 15)
 	   | (PROT_DIS << 14) 			| (LOOKUP_DIS << 13)
 	   | (IO_WIDTH_8 << 12) 		 	| (DATA_SIZE_CUSTOM << 11)
@@ -285,7 +285,7 @@ static int NandTimingConf(void)
     // init timing registers
     trwh = 8;
     trwp = 8;
-    outl((trwh << 4) |     // after power on ,device is in async mode0, twh >= 50
+    iowrite32((trwh << 4) |     // after power on ,device is in async mode0, twh >= 50
          (trwp), NAND_TIMINGS_ASYN);        // twp >= 50 and twhr >= 120
 
     ret = NandFlashReset(0);
@@ -296,16 +296,16 @@ static int NandTimingConf(void)
 #endif	
     trwh = 1; //TWH;
     trwp = 1; //TWP;
-    outl((trwh << 4) |     // timing mode change to mode 5, twh >= 7
+    iowrite32((trwh << 4) |     // timing mode change to mode 5, twh >= 7
          (trwp), NAND_TIMINGS_ASYN);      // twp >= 10
 
     twhr = 2;
     trhw = 4;
-    outl((twhr << 24) |
+    iowrite32((twhr << 24) |
          (trhw << 16) |
          (tadl << 8)  |
          (tccs), NAND_TIME_SEQ_0);
-    outl((tsync << 16) |
+    iowrite32((tsync << 16) |
          (trr << 9) |
          (twb), NAND_TIME_SEQ_1);
 
@@ -314,8 +314,8 @@ static int NandTimingConf(void)
 
 static void NandSelectChip(unsigned char nChip)
 {
-    outl((0xff00 |  nChip), NAND_MEM_CTRL);
-    outl((1UL << (nChip+8)) ^ inl(NAND_MEM_CTRL), NAND_MEM_CTRL);// clear WP reg
+    iowrite32((0xff00 |  nChip), NAND_MEM_CTRL);
+    iowrite32((1UL << (nChip+8)) ^ ioread32(NAND_MEM_CTRL), NAND_MEM_CTRL);// clear WP reg
 }
 
 #define	YAFFS_SPARE_MIN_SIZE	(2+28)
@@ -410,8 +410,8 @@ int NandInit(unsigned char nChip)
 	nand_info *pNandInfo = GetNandInfo();
 
 	/*打开时钟*/
-	outl(0x00000400, (0x80040030+4));  // open nand pclk    
-	outl(0x00000008, 0x800401D4);      // set nand clk to 1/2 pclk
+	iowrite32(0x00000400, (0x80040030+4));  // open nand pclk    
+	iowrite32(0x00000008, 0x800401D4);      // set nand clk to 1/2 pclk
 
 	
 	//NandSetPinMux();				/*设置PIN Mux*/
@@ -456,17 +456,17 @@ int NandReadIDPio(unsigned char nChip, unsigned int *pDevId, unsigned int nByte)
 {
 	int ret = 0;
 
-	outl(1, NAND_FIFO_INIT);		/*复位FIFO*/
-	outl(nByte, NAND_DATA_SIZE);
-	outl((0xff00 | nChip), NAND_MEM_CTRL);
-	outl(0x00000000, NAND_ADDR0_L);
-	outl((READ_ID << 8)
+	iowrite32(1, NAND_FIFO_INIT);		/*复位FIFO*/
+	iowrite32(nByte, NAND_DATA_SIZE);
+	iowrite32((0xff00 | nChip), NAND_MEM_CTRL);
+	iowrite32(0x00000000, NAND_ADDR0_L);
+	iowrite32((READ_ID << 8)
 	   | (ADDR_SEL_0 << 7)
 	   | (INPUT_SEL_BIU << 6)
 	   | (SEQ1), NAND_COMMAND);
 	ret = NandWaitForDeviceReady(nChip);
 
-	pDevId[0] = inl(NAND_FIFO_DATA);
+	pDevId[0] = ioread32(NAND_FIFO_DATA);
 
 	return ret;
 }
@@ -475,7 +475,7 @@ static void NandControllerConfig (void)
 {
 	nand_info *pNandInfo = GetNandInfo();
 
-	outl((EN_STATUS << 23)				| (NO_RNB_SEL << 22)
+	iowrite32((EN_STATUS << 23)				| (NO_RNB_SEL << 22)
 	   | (BIG_BLOCK_EN << 21)	 		| (pNandInfo->addr_cycles << 18)
 	   | (ADDR1_AUTO_INCR_DIS << 17) 	| (ADDR0_AUTO_INCR_DIS << 16)
  	   | (WORK_MODE_ASYNC << 15)	 	| (PROT_DIS << 14)
@@ -492,7 +492,7 @@ static int NandEccCheck(void)
 	int ret = 0;
 	u32 ecc_status = 0;
 
-	ecc_status = inl(NAND_ECC_CTRL);
+	ecc_status = ioread32(NAND_ECC_CTRL);
 	if (ecc_status & 0x01)
 	{
 		//puts("NAND_ERR_CORRECT!!!\r\n");
@@ -519,28 +519,28 @@ static int NandReadLargePagePio(u32 nPage, u32 nColumn, unsigned char *pBuffer, 
 	u32 *addr = (u32 *)NandAddr;
 	nand_info *pNandInfo = GetNandInfo();
 
-	outl(0x1, NAND_FIFO_INIT);
+	iowrite32(0x1, NAND_FIFO_INIT);
 	NandControllerConfig( );
 
 	if (nColumn == 0)
 	{
-		outl(inl(NAND_CONTROL) & (~(SPARE_EN << 3)), NAND_CONTROL);
-		outl((ecc_threshold << 8) | (ecc_cap << 5), NAND_ECC_CTRL);
-		outl(pNandInfo->page_size + nand_spare_size, NAND_ECC_OFFSET);
+		iowrite32(ioread32(NAND_CONTROL) & (~(SPARE_EN << 3)), NAND_CONTROL);
+		iowrite32((ecc_threshold << 8) | (ecc_cap << 5), NAND_ECC_CTRL);
+		iowrite32(pNandInfo->page_size + nand_spare_size, NAND_ECC_OFFSET);
 	}
 	else if (nColumn == pNandInfo->page_size)
 	{
-		outl((inl(NAND_CONTROL) & (~(ECC_EN << 5))) | (DATA_SIZE_CUSTOM<< 11), NAND_CONTROL);
-		outl(nLen, NAND_SPARE_SIZE);
-		outl(nLen, NAND_DATA_SIZE);
+		iowrite32((ioread32(NAND_CONTROL) & (~(ECC_EN << 5))) | (DATA_SIZE_CUSTOM<< 11), NAND_CONTROL);
+		iowrite32(nLen, NAND_SPARE_SIZE);
+		iowrite32(nLen, NAND_DATA_SIZE);
 	}
 
-	outl((0xff00 | pNandInfo->chip_select), NAND_MEM_CTRL);
+	iowrite32((0xff00 | pNandInfo->chip_select), NAND_MEM_CTRL);
 	NandLargePageMakeAddr(nPage, nColumn, NandAddr);
-	outl(addr[0], NAND_ADDR0_L);
-	outl(addr[1], NAND_ADDR0_H);
+	iowrite32(addr[0], NAND_ADDR0_L);
+	iowrite32(addr[1], NAND_ADDR0_H);
 
-	outl((READ_PAGE_2<<16)
+	iowrite32((READ_PAGE_2<<16)
 	   | (READ_PAGE_1<<8)
 	   | (ADDR_SEL_0<<7)
 	   | (INPUT_SEL_BIU<<6)
@@ -554,7 +554,7 @@ static int NandReadLargePagePio(u32 nPage, u32 nColumn, unsigned char *pBuffer, 
 
 	NandReadBuffer(tmpbuf, nLen);
 
-	if ((inl(NAND_CONTROL) & (ECC_EN<<5)) != 0)
+	if ((ioread32(NAND_CONTROL) & (ECC_EN<<5)) != 0)
 	{
 		ret = NandEccCheck( );
 	}
