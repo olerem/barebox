@@ -14,43 +14,136 @@
 	aliases {
 		serial0 = &uart4;
 	};
-};
 
-&uart4 {
-	status = "okay";
-};
+	soc {
+		pinctrl: pinctrl@80044000 {
+			uart4_pins_a: uart4_pins0 {
+				uart4_txrx_pins {
+					pins = "GPIO3_0", "GPIO3_1";
+					function = "uart4";
+					bias-disable;
+				};
+			};
 
-&nand_controller0 {
-	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-	nand-max-chips = <1>;
+			nand_fc0_pins_a: nand_fc0 {
+				nand_main_gr {
+					pins = "GPIO11_0", "GPIO11_1", "GPIO11_2",
+					       "GPIO11_3", "GPIO11_4", "GPIO11_6",
+					       "GPIO12_0", "GPIO12_1", "GPIO12_2",
+					       "GPIO12_3", "GPIO12_4", "GPIO12_5",
+					       "GPIO12_6", "GPIO12_7";
+					function = "nand0";
+					bias-disable;
+				};
+			};
 
-	nand@0 {
-	reg = <0>;
-	#address-cells = <1>;
-	#size-cells = <1>;
-	nand-on-flash-bbt;
-	nand-ecc-step-size = <512>;
-	nand-ecc-strength = <4>;
+			dwmac0_pins_a: dwmac0@0 {
+				rmii_group@0 {
+					pins = "GPIO10_7", "GPIO15_0", "GPIO15_1",
+					       "GPIO15_2", "GPIO15_3", "GPIO15_4",
+					       "GPIO15_5", "GPIO15_6", "GPIO15_7";
+					function = "rmii0";
+					bias-disable;
+				};
 
-		partition@00a00000 {
-			label = "logo";
-			reg = <0x00a00000 0x400000>;
-			/* read-only; */
+				phy_reset_pin@0 {
+					pins = "GPIO9_5";
+					function = "gpio0";
+					bias-disable;
+				};
+			};
+
+			led_pins_a: led_pins0 {
+				sys_led_pins {
+					pins = "GPIO16_7";
+					function = "gpio0";
+					bias-disable;
+				};
+			};
 		};
-		partition@00e00000 {
-			label = "root";
-			reg = <0x00e00000 0x3C00000>;
-			read-only;
+
+		leds {
+			compatible      = "gpio-leds";
+			pinctrl-names 	= "default";
+			pinctrl-0	= <&led_pins_a>;
+
+			sys_led {
+				label   = "System LED";
+				gpios   = <&gpio_ctrl4 7 0>;
+				linux,default-trigger   = "heartbeat";
+			};
 		};
-		partition@04a00000 {
-			label = "yaffs";
-			reg = <0x04a00000 0x3580000>;
+
+		uart4: serial@80010000 {
+			status = "okay";
+			pinctrl-names 	= "default";
+			pinctrl-0	= <&uart4_pins_a>;
 		};
-		partition@flash {
-			label = "flash";
-			reg = <0x0 0x8000000>;
+
+		ethernet0: dwmac@80500000 {
+			status = "okay";
+			local-mac-address = [00 00 de ad be ef];
+			max-speed = "100";
+			phy-mode = "rmii";
+
+			pinctrl-names 	= "default";
+			pinctrl-0	= <&dwmac0_pins_a>;
+
+			snps,reset-gpio = <&gpio_ctrl2 14 0>;
+			snps,reset-active-low;
+			snps,reset-delays-us = <0 10000 10000>;
+/*
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+				micrel,led-mode = <1>;
+			};
+*/
+		};
+
+		nand_controller0: nand@80600000 {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			nand-ecc-strength = <4>;
+			nand-ecc-step-size = <512>;
+			nand-max-chips = <1>;
+			nand-on-flash-bbt;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&nand_fc0_pins_a>;
+
+			partition@00000000 {
+				label = "sysloadder";
+				reg = <0x00000000 0x10000>;
+				read-only;
+			};
+			partition@00010000 {
+				label = "uboot";
+				reg = <0x00010000 0x1f0000>;
+			};
+
+			partition@00200000 {
+				label = "kernel";
+				reg = <0x00200000 0x800000>;
+			};
+			partition@00a00000 {
+				label = "logo";
+				reg = <0x00a00000 0x400000>;
+				/* read-only; */
+			};
+			partition@00e00000 {
+				label = "root";
+				reg = <0x00e00000 0x3C00000>;
+				read-only;
+			};
+			partition@04a00000 {
+				label = "yaffs";
+				reg = <0x04a00000 0x3580000>;
+			};
+			partition@flash {
+				label = "flash";
+				reg = <0x0 0x7f80000>;
+			};
 		};
 	};
 };
