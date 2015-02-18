@@ -6,6 +6,7 @@
 
 #include "skeleton.dtsi"
 #include <dt-bindings/clock/alphascale,asm9260.h>
+#include <dt-bindings/reset/alphascale,asm9260-rst.h>
 
 / {
 	interrupt-parent = <&icoll>;
@@ -39,11 +40,87 @@
 		compatible = "simple-bus";
 		ranges;
 
-		acc: clock-controller@80040000 {
+		gpio_ctrl0: gpio@0x50000000 {
+			gpio-controller;
+			compatible = "alphascale,asm9260-gpio", "alphascale,asm9260-gpio-0";
+			reg = <0x50000000 0x8100>;
+			clocks = <&acc CLKID_AHB_GPIO>;
+			clock-names = "ahb";
+			interrupts = <3>;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 120 5>,
+				      <&pinctrl 8 128 20>;
+		};
+
+		gpio_ctrl1: gpio@0x50010000 {
+			gpio-controller;
+			compatible = "alphascale,asm9260-gpio", "alphascale,asm9260-gpio-1";
+			reg = <0x50010000 0x8100>;
+			clocks = <&acc CLKID_AHB_GPIO>;
+			clock-names = "ahb";
+			interrupts = <4>;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 151 8>,
+				      <&pinctrl 8 169 5>;
+		};
+
+		gpio_ctrl2: gpio@0x50020000 {
+			gpio-controller;
+			compatible = "alphascale,asm9260-gpio", "alphascale,asm9260-gpio-2";
+			reg = <0x50020000 0x8100>;
+			clocks = <&acc CLKID_AHB_GPIO>;
+			clock-names = "ahb";
+			interrupts = <5>;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 1 51 7>,
+				      <&pinctrl 8 45 6>,
+				      <&pinctrl 16 4 16>;
+		};
+
+		gpio_ctrl3: gpio@0x50030000 {
+			gpio-controller;
+			compatible = "alphascale,asm9260-gpio", "alphascale,asm9260-gpio-3";
+			reg = <0x50030000 0x8100>;
+			clocks = <&acc CLKID_AHB_GPIO>;
+			clock-names = "ahb";
+			interrupts = <6>;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 23 8>,
+				      <&pinctrl 8 31 4>,
+				      <&pinctrl 16 38 6>,
+				      <&pinctrl 24 44 1>,
+				      <&pinctrl 25 61 7>;
+		};
+
+		gpio_ctrl4: gpio@0x50040000 {
+			gpio-controller;
+			compatible = "alphascale,asm9260-gpio", "alphascale,asm9260-gpio-4";
+			reg = <0x50040000 0x8100>;
+			clocks = <&acc CLKID_AHB_GPIO>;
+			clock-names = "ahb";
+			interrupts = <7>;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pinctrl 0 73 16>;
+		};
+
+		rst: reset@80040000 {
+			compatible = "alphascale,asm9260-reset";
+			#reset-cells = <1>;
+			reg = <0x80040000 0x20>;
+		};
+
+		acc: clock-controller@80040020 {
 			compatible = "alphascale,asm9260-clock-controller";
 			#clock-cells = <1>;
 			clocks = <&osc24m>;
-			reg = <0x80040000 0x204>;
+			reg = <0x80040020 0x1e4>;
+		};
+
+		pinctrl: pinctrl@80044000 {
+			compatible = "alphascale,asm9260-pinctrl";
+			reg = <0x80044000 0x400>;
+			clocks = <&acc CLKID_AHB_IOCONFIG>;
+			clock-names = "ahb";
 		};
 
 		icoll: interrupt-controller@80054000 {
@@ -158,11 +235,54 @@
 			status = "disabled";
 		};
 
+		watchdog0: watchdog@80048000 {
+			compatible = "alphascale,asm9260-wdt";
+			reg = <0x80048000 0x10>;
+			clocks = <&acc CLKID_SYS_WDT>, <&acc CLKID_AHB_WDT>;
+			clock-names = "mod", "ahb";
+			interrupts = <55>;
+		};
+
 		timer0: timer@80088000 {
 			compatible = "alphascale,asm9260-timer";
 			reg = <0x80088000 0x4000>;
 			clocks = <&acc CLKID_AHB_TIMER0>;
 			interrupts = <29>;
+		};
+
+		rtc0: rtc@800a0000 {
+			compatible = "alphascale,asm9260-rtc";
+			reg = <0x800a0000 0x100>;
+			clocks = <&acc CLKID_AHB_RTC>;
+			clock-names = "ahb";
+			interrupts = <2>;
+		};
+
+		ethernet0: dwmac@80500000 {
+			device_type 	= "network";
+			compatible	= "snps,dwmac-3.70a";
+			status 		= "disabled";
+
+			reg 		= <0x80500000 0x8000>, <0x148 0x4>;
+			reg-names	= "stmmaceth", "sti-ethconf";
+
+			/* 12, 13 or 23, 24 for mac1 ? */
+			interrupts 	= <12>, <13>;
+			interrupt-names = "macirq", "eth_wake_irq";
+			resets			= <&rst MAC_RESET>;
+			reset-names		= "stmmaceth";
+
+/*
+			snps,pbl 	= <32>;
+			snps,mixed-burst;
+			snps,force_sf_dma_mode;
+
+			st,syscon	= <&syscfg_rear>;
+
+*/
+			clock-names	= "stmmaceth", "sti-ethclk";
+			clocks		= <&acc CLKID_AHB_MAC>, <&acc CLKID_SYS_MAC>;
+			/* clocks		= <&acc CLKID_SYS_MAC>, <&acc CLKID_AHB_MAC1>; */
 		};
 
 		nand_controller0: nand@80600000 {
