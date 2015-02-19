@@ -12,6 +12,7 @@
  *
  */
 
+#include <debug_ll.h>
 #include <common.h>
 #include <sizes.h>
 #include <asm/barebox-arm-head.h>
@@ -27,10 +28,26 @@ void __naked __noreturn barebox_arm_reset_vector(void)
 
 	arm_cpu_lowlevel_init();
 
+#if 0
+	/* configure clock */
+	writel(0x4, 0x80040024);
+	writel(0x100, 0x80040034);
+	writel(0x600, 0x80040024);
+	writel(0x750, 0x80040238);
+	writel(0x2, 0x8004017C);
+	writel(0x80040180, 0x2);
+	writel(480, 0x80040100);
+
+	writel(0x1, 0x80040120);
+	writel(0x0, 0x80040124);
+	writel(0x1, 0x80040124);
+#endif
+
 	r = get_pc();
 	if (r > ASM9260_SRAM_BASE &&
 			r < ASM9260_SRAM_BASE + ASM9260_SRAM_SIZE) {
 		/* We have two internal RAMs, 8K and 32M. */
+		putc_ll('m');
 		/* Enable EMI clk */
 		writel(0x40, 0x80040024);
 		/* change default emi clk delay */
@@ -51,8 +68,20 @@ void __naked __noreturn barebox_arm_reset_vector(void)
 	}
 	arm_setup_stack(ASM9260_MEMORY_BASE + SZ_32M - 8);
 
+	writel(0x2000000, 0x80040024);
+	writel(0x2, 0x80044060);
+	writel(0x2, 0x80044064);
+	writel(0x1, 0x800401a8);
+	writel(0x8000, 0x80040024);
+	writel(0xC0000000, 0x80010008);
+	writel(0x00062070, 0x80010030);
+	writel(0x301, 0x80010024);
+	writel(0xc000, 0x80010028);
+
 	/* add here your qspi function */
 
 	relocate_to_adr(ASM9260_MEMORY_BASE);
+	putc_ll('-');
+	putc_ll('\n');
 	barebox_arm_entry(ASM9260_MEMORY_BASE, SZ_32M, NULL);
 }
