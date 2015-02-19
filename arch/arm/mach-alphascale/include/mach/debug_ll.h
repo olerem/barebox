@@ -13,8 +13,8 @@
 
 
 /* from Alphascale sysloder */
-#define UART4_BASEESS	0x80010000 
-#define HW_UART4_STAT	(UART4_BASEESS + 0x60) 
+#define UART4_BASEESS	0x80010000
+#define HW_UART4_STAT	(UART4_BASEESS + 0x60)
 #define HW_UART4_DATA	(UART4_BASEESS + 0x50)
 
 
@@ -29,7 +29,7 @@ static inline void PUTC_LL(char c)
 {
 
 	while (!(readl(HW_UART4_STAT) & 0x08000000));
-	writel(c, HW_UART4_DATA);	
+	writel(c, HW_UART4_DATA);
 	return;
 }
 
