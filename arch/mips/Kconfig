@@ -106,6 +106,7 @@ endchoice
 
 source arch/mips/mach-malta/Kconfig
 source arch/mips/mach-ar231x/Kconfig
+source arch/mips/mach-ar5523/Kconfig
 source arch/mips/mach-ath79/Kconfig
 source arch/mips/mach-bcm47xx/Kconfig
 source arch/mips/mach-loongson/Kconfig
