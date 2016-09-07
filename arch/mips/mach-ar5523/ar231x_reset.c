@@ -13,12 +13,11 @@
 #include <restart.h>
 #include <linux/err.h>
 
-#include <mach/ar2312_regs.h>
-#include <mach/ar231x_platform.h>
+#include <mach/ar5523_regs.h>
 
 static void __iomem *reset_base;
 
-static void __noreturn ar2312x_restart_soc(struct restart_handler *rst)
+static void __noreturn ar5523_restart_soc(struct restart_handler *rst)
 {
 	printf("reseting cpu\n");
 	__raw_writel(0x10000,
@@ -29,30 +28,30 @@ static void __noreturn ar2312x_restart_soc(struct restart_handler *rst)
 	hang();
 }
 
-static u32 ar231x_reset_readl(void)
+static u32 ar5523_reset_readl(void)
 {
 	return __raw_readl(reset_base);
 }
 
-static void ar231x_reset_writel(u32 val)
+static void ar5523_reset_writel(u32 val)
 {
 	__raw_writel(val, reset_base);
 }
 
-void ar231x_reset_bit(u32 val, enum reset_state state)
+void ar5523_reset_bit(u32 val, enum reset_state state)
 {
 	u32 tmp;
 
-	tmp = ar231x_reset_readl();
+	tmp = ar5523_reset_readl();
 
 	if (state == REMOVE)
-		ar231x_reset_writel(tmp & ~val);
+		ar5523_reset_writel(tmp & ~val);
 	else
-		ar231x_reset_writel(tmp | val);
+		ar5523_reset_writel(tmp | val);
 }
-EXPORT_SYMBOL(ar231x_reset_bit);
+EXPORT_SYMBOL(ar5523_reset_bit);
 
-static int ar231x_reset_probe(struct device_d *dev)
+static int ar5523_reset_probe(struct device_d *dev)
 {
 	struct resource *iores;
 	iores = dev_request_mem_resource(dev, 0);
@@ -65,14 +64,14 @@ static int ar231x_reset_probe(struct device_d *dev)
 	return 0;
 }
 
-static struct driver_d ar231x_reset_driver = {
-	.probe	= ar231x_reset_probe,
-	.name	= "ar231x_reset",
+static struct driver_d ar5523_reset_driver = {
+	.probe	= ar5523_reset_probe,
+	.name	= "ar5523_reset",
 };
 
-static int ar231x_reset_init(void)
+static int ar5523_reset_init(void)
 {
-	restart_handler_register_fn(ar2312x_restart_soc);
-	return platform_driver_register(&ar231x_reset_driver);
+	restart_handler_register_fn(ar5523_restart_soc);
+	return platform_driver_register(&ar5523_reset_driver);
 }
-coredevice_initcall(ar231x_reset_init);
+coredevice_initcall(ar5523_reset_init);
