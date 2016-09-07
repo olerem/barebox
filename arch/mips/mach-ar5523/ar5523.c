@@ -35,7 +35,7 @@ static int watchdog_init(void)
 static int platform_init(void)
 {
 	add_generic_device("ar231x_reset", DEVICE_ID_SINGLE, NULL,
-			KSEG1ADDR(AR5523_RESET), 0x4,
+			KSEG1ADDR(HW_AR5523_RESET), 0x4,
 			IORESOURCE_MEM, NULL);
 	watchdog_init();
 	return 0;
@@ -49,18 +49,16 @@ static struct NS16550_plat serial_plat = {
 
 static int ar5523_console_init(void)
 {
-#if 0
 	u32 reset;
 
 	/* reset UART0 */
-	reset = __raw_readl((char *)KSEG1ADDR(AR5523_RESET));
-	reset = ((reset & ~AR5523_RESET_APB) | AR5523_RESET_UART0);
-	__raw_writel(reset, (char *)KSEG1ADDR(AR5523_RESET));
+	reset = __raw_readl((char *)KSEG1ADDR(HW_AR5523_RESET));
+	reset = ((reset & ~BM_AR5523_RST_APBDMA) | BM_AR5523_RST_UART0);
+	__raw_writel(reset, (char *)KSEG1ADDR(HW_AR5523_RESET));
 
-	reset &= ~AR5523_RESET_UART0;
-	__raw_writel(reset, (char *)KSEG1ADDR(AR5523_RESET));
+	reset &= ~BM_AR5523_RST_UART0;
+	__raw_writel(reset, (char *)KSEG1ADDR(HW_AR5523_RESET));
 
-#endif
 	/* Register the serial port */
 	serial_plat.clock = ar5523_sys_frequency();
 	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR5523_UART0),
