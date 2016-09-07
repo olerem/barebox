@@ -13,6 +13,7 @@
  * (at your option) any later version.
  */
 
+#if 0
 #include <common.h>
 #include <init.h>
 #include <io.h>
@@ -195,3 +196,4 @@ static int ar2312_console_init(void)
 	return 0;
 }
 console_initcall(ar2312_console_init);
+#endif
