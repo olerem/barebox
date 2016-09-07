@@ -12,19 +12,35 @@
 
 #include <asm/addrspace.h>
 
-/* Address Map */
-#define AR5523_SDRAM0		0x00000000
-#define AR5523_SDRAM1		0x08000000
-#define AR5523_WLAN0		0x18000000
-#define AR5523_WLAN1		0x18500000
-#define AR5523_ENET0		0x18100000
-#define AR5523_ENET1		0x18200000
-#define AR5523_SDRAMCTL		0x18300000
-#define AR5523_FLASHCTL		0x18400000
-#define AR5523_APBBASE		0x1c000000
-#define AR5523_FLASH		0x1e000000
+#define AR5523_WIFI_CLK				40000000
 
-#define AR5523_UART0		(0x10b00000 + 3)
-#define AR5523_UART_SHIFT	2
+/* Clock register section */
+#define HW_AR5523_CLK				0x00c00060
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+/* USB Phy Source Clock Select */
+#define BM_AR5523_CLK_USB_PHY_SRC_MASK		(0x3 << 4)
+#define BM_AR5523_CLK_USB_PHY_SRC_3MHZ		(0x0 << 4)
+#define BM_AR5523_CLK_USB_PHY_SRC_6MHZ		(0x1 << 4)
+#define BM_AR5523_CLK_USB_PHY_SRC_12MHZ		(0x2 << 4)
+/* should be used only */
+#define BM_AR5523_CLK_USB_PHY_SRC_24MHZ		(0x3 << 4)
+/* CPU Clock Select */
+#define BM_AR5523_CLK_CCS_MASK			(0x7 << 1)
+#define BM_AR5523_CLK_CCS_REF			(0x0 << 1)
+#define BM_AR5523_CLK_CCS_UART			(0x1 << 1)
+#define BM_AR5523_CLK_CCS_INT			(0x2 << 1)
+#define BM_AR5523_CLK_CCS_USB_XIN		(0x3 << 1)
+#define BM_AR5523_CLK_CCS_USB_PHY		(0x4 << 1)
+/* ... some unsupported variants was removed ... */
+#define BM_AR5523_CLK_CCS_USB_PHY_PLLDIV	(0x7 << 1)
+#define BM_AR5523_CLK_CPU_CLKSWITCH		BIT(0)
+
+#define AR5523_UART0				(0x10b00000 + 3)
+#define AR5523_UART_SHIFT			2
 
 #endif
