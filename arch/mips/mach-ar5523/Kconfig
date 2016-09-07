@@ -2,7 +2,15 @@ if MACH_MIPS_AR5523
 
 config ARCH_TEXT_BASE
 	hex
-	default 0x80010200
+	default 0x80008000
+
+config STACK_SIZE
+	hex
+	default 0x4000
+
+config MALLOC_SIZE
+	hex
+	default 0x4000
 
 choice
 	prompt "Board type"
