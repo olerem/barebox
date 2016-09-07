@@ -24,7 +24,7 @@
 #define AR5523_APBBASE		0x1c000000
 #define AR5523_FLASH		0x1e000000
 
-#define AR5523_UART0		0x10B00000 /* high speed uart */
+#define AR5523_UART0		(0x10b00000 + 3)
 #define AR5523_UART_SHIFT	2
 
 #endif
