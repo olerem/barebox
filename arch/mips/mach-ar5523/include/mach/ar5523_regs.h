@@ -11,8 +11,11 @@
 #define AR5523_H
 
 #include <asm/addrspace.h>
+#include <linux/sizes.h>
 
 #define AR5523_WIFI_CLK				40000000
+#define AR5523_SRAM_BASE			0x80000000
+#define AR5523_SRAM_SIZE			SZ_256K
 
 #define HW_AR5523_RESET				0x00c00020
 #define BM_AR5523_RST_FLASH			BIT(19)
