@@ -3,6 +3,7 @@
 #include <linux/sizes.h>
 #include <asm/memory.h>
 
+#if 0
 static int mem_init(void)
 {
 	barebox_set_model("Netgear wg102");
@@ -12,3 +13,4 @@ static int mem_init(void)
 	return 0;
 }
 mem_initcall(mem_init);
+#endif
