@@ -12,6 +12,15 @@
 #include <io.h>
 #include <platform_data/serial-ns16550.h>
 #include <mach/ar5523_regs.h>
+#include <asm/memory.h>
+
+
+static int mem_init(void)  
+{
+	mips_add_ram0(AR5523_SRAM_SIZE);
+	return 0;
+}
+mem_initcall(mem_init);
 
 static unsigned int
 ar5523_sys_frequency(void)
