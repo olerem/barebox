@@ -15,6 +15,16 @@
 #include <linux/clk.h>
 #include <linux/err.h>
 
+/* current counter value */
+#define HW_AR5523_GPT_VAL	0x00
+/*
+ * reload counter value.
+ * Once it reaches zero, it immediately loads with the value of the
+ * General Timer Reload register and continues counting down.
+ */
+#define HW_AR5523_GPT_REL	0x04
+
+
 static __iomem void *ar5523_timer_base;
 
 static uint64_t ar5523_cs_read(void)
@@ -24,7 +34,7 @@ static uint64_t ar5523_cs_read(void)
 
 static struct clocksource ar5523_cs = {
 	.read = ar5523_cs_read,
-	.mask = CLOCKSOURCE_MASK(16),
+	.mask = CLOCKSOURCE_MASK(32),
 };
 
 static int ar5523_cs_probe(struct device_d *dev)
