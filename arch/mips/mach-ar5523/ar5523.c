@@ -77,3 +77,13 @@ static int ar5523_console_init(void)
 	return 0;
 }
 console_initcall(ar5523_console_init);
+
+static __init int ar5523_core_init(void)
+{
+	add_generic_device("ar5523-cs", DEVICE_ID_SINGLE, NULL,
+			   HW_AR5523_GPT, SZ_8, IORESOURCE_MEM, NULL);
+
+	return 0;
+}
+coredevice_initcall(ar5523_core_init);
+
