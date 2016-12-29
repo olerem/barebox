@@ -22,9 +22,17 @@
 #include <asm/barebox-arm.h>
 #include <io.h>
 
+static void sdelay(unsigned long loops)
+{
+	__asm__ volatile ("1:\n" "subs %0, %1, #1\n"
+				"bne 1b":"=r" (loops):"0"(loops));
+}
+
+
 void __naked __noreturn barebox_arm_reset_vector(void)
 {
-	uint32_t r;
+	uint32_t r, i;
+	uint32_t *base = ASM9260_MEMORY_BASE;
 
 	arm_cpu_lowlevel_init();
 
@@ -78,6 +86,53 @@ void __naked __noreturn barebox_arm_reset_vector(void)
 	writel(0x301, 0x80010024);
 	writel(0xc000, 0x80010028);
 
+	/* configure pins. needed only GPIO4_* based qspi */
+	writel(0x4, 0x80044080);
+	writel(0x4, 0x80044084);
+	writel(0x4, 0x80044088);
+	writel(0x4, 0x8004408c);
+	writel(0x4, 0x80044090);
+	writel(0x4, 0x80044094);
+
+	/* reset qspi */
+	writel(0x8, 0x80040018);
+	writel(0x8, 0x80040014);
+
+	/* enable ahb clk for qspi */
+	writel(0x2, 0x80040034);
+
+	writel(0, 0x80068000);
+	/* some how configure internal clock devider */
+	writel(0x101, 0x80068030);
+
+	/* configure qspi engine 32 bit with phase enabled */
+	writel(0x438, 0x80068010);
+
+	writel(0x4, 0x80068070);
+	writel(0x3, 0x80068020);
+	writel(0x28000000, 0x80068000);
+	writel(0x0, 0x80068040);
+
+#if 0
+	writel(0x3, 0x80068020);
+	writel(0x28000000, 0x80068000);
+
+	for (i = 0; i < 0; i++) {
+		writel(0, 0x80068020);
+		writel(0x28000000, 0x80068000);
+	}
+#endif
+	for (i = 0; i < 100; i++) {
+		writel(0x3, 0x80068020);
+		sdelay(100000);
+		writel(0x2c000000, 0x80068000);
+		sdelay(100000);
+		*base = readl(0x80068040);
+		base++;
+	}
+	putc_ll('\n');
+
+	while (1);
 	/* add here your qspi function */
 
 	relocate_to_adr(ASM9260_MEMORY_BASE);
