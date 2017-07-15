@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 Oleksij Rempel <o.rempel@pengutronix.de>
  * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
  *
  * This file is part of barebox.
@@ -20,7 +21,7 @@
 
 static int model_hostname_init(void)
 {
-	barebox_set_hostname("mr3020");
+	barebox_set_hostname("wdr4300");
 
 	return 0;
 }
