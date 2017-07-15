@@ -5,6 +5,8 @@
 #include <asm/regdef.h>
 #include <mach/ar71xx_regs.h>
 
+/* start of ar9331 section */
+
 #define PLL_BASE		(KSEG1 | AR71XX_PLL_BASE)
 #define PLL_CPU_CONFIG_REG	(PLL_BASE | AR933X_PLL_CPU_CONFIG_REG)
 #define PLL_CPU_CONFIG2_REG	(PLL_BASE | AR933X_PLL_CPU_CONFIG2_REG)
@@ -186,6 +188,111 @@
 	/* Bit 18 enables MDC and MDIO function on GPIO26 and GPIO28 */
 	pbl_reg_set (1 << 18), RESET_REG_BOOTSTRAP
 .endm
+
+/* end of ar9331 section */
+
+/* start of ar9344 section */
+
+.macro	pbl_ar9344_pll
+	.set	push
+	.set	noreorder
+
+	pbl_reg_writel	0x13210f00	0xb81161C4
+	pbl_reg_writel	0x03000000	0xb81161C8
+	pbl_reg_writel	0x13210f00	0xb8116244
+	pbl_reg_writel	0x03000000	0xb8116248
+	pbl_reg_writel	0x03000000	0xb8116188
+
+	pbl_reg_writel	0x0130001C	0xb8050008
+	pbl_reg_writel	0x0130001C	0xb8050008
+	pbl_reg_writel	0x0130001C	0xb8050008
+
+	pbl_reg_writel	0x40021380	0xb8050000
+	pbl_reg_writel	0x40815800	0xb8050004
+	pbl_reg_writel	0x0130801C	0xb8050008
+
+	pbl_reg_writel	0x10810F00	0xb81161C4
+	pbl_reg_writel	0x41C00000	0xb81161C0
+	pbl_reg_writel	0xD0810F00	0xb81161C4
+	pbl_reg_writel	0x03000000	0xb81161C8
+	pbl_reg_writel	0xD0800F00	0xb81161C4
+
+	pbl_reg_writel	0x03000000	0xb81161C8
+	pbl_reg_writel	0x43000000	0xb81161C8
+	pbl_reg_writel	0x030003E8	0xb81161C8
+
+	pbl_reg_writel	0x10810F00	0xb8116244
+	pbl_reg_writel	0x41680000	0xb8116240
+	pbl_reg_writel	0xD0810F00	0xb8116244
+	pbl_reg_writel	0x03000000	0xb8116248
+	pbl_reg_writel	0xD0800F00	0xb8116244
+
+	pbl_reg_writel	0x03000000	0xb8116248
+	pbl_reg_writel	0x43000000	0xb8116248
+	pbl_reg_writel	0x03000718	0xb8116248
+
+	pbl_reg_writel	0x01308018	0xb8050008
+	pbl_reg_writel	0x01308010	0xb8050008
+	pbl_reg_writel	0x01308000	0xb8050008
+	pbl_reg_writel	0x78180200	0xb8050044
+	pbl_reg_writel	0x41C00000	0xb8050048
+
+	pbl_sleep	t2, 40
+
+	.set	pop
+.endm
+
+.macro	pbl_ar9344_ddr_config
+	.set	push
+	.set	noreorder
+
+	pbl_reg_writel	0x40	0xb8000108
+	pbl_reg_writel	0xFF	0xb8000018
+	pbl_reg_writel	0x74444444	0xb80000C4
+	pbl_reg_writel	0x0222	0xb80000C8
+	pbl_reg_writel	0xFFFFF	0xb80000CC
+
+	pbl_reg_writel	0xC7D48CD0	0xb8000000
+	pbl_reg_writel	0x9DD0E6A8	0xb8000004
+
+	pbl_reg_writel	0x0E59	0xb80000B8
+	pbl_reg_writel	0x9DD0E6A8	0xb8000004
+
+	pbl_reg_writel	0x08	0xb8000010
+	pbl_reg_writel	0x08	0xb8000010
+	pbl_reg_writel	0x10	0xb8000010
+	pbl_reg_writel	0x20	0xb8000010
+	pbl_reg_writel	0x02	0xb800000C
+	pbl_reg_writel	0x02	0xb8000010
+
+	pbl_reg_writel	0x0133	0xb8000008
+	pbl_reg_writel	0x1	0xb8000010
+	pbl_reg_writel	0x8	0xb8000010
+	pbl_reg_writel	0x8	0xb8000010
+	pbl_reg_writel	0x4	0xb8000010
+	pbl_reg_writel	0x4	0xb8000010
+
+	pbl_reg_writel	0x33	0xb8000008
+	pbl_reg_writel	0x1	0xb8000010
+
+	pbl_reg_writel	0x0382	0xb800000C
+	pbl_reg_writel	0x2	0xb8000010
+	pbl_reg_writel	0x0402	0xb800000C
+	pbl_reg_writel	0x2	0xb8000010
+
+	pbl_reg_writel	0x4270	0xb8000014
+
+	pbl_reg_writel	0x0e	0xb800001C
+	pbl_reg_writel	0x0e	0xb8000020
+	pbl_reg_writel	0x0e	0xb8000024
+	pbl_reg_writel	0x0e	0xb8000028
+
+	pbl_sleep	t2, 40
+
+	.set	pop
+.endm
+
+/* end of ar9344 section */
 
 .macro	hornet_mips24k_cp0_setup
 	.set push
