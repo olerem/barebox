@@ -18,10 +18,15 @@
 #ifndef __MACH_AR9344_DEBUG_LL__
 #define __MACH_AR9344_DEBUG_LL__
 
-/** @file
- *  This File contains declaration for early output support
- */
-#include <board/debug_ll.h>
+#include <mach/ar71xx_regs.h>
+
+#define DEBUG_LL_UART_ADDR	KSEG1ADDR(AR934X_UART0_BASE)
+#define DEBUG_LL_UART_SHIFT	AR934X_UART0_SHIFT
+
+#define DEBUG_LL_UART_CLK   (40000000)
+#define DEBUG_LL_UART_BPS   CONFIG_BAUDRATE
+#define DEBUG_LL_UART_DIVISOR   (DEBUG_LL_UART_CLK + (8 * DEBUG_LL_UART_BPS) / (16 * DEBUG_LL_UART_BPS))
+
 #include <asm/debug_ll_ns16550.h>
 
-#endif /* __MACH_AR9344_DEBUG_LL__ */
+#endif /* __MACH_AR9344_DEBUG_LL_H__ */
