@@ -18,6 +18,7 @@
 
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
+#include <mach/pbl_qca95xx_pll_init.h>
 #include <asm/pbl_nmon.h>
 
 	.macro	board_pbl_start
@@ -28,8 +29,7 @@
 
 	pbl_blt 0xbf000000 skip_pll_ram_config t8
 
-	pbl_ar9344_pll
-	pbl_ar9344_ddr_config
+	qca95xx_lowlevel_init
 
 	/* Initialize caches... */
 	mips_cache_reset
