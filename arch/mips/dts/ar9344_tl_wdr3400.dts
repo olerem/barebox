@@ -25,4 +25,5 @@
 
 &uart {
 	status = "okay";
+	clock-frequency = <40000000>;
 };
