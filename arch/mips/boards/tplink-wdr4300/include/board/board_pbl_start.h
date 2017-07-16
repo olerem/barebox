@@ -26,11 +26,7 @@
 
 	mips_barebox_10h
 
-//	hornet_mips24k_cp0_setup
-
 	pbl_blt 0xbf000000 skip_pll_ram_config t8
-
-//	hornet_1_1_war
 
 	pbl_ar9344_pll
 	pbl_ar9344_ddr_config
@@ -42,15 +38,7 @@
 	dcache_enable
 
 skip_pll_ram_config:
-//	pbl_ar9331_uart_enable
-//	debug_ll_ar9331_init
 	mips_nmon
-
-	/*
-	 * It is amazing but we have to enable MDIO on GPIO
-	 * to use GPIO26 for the "WPS" LED and GPIO27 for the "3G" LED.
-	 */
-//	pbl_ar9331_mdio_gpio_enable
 
 	copy_to_link_location	pbl_start
 
