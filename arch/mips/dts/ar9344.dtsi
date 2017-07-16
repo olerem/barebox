@@ -12,7 +12,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "mips,mips24Kc";
+			compatible = "mips,mips74Kc";
 		//	clocks = <&pll ATH79_CLK_CPU>;
 			reg = <0>;
 		};
@@ -40,11 +40,12 @@
 			#size-cells = <1>;
 
 			uart: uart@18020000 {
-				compatible = "qca,ar9344-uart";
-				reg = <0x18020000 0x18>;
+				compatible = "ns16550";
+				reg = <0x18020000 0x20>;
 
 				clocks = <&ref>;
 				clock-names = "uart";
+				reg-shift = <2>;
 
 				status = "disabled";
 			};
