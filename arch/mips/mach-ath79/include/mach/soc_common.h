@@ -9,7 +9,11 @@
 #ifndef _SOC_COMMON_H_
 #define _SOC_COMMON_H_
 
+#ifndef __ASSEMBLER__
 #include <linux/bitops.h>
+#else
+#define BIT(nr)  (1 << (nr))
+#endif
 
 #ifndef SOC_TYPE
 	#error "SOC_TYPE is not defined!"
