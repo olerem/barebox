@@ -13,6 +13,7 @@
 #include <linux/bitops.h>
 #else
 #define BIT(nr)  (1 << (nr))
+#define BITS(_start, _bits)             (((1 << (_bits)) - 1) << _start)
 #endif
 
 #ifndef SOC_TYPE
