@@ -16,6 +16,11 @@
  *
  */
 
+#include <mach/soc_list.h>
+#define SOC_TYPE QCA_AR9344_SOC
+#include <mach/qca_pll_list.h>
+#define CONFIG_QCA_PLL  QCA_PLL_PRESET_650_400_200
+
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
 #include <mach/pbl_qca95xx_pll_init.h>
