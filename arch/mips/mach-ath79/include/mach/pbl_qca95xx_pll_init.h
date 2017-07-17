@@ -87,7 +87,6 @@ rtc_wait_on:
 	beqz t9, rtc_wait_on
 	nop
 
-#if 0
 /*
  * Check XTAL type and include dedicated PLL/clocks values,
  * predefined in header file, based on selected preset configuration
@@ -154,7 +153,6 @@ cpu_pll_dither:
 ddr_pll_dither:
 	li  t8, QCA_PLL_DDR_PLL_DITHER_REG
 	lw  t9, 0(t8)
-#endif
 	and t9, t9, ~QCA_PLL_DDR_PLL_DITHER_NFRAC_MIN_MASK
 	or  t9, t9, reg_ddr_pll_dit
 	sw  t9, 0(t8)
