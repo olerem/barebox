@@ -52,6 +52,7 @@ struct ns16550_priv {
 	unsigned iobase;
 	void (*write_reg)(struct ns16550_priv *, uint8_t val, unsigned offset);
 	uint8_t (*read_reg)(struct ns16550_priv *, unsigned offset);
+	int is_be;
 };
 
 struct ns16550_drvdata {
@@ -92,6 +93,16 @@ static uint8_t ns16550_read_reg_mmio_32(struct ns16550_priv *priv, unsigned offs
 static void ns16550_write_reg_mmio_32(struct ns16550_priv *priv, uint8_t val, unsigned offset)
 {
 	writel(val, priv->mmiobase + offset);
+}
+
+static uint8_t ns16550_read_reg_mmio_32be(struct ns16550_priv *priv, unsigned offset)
+{
+	return ioread32be(priv->mmiobase + offset);
+}
+
+static void ns16550_write_reg_mmio_32be(struct ns16550_priv *priv, uint8_t val, unsigned offset)
+{
+	iowrite32be(val, priv->mmiobase + offset);
 }
 
 static uint8_t ns16550_read_reg_ioport_8(struct ns16550_priv *priv, unsigned offset)
@@ -247,7 +258,8 @@ static void ns16550_qca_ar9344_init_port(struct console_device *cdev)
 {
 	struct ns16550_priv *priv = to_ns16550_priv(cdev);
 
-	ns16550_serial_init_port(cdev);
+	priv->is_be = 1;
+	//ns16550_serial_init_port(cdev);
 }
 
 /*********** Exposed Functions **********************************/
@@ -312,8 +324,13 @@ static void ns16550_probe_dt(struct device_d *dev, struct ns16550_priv *priv)
 			priv->write_reg = ns16550_write_reg_mmio_16;
 			break;
 		case 4:
-			priv->read_reg = ns16550_read_reg_mmio_32;
-			priv->write_reg = ns16550_write_reg_mmio_32;
+			if (priv->is_be) {
+				priv->read_reg = ns16550_read_reg_mmio_32be;
+				priv->write_reg = ns16550_write_reg_mmio_32be;
+			} else {
+				priv->read_reg = ns16550_read_reg_mmio_32;
+				priv->write_reg = ns16550_write_reg_mmio_32;
+			}
 			break;
 		default:
 			dev_err(dev, "unsupported reg-io-width (%d)\n",
@@ -376,8 +393,13 @@ static int ns16550_init_iomem(struct device_d *dev, struct ns16550_priv *priv)
 		priv->write_reg = ns16550_write_reg_mmio_16;
 		break;
 	case IORESOURCE_MEM_32BIT:
-		priv->read_reg = ns16550_read_reg_mmio_32;
-		priv->write_reg = ns16550_write_reg_mmio_32;
+		if (priv->is_be) {
+			priv->read_reg = ns16550_read_reg_mmio_32be;
+			priv->write_reg = ns16550_write_reg_mmio_32be;
+		} else {
+			priv->read_reg = ns16550_read_reg_mmio_32;
+			priv->write_reg = ns16550_write_reg_mmio_32;
+		}
 		break;
 	}
 
