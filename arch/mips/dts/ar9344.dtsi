@@ -30,7 +30,7 @@
 		#size-cells = <1>;
 
 		uart0: uart@18020000 {
-			compatible = "ns16550a", "qca,ar9344-uart0";
+			compatible = "qca,ar9344-uart0";
 			reg = <0x18020000 0x20>;
 
 			reg-shift = <2>;
