@@ -243,6 +243,13 @@ static void ns16550_jz_init_port(struct console_device *cdev)
 	ns16550_serial_init_port(cdev);
 }
 
+static void ns16550_qca_ar9344_init_port(struct console_device *cdev)
+{
+	struct ns16550_priv *priv = to_ns16550_priv(cdev);
+
+	ns16550_serial_init_port(cdev);
+}
+
 /*********** Exposed Functions **********************************/
 
 /**
@@ -335,6 +342,11 @@ static __maybe_unused struct ns16550_drvdata jz_drvdata = {
 
 static __maybe_unused struct ns16550_drvdata tegra_drvdata = {
 	.init_port = ns16550_serial_init_port,
+	.linux_console_name = "ttyS",
+};
+
+static __maybe_unused struct ns16550_drvdata qca_ar9344_drvdata = {
+	.init_port = ns16550_qca_ar9344_init_port,
 	.linux_console_name = "ttyS",
 };
 
@@ -511,6 +523,12 @@ static struct of_device_id ns16550_serial_dt_ids[] = {
 	{
 		.compatible = "ingenic,jz4740-uart",
 		.data = &jz_drvdata,
+	},
+#endif
+#if IS_ENABLED(CONFIG_SOC_QCA_AR9344)
+	{
+		.compatible = "qca,ar9344-uart0",
+		.data = &qca_ar9344_drvdata,
 	},
 #endif
 	{
