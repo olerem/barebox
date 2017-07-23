@@ -4,6 +4,9 @@ config ARCH_TEXT_BASE
 	hex
 	default 0xa0800000
 
+config SOC_QCA_AR9344
+	bool
+
 choice
 	prompt "Board type"
 
