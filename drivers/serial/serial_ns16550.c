@@ -259,7 +259,9 @@ static void ns16550_qca_ar9344_init_port(struct console_device *cdev)
 	struct ns16550_priv *priv = to_ns16550_priv(cdev);
 
 	priv->is_be = 1;
-	//ns16550_serial_init_port(cdev);
+	priv->read_reg = ns16550_read_reg_mmio_32be;
+	priv->write_reg = ns16550_write_reg_mmio_32be;
+	ns16550_serial_init_port(cdev);
 }
 
 /*********** Exposed Functions **********************************/
