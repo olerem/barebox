@@ -39,16 +39,22 @@
 
 	ar9344_1_dot_1_ll_init
 
-	hornet_1_1_war
+	debug_ll_outc '3'
+
+//	hornet_1_1_war
+
+	debug_ll_outc '4'
 
 	/* Initialize caches... */
-	mips_cache_reset
+//	mips_cache_reset
+
+	debug_ll_outc '5'
 
 	/* ... and enable them */
-	dcache_enable
+//	dcache_enable
 
 skip_pll_ram_config:
-	debug_ll_outc '3'
+	debug_ll_outc '6'
 	debug_ll_outnl
 
 	mips_nmon
