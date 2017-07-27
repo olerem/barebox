@@ -67,7 +67,6 @@
 	.set	push
 	.set	noreorder
 
-	debug_ll_outc 'x'
 	set_bb_pll(DPLL2_ADDRESS_c4, 0x13210f00);
 	set_bb_pll(DPLL3_ADDRESS_c8, 0x03000000);
 	set_bb_pll(DPLL2_ADDRESS_44, 0x13210f00);
