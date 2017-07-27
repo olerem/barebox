@@ -67,10 +67,15 @@
 	.set	push
 	.set	noreorder
 
+	/* mww 0xb81161C4 0x13210f00 OK */
 	set_bb_pll(DPLL2_ADDRESS_c4, 0x13210f00);
+	/* mww 0xb81161C8 0x03000000 OK */
 	set_bb_pll(DPLL3_ADDRESS_c8, 0x03000000);
+	/* mww 0xb8116244 0x13210f00 OK */
 	set_bb_pll(DPLL2_ADDRESS_44, 0x13210f00);
+	/* mww 0xb8116248 0x03000000 OK */
 	set_bb_pll(DPLL3_ADDRESS_48, 0x03000000);
+	/* mww 0xb8116248 0x03000000 OK */
 	set_bb_pll(DPLL3_ADDRESS_88, 0x03000000);
 
 	li	t5,	KSEG1ADDR(WASP_BOOTSTRAP_REG);
@@ -80,17 +85,25 @@
 	beq	zero,	t6,	setup_ref25_val
 	nop
 setup_ref40_val:
+	/* 1280 */
 	li	t5,	CPU_PLL_CONFIG_NINT_VAL_40
+	/* 20480  */
 	li	t6,	DDR_PLL_CONFIG_NINT_VAL_40
+	/* 0 */
 	li	t7,	CPU_PLL_NFRAC_40
+	/* 0 */
 	li	t9,	DDR_PLL_NFRAC_40
 	b	1f
 	nop
 
 setup_ref25_val:
+	/* 2048 */
 	li	t5,	CPU_PLL_CONFIG_NINT_VAL_25
+	/* 0x8000 */
 	li	t6,	DDR_PLL_CONFIG_NINT_VAL_25
+	/* 0 */
 	li	t7,	CPU_PLL_NFRAC_25
+	/* 0 */
 	li	t9,	DDR_PLL_NFRAC_25
 
 1:
@@ -100,13 +113,15 @@ setup_ref25_val:
 			CPU_PLL_DITHER_UPDATE_COUNT_SET(0xf));
 	or	t4,	t4,	t7
 
-	/* 0x21000 */
+	/* not 0x21000 */
+	/* 0x81000 TODO */
 	li	t8,	(CPU_PLL_CONFIG_REF_DIV_VAL | \
 			CPU_PLL_CONFIG_RANGE_VAL | \
 			CPU_PLL_CONFIG_OUT_DIV_VAL2);
 	or	t5,	t5,	t8
 
-	/* 0x210000 */
+	/* not 0x210000 */
+	/* 0x810000 TODO */
 	li	t8,	(DDR_PLL_CONFIG_REF_DIV_VAL | \
 			DDR_PLL_CONFIG_RANGE_VAL | \
 			DDR_PLL_CONFIG_OUT_DIV_VAL2);
@@ -144,34 +159,41 @@ read_from_flash:
 pll_bypass_set:
 	/* reg, mask, val  */
 	/* 0xb8050008, 0xfffffffb, 0x4 */
+	/* mww 0xb8050008 0x0130001C ? */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_SET(1));
 	/* 0xb8050008, 0xfffffff7, 0x8 */
+	/* mww 0xb8050008 0x0130001C ? */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_SET(1));
 	/* 0xb8050008, 0xffffffef, 0x10 */
+	/* mww 0xb8050008 0x0130001C ? */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(1));
 
 init_cpu_pll:
 	/* 0xb8050000 */
 	li	t7,	KSEG1ADDR(AR934X_CPU_PLL_CONFIG);
 	/* 0x40000000 | 0x21000 | 0x380 */
-	li	t8,	CPU_PLL_CONFIG_PLLPWD_SET(1)
+	//li	t8,	CPU_PLL_CONFIG_PLLPWD_SET(1)
 	/* 0x40021380 */
-	or	t8,	t8,	t5
+	//or	t8,	t8,	t5
+	/* mww 0xb8050000 0x40021380 TODO */
+	li	t8,	0x40021380;
 	sw	t8,	0(t7);
 
 init_ddr_pll:
 	/* 0xb8050004 */
 	li	t7,	KSEG1ADDR(AR934X_DDR_PLL_CONFIG);
-	li	t8,	DDR_PLL_CONFIG_PLLPWD_SET(1)
+	//li	t8,	DDR_PLL_CONFIG_PLLPWD_SET(1)
 	/* 0x40000000 | 0x210000 | 0x3000 ? diff with openocd */
-	or	t8,	t8,	t6
+	//or	t8,	t8,	t6
 	/* 0x40213000 */
+	/* mww 0xb8050004 0x40815800 TODO ! */
+	li	t8,	0x40815800
 	sw	t8,	0(t7);
 
 init_ahb_pll:
 	/* 0xb8050008 */
 	li	t7,	KSEG1ADDR(AR934X_CPU_DDR_CLOCK_CONTROL);
-	/* 0x0130801c */
+	/* 0x0130801C */
 	li	t8,	(CPU_DDR_CLOCK_CONTROL_AHB_DIV_VAL | \
 			CPU_DDR_CLOCK_CONTROL_AHB_CLK_DDR | \
 			CPU_DDR_CLOCK_CONTROL_DDR_CLK_DDR | \
@@ -181,6 +203,7 @@ init_ahb_pll:
 			CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_SET(1) | \
 			CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_SET(1) | \
 			CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(1));
+	/* mww 0xb8050008 0x0130801C OK */
 	sw	t8,	0(t7);
 
 srif_set:
@@ -243,10 +266,15 @@ cpu_pll_is_not_locked:
 	/* count on  0xbd000004 */
 	inc_loop_count(ATH_CPU_COUNT_LOC);
 
+	/* mww 0xb81161C4 0x10810F00 OK */
 	set_srif_pll(0xb81161c4, (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
+	/* mww 0xb81161C0 0x41C00000 */
 	set_srif_pll_reg(0xb81161c0, t4);
+	/* mww 0xb81161C4 0xD0810F00 OK */
 	set_srif_pll(0xb81161c4, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
+	/* mww 0xb81161C8 0x03000000 OK */
 	set_srif_pll(0xb81161c8, (6 << 23));
+	/* mww 0xb81161C4 0xD0800F00 OK */
 	set_srif_pll(0xb81161c4, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7));
 
 cpu_clear_do_meas1:
@@ -255,6 +283,7 @@ cpu_clear_do_meas1:
 	lw	t8,	0(t7)
 	li	t9,	~CPU_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
+	/* mww 0xb81161C8 0x03000000 OK */
 	sw	t8,	0(t7)
 
 cpu_set_do_meas:
@@ -263,11 +292,14 @@ cpu_set_do_meas:
 	lw	t8,	0(t7)
 	li	t9,	CPU_DPLL3_DO_MEAS_SET(1)
 	or	t8,	t8,	t9
+	/* mww 0xb81161C8 0x43000000 */
 	sw	t8,	0(t7)
 
+	/* 0xb81161cc */
 	li	t7,	KSEG1ADDR(CPU_DPLL4_ADDRESS)
 cpu_wait_for_meas_done:
 	lw	t8,	0(t7)
+	/* val & 0x8 */
 	andi	t8,	t8,	CPU_DPLL4_MEAS_DONE_SET(1)
 	beqz	t8,	cpu_wait_for_meas_done
 	nop
@@ -278,12 +310,14 @@ cpu_clear_do_meas2:
 	lw	t8,	0(t7)
 	li	t9,	~CPU_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
+	/* mww 0xb81161C8 0x030003E8 probably */
 	sw	t8,	0(t7)
 
 cpu_read_sqsum_dvc:
 	/* 0xb81161c8 */
 	li	t7,	KSEG1ADDR(CPU_DPLL3_ADDRESS)
 	lw	t8,	0(t7)
+	/* 0x7ffff8 */
 	li	t9,	CPU_DPLL3_SQSUM_DVC_MASK
 	and	t8,	t8,	t9
 	sra	t8,	t8,	CPU_DPLL3_SQSUM_DVC_LSB
@@ -293,16 +327,22 @@ cpu_read_sqsum_dvc:
 	nop
 
 	/* DDR */
+	/* 0xdb000000 */
 	clear_loop_count(ATH_DDR_COUNT_LOC)
 
 ddr_pll_is_not_locked:
 
 	inc_loop_count(ATH_DDR_COUNT_LOC)
 
+	/* mww 0xb8116244 0x10810F00 OK */
 	set_srif_pll(0xb8116244, (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
+	/* mww 0xb8116240 0x41680000 OK? */
 	set_srif_pll_reg(0xb8116240, t5);
+	/* mww 0xb8116244 0xD0810F00 *OK /
 	set_srif_pll(0xb8116244, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
+	/* mww 0xb8116248 0x03000000 OK */
 	set_srif_pll(0xb8116248, (6 << 23));
+	/* mww 0xb8116244 0xD0800F00 OK */
 	set_srif_pll(0xb8116244, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7));
 
 ddr_clear_do_meas1:
@@ -310,6 +350,7 @@ ddr_clear_do_meas1:
 	lw	t8,	0(t7)
 	li	t9,	~DDR_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
+	/* mww 0xb8116248 0x03000000 OK */
 	sw	t8,	0(t7)
 
 
@@ -318,6 +359,7 @@ ddr_set_do_meas:
 	lw	t8,	0(t7)
 	li	t9,	DDR_DPLL3_DO_MEAS_SET(1)
 	or	t8,	t8,	t9
+	/* mww 0xb8116248 0x43000000 OK */
 	sw	t8,	0(t7)
 
 	li	t7,	KSEG1ADDR(DDR_DPLL4_ADDRESS)
@@ -332,6 +374,7 @@ ddr_clear_do_meas2:
 	lw	t8,	0(t7)
 	li	t9,	~DDR_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
+	/* mww 0xb8116248 0x03000718 */
 	sw	t8,	0(t7)
 
 ddr_read_sqsum_dvc:
@@ -342,19 +385,26 @@ ddr_read_sqsum_dvc:
 	sra	t8,	t8,	DDR_DPLL3_SQSUM_DVC_LSB
 	li	t9,	0x40000
 	subu	t8,	t8,	t9
+	/**/
 	bgez	t8,	ddr_pll_is_not_locked
 	nop
 
 pll_bypass_unset:
+	/* mww 0xb8050008 0x01308018 */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_SET(0));
+	/* mww 0xb8050008 0x01308010 */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_SET(0));
+	/* mww 0xb8050008 0x01308000 */
 	cpu_ddr_control_set (CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_MASK, CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(0));
 
 ddr_pll_dither_unset:
+	/* mww 0xb8050044 0x78180200 TODO */
 	li	t7,	KSEG1ADDR(AR934X_DDR_PLL_DITHER);
+	li	t3,	0x78180200;
 	sw	t3,	0(t7);
 
 cpu_pll_dither_unset:
+	/* mww 0xb8050048 0x41C00000 OK */
 	li	t7,	KSEG1ADDR(AR934X_CPU_PLL_DITHER);
 	sw	t4,	0(t7);
 
