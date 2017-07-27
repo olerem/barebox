@@ -67,6 +67,7 @@
 	.set	push
 	.set	noreorder
 
+	debug_ll_outc 'x'
 	set_bb_pll(DPLL2_ADDRESS_c4, 0x13210f00);
 	set_bb_pll(DPLL3_ADDRESS_c8, 0x03000000);
 	set_bb_pll(DPLL2_ADDRESS_44, 0x13210f00);
@@ -119,6 +120,7 @@ setup_ref25_val:
 
 	or	t3,	t3,	t9
 
+#if 0
 	/* 0x9f04ffe0 */
 	li	t7,	0x9f04ffe0
 	//li	t7,	PLL_CONFIG_VAL_F
@@ -127,7 +129,7 @@ setup_ref25_val:
 	li	t7,	PLL_MAGIC
 	beq	t7,	t8,	read_from_flash
 	nop
-	j	pll_bypass_set
+	b	pll_bypass_set
 	nop
 read_from_flash:
 	/* 0x9f04ffe4 */
@@ -137,6 +139,7 @@ read_from_flash:
 	lw	t4,	4(t7)
 	lw	t6,	8(t7)
 	lw	t3,	12(t7)
+#endif
 
 
 pll_bypass_set:
@@ -182,6 +185,7 @@ init_ahb_pll:
 	sw	t8,	0(t7);
 
 srif_set:
+#if 0
 	/* See if we have to read the pll values from flash */
 	/* 0x9f04ffd4 */
 	//li	t7,	SRIF_PLL_CONFIG_VAL_F
@@ -191,6 +195,7 @@ srif_set:
 	li	t7,	SRIF_PLL_MAGIC
 	beq	t7,	t8,	read_srif_from_flash
 	nop
+#endif
 
 	/* Use built in values, based on ref clock */
 	/* 0xb80600b0 */
@@ -208,7 +213,7 @@ srif_set:
 	li	t4,	((0x8 << 27) | (112 << 18) | 0);// cpu freq = (40 MHz refclk/refdiv 8) * Nint
 	/* 0x41680000 */
 	li	t5,	((0x8 << 27) | (90 << 18) | 0);	// ddr freq = (40 MHz refclk/refdiv 8) * Nint
-	j	2f
+	b	2f
 	nop
 1:
 
@@ -217,15 +222,18 @@ srif_set:
 	/* 0x29680000 */
 	li	t5,	((0x5 << 27) | (90 << 18) | 0);	// ddr freq = (25 MHz refclk/refdiv 5) * Nint
 
-	j	2f
+	b	2f
 	nop
 
+#if 0
 read_srif_from_flash:
 	li	t7,	0x9f04ffd4 + 4
 	//li	t7,	SRIF_PLL_CONFIG_VAL_F + 4
 	lw	t4,	0(t7);	// CPU PLL
 	lw	t5,	4(t7);	// DDR PLL
 	/* CPU */
+#endif
+
 2:
 
 	/* 0 to 0xbd000004 */
@@ -284,7 +292,6 @@ cpu_read_sqsum_dvc:
 	subu	t8,	t8,	t9
 	bgez	t8,	cpu_pll_is_not_locked
 	nop
-
 
 	/* DDR */
 	clear_loop_count(ATH_DDR_COUNT_LOC)
