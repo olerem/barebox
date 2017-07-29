@@ -412,16 +412,15 @@ cpu_pll_dither_unset:
 .endm
 
 
-#define CFG_934X_DDR2_EN_TWL_VAL	0x1659
-#define USEC_MULT			100
+#define CFG_934X_DDR2_EN_TWL_VAL	0x0e59
+#define USEC_MULT			1
 
 .macro	pbl_ar9344_ddr2_config
 	.set	push
 	.set	noreorder
 
-	pbl_reg_writel	
-
-	// 0x180000b8 0x1659
+#if 0
+	// 0x180000b8 0x0e59
 	pbl_reg_writel	CFG_934X_DDR2_EN_TWL_VAL, AR7240_DDR_DDR2_CONFIG
 	pbl_sleep	t2, 100 * USEC_MULT
 
@@ -508,17 +507,20 @@ setup_16bit_1:
 	pbl_reg_writel	CFG_DDR_REFRESH_VAL, AR7240_DDR_REFRESH
 	pbl_sleep	t2, 100 * USEC_MULT
 
-#define CFG_934X_DDR2_TAP_VAL	0x10012
+//#define CFG_934X_DDR2_TAP_VAL	0x10012
+#define CFG_934X_DDR2_TAP_VAL	0xe
 	// 0x1800001c
 	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL0
 	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL1
 
 
+#define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_32 0xff
+#define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_16 0xffff
 	li	t5,	KSEG1ADDR(WASP_BOOTSTRAP_REG);
 	li	t6,	BIT(3)
 	lw	t7,	0(t5);
 	and	t6,	t7,	t6
-	beq	zero,	t6,	setup_16bit_1
+	beq	zero,	t6,	setup_16bit_2
 	nop
 setup_32bit_2:
 	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL2
@@ -542,6 +544,48 @@ setup_16bit_2:
 
 	pbl_reg_writel 0xfffff, AR7240_AHB_MASTER_TIMEOUT
 	pbl_sleep	t2, 100 * USEC_MULT
+#endif
+
+	pbl_reg_writel  0x40,        0xb8000108 
+	pbl_reg_writel  0xFF,        0xb8000018
+	pbl_reg_writel  0x74444444,  0xb80000C4
+	pbl_reg_writel  0x0222,      0xb80000C8
+	pbl_reg_writel  0xFFFFF,     0xb80000CC
+				   
+	pbl_reg_writel  0xC7D48CD0,  0xb8000000
+	pbl_reg_writel  0x9DD0E6A8,  0xb8000004
+				   
+	pbl_reg_writel  0x0E59,      0xb80000B8
+	pbl_reg_writel  0x9DD0E6A8,  0xb8000004
+				   
+	pbl_reg_writel  0x08,        0xb8000010
+	pbl_reg_writel  0x08,        0xb8000010
+	pbl_reg_writel  0x10,        0xb8000010
+	pbl_reg_writel  0x20,        0xb8000010
+	pbl_reg_writel  0x02,        0xb800000C
+	pbl_reg_writel  0x02,        0xb8000010
+				   
+	pbl_reg_writel  0x0133,      0xb8000008
+	pbl_reg_writel  0x1,         0xb8000010
+	pbl_reg_writel  0x8,         0xb8000010
+	pbl_reg_writel  0x8,         0xb8000010
+	pbl_reg_writel  0x4,         0xb8000010
+	pbl_reg_writel  0x4,         0xb8000010
+				   
+	pbl_reg_writel  0x33,        0xb8000008
+	pbl_reg_writel  0x1,        0xb8000010
+				   
+	pbl_reg_writel  0x0382,      0xb800000C
+	pbl_reg_writel  0x2,         0xb8000010
+	pbl_reg_writel  0x0402,      0xb800000C
+	pbl_reg_writel  0x2,         0xb8000010
+				   
+	pbl_reg_writel  0x4270,      0xb8000014
+				   
+	pbl_reg_writel  0x0e,        0xb800001C
+	pbl_reg_writel  0x0e,        0xb8000020
+	pbl_reg_writel  0x0e,        0xb8000024
+	pbl_reg_writel  0x0e,        0xb8000028
 
 	.set	pop
 .endm
