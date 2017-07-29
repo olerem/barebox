@@ -338,7 +338,7 @@ ddr_pll_is_not_locked:
 	set_srif_pll(0xb8116244, (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
 	/* mww 0xb8116240 0x41680000 OK? */
 	set_srif_pll_reg(0xb8116240, t5);
-	/* mww 0xb8116244 0xD0810F00 *OK /
+	/* mww 0xb8116244 0xD0810F00 OK */
 	set_srif_pll(0xb8116244, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
 	/* mww 0xb8116248 0x03000000 OK */
 	set_srif_pll(0xb8116248, (6 << 23));
@@ -410,4 +410,140 @@ cpu_pll_dither_unset:
 
 	.set	pop
 .endm
+
+
+#define CFG_934X_DDR2_EN_TWL_VAL	0x1659
+#define USEC_MULT			100
+
+.macro	pbl_ar9344_ddr2_config
+	.set	push
+	.set	noreorder
+
+	pbl_reg_writel	
+
+	// 0x180000b8 0x1659
+	pbl_reg_writel	CFG_934X_DDR2_EN_TWL_VAL, AR7240_DDR_DDR2_CONFIG
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x18000010 0x10
+	pbl_reg_writel	0x10, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+	// 0x18000010 0x20
+	pbl_reg_writel	0x20, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+	li	t5,	KSEG1ADDR(WASP_BOOTSTRAP_REG);
+	li	t6,	BIT(3)
+	lw	t7,	0(t5);
+	and	t6,	t7,	t6
+	beq	zero,	t6,	setup_16bit_1
+	nop
+setup_32bit_1:
+	pbl_reg_writel	BIT(6), AR7240_DDR_CTL_CONFIG
+	b	1f
+	nop
+setup_16bit_1:
+	pbl_reg_clr	BIT(6), AR7240_DDR_CTL_CONFIG
+1:
+
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_934X_DDR2_CONFIG_VAL	0xc7d48cd0
+	// 0x18000000
+	pbl_reg_writel	CFG_934X_DDR2_CONFIG_VAL, AR7240_DDR_CONFIG
+	pbl_sleep	t2, 100 * USEC_MULT
+
+#define CFG_934X_DDR2_CONFIG2_VAL	0x9dd0e6a8
+	// 0x18000004
+	pbl_reg_writel	CFG_934X_DDR2_CONFIG2_VAL, AR7240_DDR_CONFIG2
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x18000010 0x8
+	pbl_reg_writel	0x8, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_934X_DDR2_MODE_VAL_INIT	0x133
+	// 0x18000008
+	pbl_reg_writel	CFG_934X_DDR2_MODE_VAL_INIT, AR7240_DDR_MODE
+	pbl_sleep	t2, 1000 * USEC_MULT
+
+	// 0x18000010 0x1
+	pbl_reg_writel	0x1, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_934X_DDR2_EXT_MODE_VAL_INIT	0x382
+	// 0x1800000c 0x382
+	pbl_reg_writel	CFG_934X_DDR2_EXT_MODE_VAL_INIT, AR7240_DDR_EXT_MODE
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x18000010 0x2
+	pbl_reg_writel	0x2, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_934X_DDR2_EXT_MODE_VAL	0x402
+	// 0x1800000c
+	pbl_reg_writel	CFG_934X_DDR2_EXT_MODE_VAL, AR7240_DDR_EXT_MODE
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x18000010 0x2
+	pbl_reg_writel	0x2, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+	// 0x18000010 0x8
+	pbl_reg_writel	0x8, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_934X_DDR2_MODE_VAL	0x33
+	// 0x18000008
+	pbl_reg_writel	CFG_934X_DDR2_MODE_VAL, AR7240_DDR_MODE
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x18000010
+	pbl_reg_writel	0x1, AR7240_DDR_CONTROL
+	pbl_sleep	t2, 10 * USEC_MULT
+
+#define CFG_DDR_REFRESH_VAL	0x4270
+	// 0x18000014
+	pbl_reg_writel	CFG_DDR_REFRESH_VAL, AR7240_DDR_REFRESH
+	pbl_sleep	t2, 100 * USEC_MULT
+
+#define CFG_934X_DDR2_TAP_VAL	0x10012
+	// 0x1800001c
+	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL0
+	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL1
+
+
+	li	t5,	KSEG1ADDR(WASP_BOOTSTRAP_REG);
+	li	t6,	BIT(3)
+	lw	t7,	0(t5);
+	and	t6,	t7,	t6
+	beq	zero,	t6,	setup_16bit_1
+	nop
+setup_32bit_2:
+	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL2
+	pbl_reg_writel	CFG_934X_DDR2_TAP_VAL, AR7240_DDR_TAP_CONTROL3
+	pbl_reg_writel	CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_32, AR7240_DDR_RD_DATA_THIS_CYCLE
+	b	1f
+	nop
+setup_16bit_2:
+	pbl_reg_writel	CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_16, AR7240_DDR_RD_DATA_THIS_CYCLE
+1:
+
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x180000c4 0x74444444
+	pbl_reg_writel	0x74444444, AR7240_DDR_BURST
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	// 0x180000c8 0x222
+	pbl_reg_writel	0x222, AR7240_DDR_BURST2
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	pbl_reg_writel 0xfffff, AR7240_AHB_MASTER_TIMEOUT
+	pbl_sleep	t2, 100 * USEC_MULT
+
+	.set	pop
+.endm
+
 #endif /* __ASM_MACH_ATH79_PBL_LL_INIT_AR9344_1_1_H */
