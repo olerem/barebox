@@ -33,7 +33,7 @@
 
 	hornet_mips24k_cp0_setup
 
-	pbl_blt 0xbf000000 skip_pll_ram_config t8
+//	pbl_blt 0xbf000000 skip_pll_ram_config t8
 
 	debug_ll_outc '2'
 
