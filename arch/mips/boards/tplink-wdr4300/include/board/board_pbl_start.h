@@ -39,6 +39,10 @@
 
 	ar9344_1_dot_1_ll_init
 
+	debug_ll_outc 'x'
+
+	pbl_ar9344_ddr2_config
+
 	debug_ll_outc '3'
 
 //	hornet_1_1_war
