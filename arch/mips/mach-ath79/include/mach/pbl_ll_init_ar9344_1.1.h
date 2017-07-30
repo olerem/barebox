@@ -6,6 +6,69 @@
 #include <mach/ar7240_soc.h>
 #include <mach/ar934x_soc.h>
 
+#define AR7240_PLL_BASE                 AR7240_APB_BASE+0x00050000
+#define AR934X_CPU_PLL_CONFIG                 AR7240_PLL_BASE+0x0000
+#define AR934X_DDR_PLL_CONFIG                 AR7240_PLL_BASE+0x0004
+#define AR934X_CPU_DDR_CLOCK_CONTROL          AR7240_PLL_BASE+0x0008
+#define AR934X_DDR_PLL_DITHER                 AR7240_PLL_BASE+0x0044
+
+#define CPU_DPLL3_ADDRESS			0x181161c8
+
+#define	ATH_DDR_COUNT_LOC	0xbd000000
+#define	ATH_CPU_COUNT_LOC	0xbd000004
+
+#define DPLL2_ADDRESS_c4			0x181161c4
+#define DPLL3_ADDRESS_c8			CPU_DPLL3_ADDRESS
+#define DPLL2_ADDRESS_44			0x18116244
+#define DPLL3_ADDRESS_48			DDR_DPLL3_ADDRESS
+#define DPLL3_ADDRESS_88			0x18116188
+
+#define CPU_PLL_CONFIG_NINT_VAL_40	0x380
+#define DDR_PLL_CONFIG_NINT_VAL_40	0x3000
+#define CPU_PLL_NFRAC_40			0
+#define DDR_PLL_NFRAC_40			0
+
+#define CPU_PLL_CONFIG_NINT_VAL_25	0x580
+#define DDR_PLL_CONFIG_NINT_VAL_25	0x4c00
+#define CPU_PLL_NFRAC_25			0x659
+#define DDR_PLL_NFRAC_25			0x330cc
+
+#define CPU_PLL_DITHER_DITHER_EN_LSB                                 31
+#define CPU_PLL_DITHER_DITHER_EN_MASK                                0x80000000
+#define CPU_PLL_DITHER_DITHER_EN_SET(x)                              (((x) << CPU_PLL_DITHER_DITHER_EN_LSB) & CPU_PLL_DITHER_DITHER_EN_MASK)
+
+#define CPU_PLL_DITHER_NFRAC_STEP_LSB                                12
+#define CPU_PLL_DITHER_NFRAC_STEP_MASK                               0x0003f000
+#define CPU_PLL_DITHER_NFRAC_STEP_SET(x)                             (((x) << CPU_PLL_DITHER_NFRAC_STEP_LSB) & CPU_PLL_DITHER_NFRAC_STEP_MASK)
+
+#define CPU_PLL_DITHER_UPDATE_COUNT_LSB                              18
+#define CPU_PLL_DITHER_UPDATE_COUNT_MASK                             0x00fc0000
+#define CPU_PLL_DITHER_UPDATE_COUNT_SET(x)                           (((x) << CPU_PLL_DITHER_UPDATE_COUNT_LSB) & CPU_PLL_DITHER_UPDATE_COUNT_MASK)
+
+#define DDR_PLL_DITHER_DITHER_EN_LSB                                 31
+#define DDR_PLL_DITHER_DITHER_EN_MASK                                0x80000000
+#define DDR_PLL_DITHER_DITHER_EN_SET(x)                              (((x) << DDR_PLL_DITHER_DITHER_EN_LSB) & DDR_PLL_DITHER_DITHER_EN_MASK)
+
+#define DDR_PLL_DITHER_NFRAC_STEP_LSB                                20
+#define DDR_PLL_DITHER_NFRAC_STEP_MASK                               0x07f00000
+#define DDR_PLL_DITHER_NFRAC_STEP_SET(x)                             (((x) << DDR_PLL_DITHER_NFRAC_STEP_LSB) & DDR_PLL_DITHER_NFRAC_STEP_MASK)
+
+#define DDR_PLL_DITHER_UPDATE_COUNT_LSB                              27
+#define DDR_PLL_DITHER_UPDATE_COUNT_MASK                             0x78000000
+#define DDR_PLL_DITHER_UPDATE_COUNT_SET(x)                           (((x) << DDR_PLL_DITHER_UPDATE_COUNT_LSB) & DDR_PLL_DITHER_UPDATE_COUNT_MASK)
+
+#define CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_LSB                     2
+#define CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_MASK                    0x00000004
+#define CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_SET(x)                  (((x) << CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_LSB) & CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_MASK)
+
+#define CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_LSB                     3
+#define CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_MASK                    0x00000008
+#define CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_SET(x)                  (((x) << CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_LSB) & CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_MASK)
+
+#define CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_LSB                     4
+#define CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_MASK                    0x00000010
+#define CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(x)                  (((x) << CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_LSB) & CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_MASK)
+
 /*
  * Helper macros.
  * These Clobber t7, t8 and t9
@@ -84,26 +147,19 @@
 	and	t6,	t7,	t6
 	beq	zero,	t6,	setup_ref25_val
 	nop
+
 setup_ref40_val:
-	/* 1280 */
 	li	t5,	CPU_PLL_CONFIG_NINT_VAL_40
-	/* 20480  */
 	li	t6,	DDR_PLL_CONFIG_NINT_VAL_40
-	/* 0 */
 	li	t7,	CPU_PLL_NFRAC_40
-	/* 0 */
 	li	t9,	DDR_PLL_NFRAC_40
 	b	1f
 	nop
 
 setup_ref25_val:
-	/* 2048 */
 	li	t5,	CPU_PLL_CONFIG_NINT_VAL_25
-	/* 0x8000 */
 	li	t6,	DDR_PLL_CONFIG_NINT_VAL_25
-	/* 0 */
 	li	t7,	CPU_PLL_NFRAC_25
-	/* 0 */
 	li	t9,	DDR_PLL_NFRAC_25
 
 1:
@@ -115,16 +171,12 @@ setup_ref25_val:
 
 	/* not 0x21000 */
 	/* 0x81000 TODO */
-	li	t8,	(CPU_PLL_CONFIG_REF_DIV_VAL | \
-			CPU_PLL_CONFIG_RANGE_VAL | \
-			CPU_PLL_CONFIG_OUT_DIV_VAL2);
+	li	t8,	0x21000;
 	or	t5,	t5,	t8
 
 	/* not 0x210000 */
 	/* 0x810000 TODO */
-	li	t8,	(DDR_PLL_CONFIG_REF_DIV_VAL | \
-			DDR_PLL_CONFIG_RANGE_VAL | \
-			DDR_PLL_CONFIG_OUT_DIV_VAL2);
+	li	t8,	0x210000;
 	or	t6,	t6,	t8
 
 	/* 0x78100000 */
@@ -133,28 +185,6 @@ setup_ref25_val:
 			DDR_PLL_DITHER_UPDATE_COUNT_SET(0xf));
 
 	or	t3,	t3,	t9
-
-#if 0
-	/* 0x9f04ffe0 */
-	li	t7,	0x9f04ffe0
-	//li	t7,	PLL_CONFIG_VAL_F
-	lw	t8,	0(t7)
-	/* 0xaabbccdd */
-	li	t7,	PLL_MAGIC
-	beq	t7,	t8,	read_from_flash
-	nop
-	b	pll_bypass_set
-	nop
-read_from_flash:
-	/* 0x9f04ffe4 */
-	li	t7,	0x9f04ffe0 + 4
-//	li	t7,	PLL_CONFIG_VAL_F + 4
-	lw	t5,	0(t7)
-	lw	t4,	4(t7)
-	lw	t6,	8(t7)
-	lw	t3,	12(t7)
-#endif
-
 
 pll_bypass_set:
 	/* reg, mask, val  */
@@ -191,33 +221,9 @@ init_ddr_pll:
 	sw	t8,	0(t7);
 
 init_ahb_pll:
-	/* 0xb8050008 */
-	li	t7,	KSEG1ADDR(AR934X_CPU_DDR_CLOCK_CONTROL);
-	/* 0x0130801C */
-	li	t8,	(CPU_DDR_CLOCK_CONTROL_AHB_DIV_VAL | \
-			CPU_DDR_CLOCK_CONTROL_AHB_CLK_DDR | \
-			CPU_DDR_CLOCK_CONTROL_DDR_CLK_DDR | \
-			CPU_DDR_CLOCK_CONTROL_CPU_CLK_CPU | \
-			CPU_DDR_CLOCK_CONTROL_DDR_POST_DIV | \
-			CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV | \
-			CPU_DDR_CLOCK_CONTROL_CPU_PLL_BYPASS_SET(1) | \
-			CPU_DDR_CLOCK_CONTROL_DDR_PLL_BYPASS_SET(1) | \
-			CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(1));
-	/* mww 0xb8050008 0x0130801C OK */
-	sw	t8,	0(t7);
+	pbl_reg_writel	0x0130801C, KSEG1ADDR(AR934X_CPU_DDR_CLOCK_CONTROL)
 
 srif_set:
-#if 0
-	/* See if we have to read the pll values from flash */
-	/* 0x9f04ffd4 */
-	//li	t7,	SRIF_PLL_CONFIG_VAL_F
-	li	t7,	0x9f04ffd4
-	lw	t8,	0(t7)
-	/* 0x73726966 */
-	li	t7,	SRIF_PLL_MAGIC
-	beq	t7,	t8,	read_srif_from_flash
-	nop
-#endif
 
 	/* Use built in values, based on ref clock */
 	/* 0xb80600b0 */
@@ -243,18 +249,6 @@ srif_set:
 	li	t4,	((0x5 << 27) | (112 << 18) | 0);// cpu freq = (25 MHz refclk/refdiv 5) * Nint
 	/* 0x29680000 */
 	li	t5,	((0x5 << 27) | (90 << 18) | 0);	// ddr freq = (25 MHz refclk/refdiv 5) * Nint
-
-	b	2f
-	nop
-
-#if 0
-read_srif_from_flash:
-	li	t7,	0x9f04ffd4 + 4
-	//li	t7,	SRIF_PLL_CONFIG_VAL_F + 4
-	lw	t4,	0(t7);	// CPU PLL
-	lw	t5,	4(t7);	// DDR PLL
-	/* CPU */
-#endif
 
 2:
 
