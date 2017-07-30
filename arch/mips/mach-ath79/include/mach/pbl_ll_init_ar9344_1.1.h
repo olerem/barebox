@@ -193,7 +193,7 @@
  *
  *****************************************************************************/
 
-.macro	ar9344_1_dot_1_ll_init
+.macro	pbl_ar9344_v11_pll_config
 	.set	push
 	.set	noreorder
 
@@ -435,7 +435,7 @@ cpu_pll_dither_unset:
 #define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_32	0xff
 #define CFG_DDR2_RD_DATA_THIS_CYCLE_VAL_16	0xffff
 
-.macro	pbl_ar9344_ddr2_config
+.macro	pbl_ar9344_v11_ddr2_config
 	.set	push
 	.set	noreorder
 
