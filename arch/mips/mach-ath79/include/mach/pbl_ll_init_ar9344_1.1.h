@@ -202,22 +202,21 @@ init_cpu_pll:
 	/* 0xb8050000 */
 	li	t7,	KSEG1ADDR(AR934X_CPU_PLL_CONFIG);
 	/* 0x40000000 | 0x21000 | 0x380 */
-	//li	t8,	CPU_PLL_CONFIG_PLLPWD_SET(1)
+	li	t8,	CPU_PLL_CONFIG_PLLPWD_SET(1)
 	/* 0x40021380 */
-	//or	t8,	t8,	t5
+	or	t8,	t8,	t5
 	/* mww 0xb8050000 0x40021380 TODO */
-	li	t8,	0x40021380;
+	//li	t8,	0x40021380;
 	sw	t8,	0(t7);
 
 init_ddr_pll:
 	/* 0xb8050004 */
 	li	t7,	KSEG1ADDR(AR934X_DDR_PLL_CONFIG);
-	//li	t8,	DDR_PLL_CONFIG_PLLPWD_SET(1)
+	li	t8,	DDR_PLL_CONFIG_PLLPWD_SET(1)
 	/* 0x40000000 | 0x210000 | 0x3000 ? diff with openocd */
-	//or	t8,	t8,	t6
+	or	t8,	t8,	t6
 	/* 0x40213000 */
 	/* mww 0xb8050004 0x40815800 TODO ! */
-	li	t8,	0x40815800
 	sw	t8,	0(t7);
 
 init_ahb_pll:
@@ -326,16 +325,14 @@ ddr_pll_is_not_locked:
 
 	inc_loop_count(ATH_DDR_COUNT_LOC)
 
-	/* mww 0xb8116244 0x10810F00 OK */
-	set_srif_pll(0xb8116244, (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
+	pbl_reg_writel 0x10810F00, 0xb8116244
+
 	/* mww 0xb8116240 0x41680000 OK? */
 	set_srif_pll_reg(0xb8116240, t5);
-	/* mww 0xb8116244 0xD0810F00 OK */
-	set_srif_pll(0xb8116244, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7) | (1 << 16));
-	/* mww 0xb8116248 0x03000000 OK */
-	set_srif_pll(0xb8116248, (6 << 23));
-	/* mww 0xb8116244 0xD0800F00 OK */
-	set_srif_pll(0xb8116244, (0x3 << 30) | (0x4 << 26) | (0x10 << 19) | (0x1e << 7));
+
+	pbl_reg_writel 0xD0810F00, 0xb8116244
+	pbl_reg_writel 0x03000000, 0xb8116248
+	pbl_reg_writel 0xD0800F00, 0xb8116244
 
 ddr_clear_do_meas1:
 	li	t7,	KSEG1ADDR(DDR_DPLL3_ADDRESS)
