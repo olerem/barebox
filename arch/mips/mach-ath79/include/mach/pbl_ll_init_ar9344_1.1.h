@@ -255,19 +255,19 @@ pll_bypass_set:
 		CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(1));
 
 init_cpu_pll:
-	li	t7,	KSEG1ADDR(AR934X_CPU_PLL_CONFIG);
+	li	t7,	AR934X_CPU_PLL_CONFIG
 	li	t8,	CPU_PLL_CONFIG_PLLPWD_SET(1)
 	or	t8,	t8,	t5
 	sw	t8,	0(t7);
 
 init_ddr_pll:
-	li	t7,	KSEG1ADDR(AR934X_DDR_PLL_CONFIG);
+	li	t7,	AR934X_DDR_PLL_CONFIG
 	li	t8,	DDR_PLL_CONFIG_PLLPWD_SET(1)
 	or	t8,	t8,	t6
 	sw	t8,	0(t7);
 
 init_ahb_pll:
-	pbl_reg_writel	0x0130801C, KSEG1ADDR(AR934X_CPU_DDR_CLOCK_CONTROL)
+	pbl_reg_writel	0x0130801C, AR934X_CPU_DDR_CLOCK_CONTROL
 
 srif_set:
 	/* Use built in values, based on ref clock */
@@ -364,7 +364,7 @@ ddr_pll_is_not_locked:
 	pbl_reg_writel 0xD0800F00, DPLL2_ADDRESS_44
 
 ddr_clear_do_meas1:
-	li	t7,	KSEG1ADDR(DDR_DPLL3_ADDRESS)
+	li	t7,	DDR_DPLL3_ADDRESS
 	lw	t8,	0(t7)
 	li	t9,	~DDR_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
@@ -372,7 +372,7 @@ ddr_clear_do_meas1:
 
 
 ddr_set_do_meas:
-	li	t7,	KSEG1ADDR(DDR_DPLL3_ADDRESS)
+	li	t7,	DDR_DPLL3_ADDRESS
 	lw	t8,	0(t7)
 	li	t9,	DDR_DPLL3_DO_MEAS_SET(1)
 	or	t8,	t8,	t9
@@ -386,14 +386,14 @@ ddr_wait_for_meas_done:
 	nop
 
 ddr_clear_do_meas2:
-	li	t7,	KSEG1ADDR(DDR_DPLL3_ADDRESS)
+	li	t7,	DDR_DPLL3_ADDRESS
 	lw	t8,	0(t7)
 	li	t9,	~DDR_DPLL3_DO_MEAS_SET(1)
 	and	t8,	t8,	t9
 	sw	t8,	0(t7)
 
 ddr_read_sqsum_dvc:
-	li	t7,	KSEG1ADDR(DDR_DPLL3_ADDRESS)
+	li	t7,	DDR_DPLL3_ADDRESS
 	lw	t8,	0(t7)
 	li	t9,	DDR_DPLL3_SQSUM_DVC_MASK
 	and	t8,	t8,	t9
@@ -412,11 +412,11 @@ pll_bypass_unset:
 		CPU_DDR_CLOCK_CONTROL_AHB_PLL_BYPASS_SET(0));
 
 ddr_pll_dither_unset:
-	pbl_reg_writel	0x78180200, KSEG1ADDR(AR934X_DDR_PLL_DITHER)
+	pbl_reg_writel	0x78180200, AR934X_DDR_PLL_DITHER
 
 cpu_pll_dither_unset:
-	li	t7,	KSEG1ADDR(AR934X_CPU_PLL_DITHER);
-	sw	t4,	0(t7);
+	li	t7,	AR934X_CPU_PLL_DITHER
+	sw	t4,	0(t7)
 
 	.set	pop
 .endm
