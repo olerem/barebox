@@ -32,30 +32,23 @@
 	debug_ll_outc '1'
 
 	hornet_mips24k_cp0_setup
-
-//	pbl_blt 0xbf000000 skip_pll_ram_config t8
-
 	debug_ll_outc '2'
 
-	ar9344_1_dot_1_ll_init
-
-	debug_ll_outc 'x'
-
-	pbl_ar9344_ddr2_config
-
+	/* test if we are in the SRAM */
+	pbl_blt 0xbd000000 1f t8
 	debug_ll_outc '3'
-
-//	hornet_1_1_war
-
+	b skip_flash_test
+	nop
+1:
+	/* test if we are in the flash */
+	pbl_blt 0xbf000000 skip_pll_ram_config t8
 	debug_ll_outc '4'
+skip_flash_test:
 
-	/* Initialize caches... */
-//	mips_cache_reset
-
+	pbl_ar9344_v11_pll_config
 	debug_ll_outc '5'
 
-	/* ... and enable them */
-//	dcache_enable
+	pbl_ar9344_v11_ddr2_config
 
 skip_pll_ram_config:
 	debug_ll_outc '6'
