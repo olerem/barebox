@@ -596,6 +596,11 @@ static inline int of_device_is_available(const struct device_node *device)
 	return 0;
 }
 
+static bool of_device_is_big_endian(const struct device_node *device)
+{
+	return false;
+}
+
 static inline void of_alias_scan(void)
 {
 }
