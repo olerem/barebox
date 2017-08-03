@@ -20,6 +20,11 @@
 
 	chosen {
 		stdout-path = &uart0;
+
+		environment@0 {
+			compatible = "barebox,environment";
+			device-path = &spiflash, "partname:barebox-environment";
+		};
 	};
 };
 
@@ -40,8 +45,19 @@
 	spiflash: w25q64cv@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "winbond,w25q64cv", "jedec,spi-nor";
+		compatible = "jedec,spi-nor", "winbond,w25q64cv";
 		spi-max-frequency = <104000000>;
 		reg = <0>;
+
+		partition@0 {
+			label = "barebox";
+			reg = <0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "barebox-environment";
+			reg = <0x80000 0x10000>;
+		};
 	};
 };
