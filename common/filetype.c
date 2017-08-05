@@ -289,7 +289,9 @@ enum filetype file_detect_type(const void *_buf, size_t bufsize)
 		return filetype_aimage;
 	if (buf64[0] == le64_to_cpu(0x0a1a0a0d474e5089ull))
 		return filetype_png;
-	if (is_barebox_mips_head(_buf))
+	//if (is_barebox_mips_head(_buf))
+	if (buf8[0x10] == 0x62 && buf8[0x11] == 0x61
+	    && buf8[0x12] == 0x72 && buf8[0x13] == 0x65)
 		return filetype_mips_barebox;
 	if (buf[0] == be32_to_cpu(0x534F4659))
 		return filetype_bpk;
