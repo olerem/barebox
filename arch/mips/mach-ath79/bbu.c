@@ -13,10 +13,12 @@
 
 #include <common.h>
 #include <bbu.h>
+#include <init.h>
 
 static int ath79_init_bbu(void)
 {
-	bbu_register_std_file_update("spi-barebox", 0,c"/dev/spiflash.barebox",
+	bbu_register_std_file_update("barebox", BBU_HANDLER_FLAG_DEFAULT,
+				     "/dev/spiflash.barebox",
 				     filetype_mips_barebox);
 
 	return 0;
