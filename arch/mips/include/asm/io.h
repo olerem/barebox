@@ -32,7 +32,7 @@ void dma_inv_range(unsigned long, unsigned long);
  */
 static inline unsigned long virt_to_phys(const void *address)
 {
-	return (unsigned long)address & 0x1fffffff;
+	return CPHYSADDR(address);
 }
 
 /*
@@ -49,7 +49,7 @@ static inline unsigned long virt_to_phys(const void *address)
  */
 static inline void *phys_to_virt(unsigned long address)
 {
-	return (void *)(KSEG0 | (address & 0x1fffffff));
+	return CKSEG0ADDR(address);
 }
 
 #define	IO_SPACE_LIMIT	0
