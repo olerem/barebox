@@ -462,6 +462,7 @@ static int ag71xx_probe(struct device_d *dev)
 	rd |= 0x10;
 	__raw_writel(rd, (char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG));
 
+	/* if is_ar933x */
 	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
 		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
 
@@ -516,11 +517,12 @@ static int ag71xx_probe(struct device_d *dev)
 }
 
 static __maybe_unused struct of_device_id ag71xx_dt_ids[] = {
-	{
-		.compatible = "qca,ar7100-gmac",
-	}, {
-		/* sentinel */
-	}
+	{ .compatible = "qca,ar7100-gmac", },
+	{ .compatible = "qca,ar9331-ge0", },
+	{ .compatible = "qca,ar9331-ge1", },
+	{ .compatible = "qca,ar9344-gmac0", },
+	{ .compatible = "qca,ar9344-gmac1", },
+	{ /* sentinel */ }
 };
 
 static struct driver_d ag71xx_driver = {
