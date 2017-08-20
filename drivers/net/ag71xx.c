@@ -12,6 +12,7 @@
  */
 
 #include <common.h>
+#include <driver.h>
 #include <net.h>
 #include <dma.h>
 #include <init.h>
@@ -219,9 +220,16 @@ struct ag71xx {
 	unsigned char *rx_pkt[NO_OF_RX_FIFOS];
 	ag7240_desc_t *fifo_tx;
 	ag7240_desc_t *fifo_rx;
+	dma_addr_t addr_tx;
+	dma_addr_t addr_rx;
 
 	int next_tx;
 	int next_rx;
+};
+
+struct ag71xx_cfg {
+	void (*init)(struct ag71xx *priv);
+	void (*init_mii)(struct ag71xx *priv);
 };
 
 static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
@@ -408,25 +416,57 @@ static int ag71xx_ether_init(struct eth_device *edev)
 	return 1;
 }
 
-static int ag71xx_mii_setup(struct ag71xx *priv)
+static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 {
 	u32 rd;
 
 	rd = ag71xx_gmac_rr(priv, 0);
 	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
 	ag71xx_gmac_wr(priv, 0, rd);
-
-	return 0;
 }
+
+static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
+{
+	ag71xx_gmac_wr(priv, 0, 1);
+}
+
+static void ag71xx_ar9331_init(struct ag71xx *priv)
+{
+	u32 rd;
+
+	/* enable switch core */
+	rd = __raw_readl((char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG)) & ~(0x1f);
+	rd |= 0x10;
+	__raw_writel(rd, (char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG));
+
+	/* if is_ar933x */
+	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
+		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
+}
+
+static struct ag71xx_cfg ag71xx_cfg_ar9331_ge0 = {
+	.init = ag71xx_ar9331_init,
+	.init_mii = ag71xx_ar9331_ge0_mii_init,
+};
+
+static struct ag71xx_cfg ag71xx_cfg_ar9344_gmac0 = {
+	.init_mii = ag71xx_ar9344_gmac0_mii_init,
+};
 
 static int ag71xx_probe(struct device_d *dev)
 {
 	void __iomem *regs, *regs_gmac;
 	struct mii_bus *miibus;
 	struct eth_device *edev;
+	struct ag71xx_cfg *cfg;
 	struct ag71xx *priv;
 	u32 mac_h, mac_l;
 	u32 rd;
+	int ret;
+
+	ret = dev_get_drvdata(dev, (const void **)&cfg);
+	if (ret)
+		return ret;
 
 	regs_gmac = dev_request_mem_region_by_name(dev, "gmac");
 	if (IS_ERR(regs_gmac))
@@ -457,14 +497,8 @@ static int ag71xx_probe(struct device_d *dev)
 	miibus->write = ag71xx_ether_mii_write;
 	miibus->priv = priv;
 
-	/* enable switch core */
-	rd = __raw_readl((char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG)) & ~(0x1f);
-	rd |= 0x10;
-	__raw_writel(rd, (char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG));
-
-	/* if is_ar933x */
-	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
-		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
+	if (cfg->init)
+		cfg->init(priv);
 
 	/* reset GE0 MAC and MDIO */
 	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
@@ -487,7 +521,8 @@ static int ag71xx_probe(struct device_d *dev)
 	/* config FIFOs */
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
 
-	ag71xx_mii_setup(priv);
+	if (cfg->init_mii)
+		cfg->init_mii(priv);
 
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG1, 0x10ffff);
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG2, 0xAAA0555);
@@ -498,8 +533,10 @@ static int ag71xx_probe(struct device_d *dev)
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG3, 0x1f00140);
 
 	priv->rx_buffer = xmemalign(PAGE_SIZE, NO_OF_RX_FIFOS * MAX_RBUFF_SZ);
-	priv->fifo_tx = dma_alloc_coherent(NO_OF_TX_FIFOS * sizeof(ag7240_desc_t), DMA_ADDRESS_BROKEN);
-	priv->fifo_rx = dma_alloc_coherent(NO_OF_RX_FIFOS * sizeof(ag7240_desc_t), DMA_ADDRESS_BROKEN);
+	priv->fifo_tx = dma_alloc_coherent(NO_OF_TX_FIFOS * sizeof(ag7240_desc_t),
+					   &priv->addr_tx);
+	priv->fifo_rx = dma_alloc_coherent(NO_OF_RX_FIFOS * sizeof(ag7240_desc_t),
+					   &priv->addr_rx);
 	priv->next_tx = 0;
 
 	mac_l = 0x3344;
@@ -518,10 +555,8 @@ static int ag71xx_probe(struct device_d *dev)
 
 static __maybe_unused struct of_device_id ag71xx_dt_ids[] = {
 	{ .compatible = "qca,ar7100-gmac", },
-	{ .compatible = "qca,ar9331-ge0", },
-	{ .compatible = "qca,ar9331-ge1", },
-	{ .compatible = "qca,ar9344-gmac0", },
-	{ .compatible = "qca,ar9344-gmac1", },
+	{ .compatible = "qca,ar9331-ge0", .data = &ag71xx_cfg_ar9331_ge0, },
+	{ .compatible = "qca,ar9344-gmac0", .data = &ag71xx_cfg_ar9344_gmac0, },
 	{ /* sentinel */ }
 };
 
