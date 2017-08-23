@@ -271,10 +271,10 @@ static inline void ag71xx_wr(struct ag71xx *priv, int reg, u32 val)
 	(void)__raw_readl(priv->regs + reg);
 }
 
-static int ag71xx_ether_mii_read(struct mii_bus *miidev, int addr, int reg)
+static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 {
 	struct ag71xx	*priv = miidev->priv;
-	uint16_t	addr  = (phy_addr << AG7240_ADDR_SHIFT) | reg, val;
+	uint16_t	addr  = (phy_addr << MII_ADDR_SHIFT) | reg, val;
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
@@ -285,35 +285,36 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int addr, int reg)
 	 */
 	do {
 		udelay(5);
-		rddata = ag7240_rr(priv, AG71XX_REG_MII_IND) & 0x1;
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
 	} while (rddata && --ii);
 
 	if (ii == 0)
 		printk("ERROR:%s:%d transaction failed\n",__func__,__LINE__);
 
 
-	ag7240_wr(priv, AG71XX_REG_MII_CMD, 0x0);
-	ag7240_wr(priv, AG71XX_REG_MII_ADDR, addr);
-	ag7240_wr(priv, AG71XX_REG_MII_CMD, AG7240_MGMT_CMD_READ);
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
+	ag71xx_wr(priv, AG71XX_REG_MII_ADDR, addr);
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_READ);
 
 	do {
 		udelay(5);
-		rddata = ag7240_rr(priv, AG71XX_REG_MII_IND) & 0x1;
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
 	} while (rddata && --ii);
 
 	if (ii == 0)
 		printk("Error!!! Leave ag7240_miiphy_read without polling correct status!\n");
 
-	val = ag7240_rr(priv, AG7240_MII_MGMT_STATUS);
-	ag7240_wr(priv, AG71XX_REG_MII_CMD, 0x0);
+	val = ag71xx_rr(priv, AG71XX_REG_MII_STATUS);
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 
 	return val;
 }
 
-static int ag71xx_ether_mii_write(struct mii_bus *miidev, int addr, int reg, u16 val)
+static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
+				  int reg, u16 val)
 {
 	struct ag71xx	*priv = miidev->priv;
-	uint16_t	addr  = (phy_addr << AG7240_ADDR_SHIFT) | reg;
+	uint16_t	addr  = (phy_addr << MII_ADDR_SHIFT) | reg;
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
@@ -323,17 +324,17 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int addr, int reg, u16
 	 */
 	do {
 		udelay(5);
-		rddata = ag7240_rr(priv, AG71XX_REG_MII_IND) & 0x1;
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
 	} while (rddata && --ii);
 
 	if (ii == 0)
 		printk("ERROR:%s:%d transaction failed\n", __func__, __LINE__);
 
-	ag7240_wr(priv, AG71XX_REG_MII_ADDR, addr);
-	ag7240_wr(priv, AG71XX_REG_MII_CTRL, data);
+	ag71xx_wr(priv, AG71XX_REG_MII_ADDR, addr);
+	ag71xx_wr(priv, AG71XX_REG_MII_CTRL, val);
 
 	do {
-		rddata = ag7240_rr(priv, AG71XX_REG_MII_IND) & 0x1;
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
 	} while (rddata && --ii);
 
 	if (ii == 0)
