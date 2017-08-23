@@ -336,7 +336,7 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int addr, int reg, u16
 		rddata = ag7240_rr(priv, AG71XX_REG_MII_IND) & 0x1;
 	} while (rddata && --ii);
 
-	if (ii==0)
+	if (ii == 0)
 		printk("Error!!! Leave ag7240_miiphy_write without polling correct status!\n");
 
 	return 0;
