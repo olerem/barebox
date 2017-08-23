@@ -237,10 +237,11 @@ static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_TX_SM:
-	case AG71XX_REG_MII_CFG:
+	case AG71XX_REG_MII_CFG ... AG71XX_REG_MII_IND:
 		break;
 
 	default:
+		printk("wring reg: 0x%02x\n", reg);
 		BUG();
 	}
 }
@@ -271,23 +272,90 @@ static inline void ag71xx_wr(struct ag71xx *priv, int reg, u32 val)
 	(void)__raw_readl(priv->regs + reg);
 }
 
-static int ag71xx_ether_mii_read(struct mii_bus *miidev, int addr, int reg)
+static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 {
-	return 0xffff;
+	struct ag71xx	*priv = miidev->priv;
+	uint16_t	addr  = (phy_addr << MII_ADDR_SHIFT) | reg, val;
+	volatile int	rddata;
+	uint16_t	ii = 0xFFFF;
+
+	printk("%s:%i: %x %x\n",__func__, __LINE__, phy_addr, reg);
+
+	/*
+	 * Check for previous transactions are complete. Added to avoid
+	 * race condition while running at higher frequencies.
+	 */
+	do {
+		udelay(5);
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
+	} while (rddata && --ii);
+
+	if (ii == 0)
+		printk("ERROR:%s:%d transaction failed\n",__func__,__LINE__);
+
+
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
+	ag71xx_wr(priv, AG71XX_REG_MII_ADDR, addr);
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_READ);
+
+	do {
+		udelay(5);
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
+	} while (rddata && --ii);
+
+	if (ii == 0)
+		printk("Error!!! Leave ag7240_miiphy_read without polling correct status!\n");
+
+	val = ag71xx_rr(priv, AG71XX_REG_MII_STATUS);
+	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
+
+	printk(".. %x\n", val);
+	return val;
 }
 
-static int ag71xx_ether_mii_write(struct mii_bus *miidev, int addr, int reg, u16 val)
+static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
+				  int reg, u16 val)
 {
+	struct ag71xx	*priv = miidev->priv;
+	uint16_t	addr  = (phy_addr << MII_ADDR_SHIFT) | reg;
+	volatile int	rddata;
+	uint16_t	ii = 0xFFFF;
+
+	printk("%s:%i %x %x %x\n",__func__, __LINE__, phy_addr, reg, val);
+	/*
+	 * Check for previous transactions are complete. Added to avoid
+	 * race condition while running at higher frequencies.
+	 */
+	do {
+		udelay(5);
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
+	} while (rddata && --ii);
+
+	if (ii == 0)
+		printk("ERROR:%s:%d transaction failed\n", __func__, __LINE__);
+
+	ag71xx_wr(priv, AG71XX_REG_MII_ADDR, addr);
+	ag71xx_wr(priv, AG71XX_REG_MII_CTRL, val);
+
+	do {
+		rddata = ag71xx_rr(priv, AG71XX_REG_MII_IND) & MII_IND_BUSY;
+	} while (rddata && --ii);
+
+	if (ii == 0)
+		printk("Error!!! Leave ag7240_miiphy_write without polling correct status!\n");
+
 	return 0;
 }
 
 static int ag71xx_ether_set_ethaddr(struct eth_device *edev, const unsigned char *adr)
 {
+	printk("%s:%i\n",__func__, __LINE__);
 	return 0;
 }
 
 static int ag71xx_ether_get_ethaddr(struct eth_device *edev, unsigned char *adr)
 {
+	printk("%s:%i\n",__func__, __LINE__);
 	/* We have no eeprom */
 	return -1;
 }
@@ -296,6 +364,7 @@ static void ag71xx_ether_halt(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	ag71xx_wr(priv, AG71XX_REG_RX_CTRL, 0);
 	while (ag71xx_rr(priv, AG71XX_REG_RX_CTRL))
 		;
@@ -380,7 +449,11 @@ static int ag71xx_ether_send(struct eth_device *edev, void *packet, int length)
 
 static int ag71xx_ether_open(struct eth_device *edev)
 {
-	return 0;
+	struct ag71xx *priv = edev->priv;
+
+	printk("%s:%i\n",__func__, __LINE__);
+	return phy_device_connect(edev, &priv->miibus, 0,
+			NULL, 0, PHY_INTERFACE_MODE_RGMII_TXID);
 }
 
 static int ag71xx_ether_init(struct eth_device *edev)
@@ -389,6 +462,7 @@ static int ag71xx_ether_init(struct eth_device *edev)
 	int i;
 	void *rxbuf = priv->rx_buffer;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	priv->next_rx = 0;
 
 	for (i = 0; i < NO_OF_RX_FIFOS; i++) {
@@ -420,6 +494,7 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 {
 	u32 rd;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	rd = ag71xx_gmac_rr(priv, 0);
 	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
 	ag71xx_gmac_wr(priv, 0, rd);
@@ -434,6 +509,7 @@ static void ag71xx_ar9331_init(struct ag71xx *priv)
 {
 	u32 rd;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	/* enable switch core */
 	rd = __raw_readl((char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG)) & ~(0x1f);
 	rd |= 0x10;
@@ -464,6 +540,7 @@ static int ag71xx_probe(struct device_d *dev)
 	u32 rd;
 	int ret;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	ret = dev_get_drvdata(dev, (const void **)&cfg);
 	if (ret)
 		return ret;
@@ -515,7 +592,8 @@ static int ag71xx_probe(struct device_d *dev)
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1, (MAC_CFG1_RXE | MAC_CFG1_TXE));
 
 	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
-	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
+	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
+	//rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
 
 	/* config FIFOs */
