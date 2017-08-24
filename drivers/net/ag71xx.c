@@ -237,10 +237,11 @@ static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_TX_SM:
-	case AG71XX_REG_MII_CFG:
+	case AG71XX_REG_MII_CFG ... AG71XX_REG_MII_IND:
 		break;
 
 	default:
+		printk("wring reg: 0x%02x\n", reg);
 		BUG();
 	}
 }
@@ -278,6 +279,7 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
+	printk("%s:%i: %x %x\n",__func__, __LINE__, phy_addr, reg);
 
 	/*
 	 * Check for previous transactions are complete. Added to avoid
@@ -307,6 +309,7 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 	val = ag71xx_rr(priv, AG71XX_REG_MII_STATUS);
 	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 
+	printk(".. %x\n", val);
 	return val;
 }
 
@@ -318,6 +321,7 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	/*
 	 * Check for previous transactions are complete. Added to avoid
 	 * race condition while running at higher frequencies.
@@ -442,7 +446,10 @@ static int ag71xx_ether_send(struct eth_device *edev, void *packet, int length)
 
 static int ag71xx_ether_open(struct eth_device *edev)
 {
-	return 0;
+	struct ag71xx *priv = edev->priv;
+
+	return phy_device_connect(edev, &priv->miibus, 0,
+			NULL, 0, PHY_INTERFACE_MODE_RGMII_TXID);
 }
 
 static int ag71xx_ether_init(struct eth_device *edev)
