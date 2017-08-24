@@ -106,7 +106,7 @@ static int ar8327n_config_init(struct phy_device *phydev)
 	/* configure s17 register after frame transmission is enabled */
 
 	if (athr17_init_flag)
-		return;
+		return 0;
 
 	/* configure the RGMII */
 	athrs17_reg_write(phydev, 0x624 , 0x7f7f7f7f);
@@ -117,7 +117,7 @@ static int ar8327n_config_init(struct phy_device *phydev)
 
 	/* AR8327/AR8328 v1.0 fixup */
 		printk("%s.%i %x\n", __func__, __LINE__, phydev->interface);
-	if ((athrs17_reg_read(0x0) & 0xffff) == 0x1201) {
+	if ((athrs17_reg_read(phydev, 0x0) & 0xffff) == 0x1201) {
 		printk("!!!!!%s.%i %x\n", __func__, __LINE__, phydev->interface);
 		for (phy_addr = 0x0; phy_addr <= ATHR_PHY_MAX; phy_addr++) {
 			/* For 100M waveform */
@@ -130,7 +130,7 @@ static int ar8327n_config_init(struct phy_device *phydev)
 	}
 
 	/* set the WAN Port(Port1) Disable Mode(can not receive or transmit any frames) */
-	athrs17_reg_write(phydev, 0x066c, athrs17_reg_read(0x066c) & 0xfff8ffff);
+	athrs17_reg_write(phydev, 0x066c, athrs17_reg_read(phydev, 0x066c) & 0xfff8ffff);
 
 	athr17_init_flag = 1;
 	printf("%s: complete\n",__func__);
@@ -138,7 +138,7 @@ static int ar8327n_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-static struct phy_driver at803x_driver[] = {
+static struct phy_driver ar8327n_driver[] = {
 {
 	/* QCA AR8327N */
 	.phy_id		= 0x004dd034,
@@ -152,7 +152,7 @@ static struct phy_driver at803x_driver[] = {
 
 static int atheros_phy_init(void)
 {
-	return phy_drivers_register(at803x_driver,
-				    ARRAY_SIZE(at803x_driver));
+	return phy_drivers_register(ar8327n_driver,
+				    ARRAY_SIZE(ar8327n_driver));
 }
 fs_initcall(atheros_phy_init);
