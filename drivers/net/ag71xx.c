@@ -321,7 +321,7 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
-	printk("%s:%i\n",__func__, __LINE__);
+	printk("%s:%i %x %x %x\n",__func__, __LINE__, phy_addr, reg, val);
 	/*
 	 * Check for previous transactions are complete. Added to avoid
 	 * race condition while running at higher frequencies.
@@ -349,11 +349,13 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 
 static int ag71xx_ether_set_ethaddr(struct eth_device *edev, const unsigned char *adr)
 {
+	printk("%s:%i\n",__func__, __LINE__);
 	return 0;
 }
 
 static int ag71xx_ether_get_ethaddr(struct eth_device *edev, unsigned char *adr)
 {
+	printk("%s:%i\n",__func__, __LINE__);
 	/* We have no eeprom */
 	return -1;
 }
@@ -362,6 +364,7 @@ static void ag71xx_ether_halt(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	ag71xx_wr(priv, AG71XX_REG_RX_CTRL, 0);
 	while (ag71xx_rr(priv, AG71XX_REG_RX_CTRL))
 		;
@@ -372,6 +375,7 @@ static int ag71xx_ether_rx(struct eth_device *edev)
 	struct ag71xx *priv = edev->priv;
 	ag7240_desc_t *f;
 	unsigned int work_done;
+	printk("%s:%i\n",__func__, __LINE__);
 
 	for (work_done = 0; work_done < NO_OF_RX_FIFOS; work_done++) {
 		unsigned int pktlen;
@@ -412,6 +416,7 @@ static int ag71xx_ether_send(struct eth_device *edev, void *packet, int length)
 	ag7240_desc_t *f = &priv->fifo_tx[priv->next_tx];
 	int i;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	/* flush */
 	dma_sync_single_for_device((unsigned long)packet, length, DMA_TO_DEVICE);
 
@@ -448,6 +453,7 @@ static int ag71xx_ether_open(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	return phy_device_connect(edev, &priv->miibus, 0,
 			NULL, 0, PHY_INTERFACE_MODE_RGMII_TXID);
 }
@@ -458,6 +464,7 @@ static int ag71xx_ether_init(struct eth_device *edev)
 	int i;
 	void *rxbuf = priv->rx_buffer;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	priv->next_rx = 0;
 
 	for (i = 0; i < NO_OF_RX_FIFOS; i++) {
@@ -489,6 +496,7 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 {
 	u32 rd;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	rd = ag71xx_gmac_rr(priv, 0);
 	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
 	ag71xx_gmac_wr(priv, 0, rd);
@@ -503,6 +511,7 @@ static void ag71xx_ar9331_init(struct ag71xx *priv)
 {
 	u32 rd;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	/* enable switch core */
 	rd = __raw_readl((char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG)) & ~(0x1f);
 	rd |= 0x10;
@@ -533,6 +542,7 @@ static int ag71xx_probe(struct device_d *dev)
 	u32 rd;
 	int ret;
 
+	printk("%s:%i\n",__func__, __LINE__);
 	ret = dev_get_drvdata(dev, (const void **)&cfg);
 	if (ret)
 		return ret;
