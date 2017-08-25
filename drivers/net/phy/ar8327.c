@@ -31,7 +31,7 @@ athrs17_reg_read(struct phy_device *phydev, uint32_t reg_addr)
 	phy_addr = 0x18;
 	phy_reg = 0x0;
 	phy_val = (uint16_t) ((reg_word_addr >> 8) & 0x1ff);  /* bit16-8 of reg address */
-	phy_write(phydev, phy_reg, phy_val);
+	mdiobus_write(phydev->bus,  phy_addr, phy_reg, phy_val);
 
 	/* For some registers such as MIBs, since it is read/clear, we should */
 	/* read the lower 16-bit register then the higher one */
@@ -39,13 +39,13 @@ athrs17_reg_read(struct phy_device *phydev, uint32_t reg_addr)
 	/* read register in lower address */
 	phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
 	phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
-	reg_val = (uint32_t) phy_read(phydev, phy_reg);
+	reg_val = (uint32_t) mdiobus_read(phydev->bus, phy_addr, phy_reg);
 
 	/* read register in higher address */
 	reg_word_addr++;
 	phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
 	phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
-	tmp_val = (uint32_t) phy_read(phydev, phy_reg);
+	reg_val = (uint32_t) mdiobus_read(phydev->bus, phy_addr, phy_reg);
 	reg_val |= (tmp_val << 16);
 
 	return reg_val;
@@ -66,7 +66,7 @@ athrs17_reg_write(struct phy_device *phydev, uint32_t reg_addr, uint32_t reg_val
 	phy_addr = 0x18;
 	phy_reg = 0x0;
 	phy_val = (uint16_t) ((reg_word_addr >> 8) & 0x1ff);  /* bit16-8 of reg address */
-	phy_write(phydev, phy_reg, phy_val);
+	mdiobus_write(phydev->bus,  phy_addr, phy_reg, phy_val);
 
 	/* For some registers such as ARL and VLAN, since they include BUSY bit */
 	/* in lower address, we should write the higher 16-bit register then the */
@@ -77,14 +77,14 @@ athrs17_reg_write(struct phy_device *phydev, uint32_t reg_addr, uint32_t reg_val
 	phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
 	phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
 	phy_val = (uint16_t) ((reg_val >> 16) & 0xffff);
-	phy_write(phydev, phy_reg, phy_val);
+	mdiobus_write(phydev->bus,  phy_addr, phy_reg, phy_val);
 
 	/* write register in lower address */
 	reg_word_addr--;
 	phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
 	phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
 	phy_val = (uint16_t) (reg_val & 0xffff);
-	phy_write(phydev, phy_reg, phy_val);
+	mdiobus_write(phydev->bus,  phy_addr, phy_reg, phy_val);
 }
 
 
@@ -93,6 +93,7 @@ static int ar8327n_config_init(struct phy_device *phydev)
 	int phy_addr = 0;
 	int ret;
 
+	printk("%s.%i %x\n", __func__, __LINE__, phydev->interface);
 	ret = genphy_config_init(phydev);
 	if (ret < 0)
 		return ret;
@@ -121,11 +122,11 @@ static int ar8327n_config_init(struct phy_device *phydev)
 		printk("!!!!!%s.%i %x\n", __func__, __LINE__, phydev->interface);
 		for (phy_addr = 0x0; phy_addr <= ATHR_PHY_MAX; phy_addr++) {
 			/* For 100M waveform */
-			phy_write(phydev, 0x1d, 0x0);
-			phy_write(phydev, 0x1e, 0x02ea);
+			mdiobus_write(phydev->bus, phy_addr, 0x1d, 0x0);
+			mdiobus_write(phydev->bus, phy_addr, 0x1e, 0x02ea);
 			/* Turn On Gigabit Clock */
-			phy_write(phydev, 0x1d, 0x3d);
-			phy_write(phydev, 0x1e, 0x68a0);
+			mdiobus_write(phydev->bus, phy_addr, 0x1d, 0x3d);
+			mdiobus_write(phydev->bus, phy_addr, 0x1e, 0x68a0);
 		}
 	}
 
@@ -152,6 +153,7 @@ static struct phy_driver ar8327n_driver[] = {
 
 static int atheros_phy_init(void)
 {
+	printk("%s.%i\n", __func__, __LINE__);
 	return phy_drivers_register(ar8327n_driver,
 				    ARRAY_SIZE(ar8327n_driver));
 }
