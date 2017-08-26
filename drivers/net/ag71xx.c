@@ -228,7 +228,6 @@ struct ag71xx {
 };
 
 struct ag71xx_cfg {
-	void (*init)(struct ag71xx *priv);
 	void (*init_mii)(struct ag71xx *priv);
 };
 
@@ -241,9 +240,18 @@ static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
 		break;
 
 	default:
-		printk("wring reg: 0x%02x\n", reg);
 		BUG();
 	}
+}
+
+static inline u32 ar7240_reg_rd(u32 reg)
+{
+	return __raw_readl(KSEG1ADDR(reg));
+}
+
+static inline void ar7240_reg_wr(u32 reg, u32 val)
+{
+	__raw_writel(val, KSEG1ADDR(reg));
 }
 
 static inline u32 ag71xx_gmac_rr(struct ag71xx *dev, int reg)
@@ -279,8 +287,6 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
-	printk("%s:%i: %x %x\n",__func__, __LINE__, phy_addr, reg);
-
 	/*
 	 * Check for previous transactions are complete. Added to avoid
 	 * race condition while running at higher frequencies.
@@ -309,7 +315,6 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 	val = ag71xx_rr(priv, AG71XX_REG_MII_STATUS);
 	ag71xx_wr(priv, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 
-	printk(".. %x\n", val);
 	return val;
 }
 
@@ -321,7 +326,6 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 	volatile int	rddata;
 	uint16_t	ii = 0xFFFF;
 
-	printk("%s:%i %x %x %x\n",__func__, __LINE__, phy_addr, reg, val);
 	/*
 	 * Check for previous transactions are complete. Added to avoid
 	 * race condition while running at higher frequencies.
@@ -349,13 +353,11 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 
 static int ag71xx_ether_set_ethaddr(struct eth_device *edev, const unsigned char *adr)
 {
-	printk("%s:%i\n",__func__, __LINE__);
 	return 0;
 }
 
 static int ag71xx_ether_get_ethaddr(struct eth_device *edev, unsigned char *adr)
 {
-	printk("%s:%i\n",__func__, __LINE__);
 	/* We have no eeprom */
 	return -1;
 }
@@ -364,7 +366,6 @@ static void ag71xx_ether_halt(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
-	printk("%s:%i\n",__func__, __LINE__);
 	ag71xx_wr(priv, AG71XX_REG_RX_CTRL, 0);
 	while (ag71xx_rr(priv, AG71XX_REG_RX_CTRL))
 		;
@@ -451,7 +452,6 @@ static int ag71xx_ether_open(struct eth_device *edev)
 {
 	struct ag71xx *priv = edev->priv;
 
-	printk("%s:%i\n",__func__, __LINE__);
 	return phy_device_connect(edev, &priv->miibus, 0,
 			NULL, 0, PHY_INTERFACE_MODE_RGMII_TXID);
 }
@@ -462,7 +462,6 @@ static int ag71xx_ether_init(struct eth_device *edev)
 	int i;
 	void *rxbuf = priv->rx_buffer;
 
-	printk("%s:%i\n",__func__, __LINE__);
 	priv->next_rx = 0;
 
 	for (i = 0; i < NO_OF_RX_FIFOS; i++) {
@@ -494,34 +493,20 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 {
 	u32 rd;
 
-	printk("%s:%i\n",__func__, __LINE__);
-	rd = ag71xx_gmac_rr(priv, 0);
+	rd = ag71xx_gmac_rr(priv, AG71XX_REG_MAC_CFG1);
 	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
 	ag71xx_gmac_wr(priv, 0, rd);
 }
 
 static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
 {
-	ag71xx_gmac_wr(priv, 0, 1);
-}
-
-static void ag71xx_ar9331_init(struct ag71xx *priv)
-{
-	u32 rd;
-
-	printk("%s:%i\n",__func__, __LINE__);
-	/* enable switch core */
-	rd = __raw_readl((char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG)) & ~(0x1f);
-	rd |= 0x10;
-	__raw_writel(rd, (char *)KSEG1ADDR(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG));
-
-	/* if is_ar933x */
-	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
-		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
+	ag71xx_gmac_wr(priv, AG71XX_REG_MAC_CFG1, 1);
+	udelay(1000);
+	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 4 | (1 << 31));
+	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 4);
 }
 
 static struct ag71xx_cfg ag71xx_cfg_ar9331_ge0 = {
-	.init = ag71xx_ar9331_init,
 	.init_mii = ag71xx_ar9331_ge0_mii_init,
 };
 
@@ -537,10 +522,9 @@ static int ag71xx_probe(struct device_d *dev)
 	struct ag71xx_cfg *cfg;
 	struct ag71xx *priv;
 	u32 mac_h, mac_l;
-	u32 rd;
+	u32 rd, mask;
 	int ret;
 
-	printk("%s:%i\n",__func__, __LINE__);
 	ret = dev_get_drvdata(dev, (const void **)&cfg);
 	if (ret)
 		return ret;
@@ -574,17 +558,28 @@ static int ag71xx_probe(struct device_d *dev)
 	miibus->write = ag71xx_ether_mii_write;
 	miibus->priv = priv;
 
-	if (cfg->init)
-		cfg->init(priv);
+	/* enable switch core */
+	rd = ar7240_reg_rd(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG);
+	rd &= ~(0x1f);
+	rd |= 0x10;
+	if ((ar7240_reg_rd(WASP_BOOTSTRAP_REG) & WASP_REF_CLK_25) == 0)
+		rd |= 0x1;
+	ar7240_reg_wr((AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG), rd);
+
+	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
+		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
 
 	/* reset GE0 MAC and MDIO */
+	mask = AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO
+		| AR933X_RESET_SWITCH;
+
 	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd |= AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO | AR933X_RESET_SWITCH;
+	rd |= mask;
 	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
 	mdelay(100);
 
 	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd &= ~(AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO | AR933X_RESET_SWITCH);
+	rd &= ~(mask);
 	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
 	mdelay(100);
 
@@ -592,8 +587,8 @@ static int ag71xx_probe(struct device_d *dev)
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1, (MAC_CFG1_RXE | MAC_CFG1_TXE));
 
 	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
-	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
-	//rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
+	//rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
+	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
 
 	/* config FIFOs */
@@ -607,7 +602,8 @@ static int ag71xx_probe(struct device_d *dev)
 
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG4, 0x3ffff);
 	/* bit 19 should be set to 1 for GE0 */
-	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, (0x66b82) | (1 << 19));
+	//ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, (0x66b82) | (1 << 19));
+	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, 0x7eccf);
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG3, 0x1f00140);
 
 	priv->rx_buffer = xmemalign(PAGE_SIZE, NO_OF_RX_FIFOS * MAX_RBUFF_SZ);
