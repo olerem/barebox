@@ -493,6 +493,13 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 {
 	u32 rd;
 
+	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
+	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
+	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
+
+	/* config FIFOs */
+	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
+
 	rd = ag71xx_gmac_rr(priv, AG71XX_REG_MAC_CFG1);
 	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
 	ag71xx_gmac_wr(priv, 0, rd);
@@ -500,6 +507,15 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 
 static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
 {
+	u32 rd;
+
+	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
+	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
+	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
+
+	/* config FIFOs */
+	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
+
 	ag71xx_gmac_wr(priv, AG71XX_REG_MAC_CFG1, 1);
 	udelay(1000);
 	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 4 | (1 << 31));
@@ -586,14 +602,6 @@ static int ag71xx_probe(struct device_d *dev)
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1, (MAC_CFG1_SR | MAC_CFG1_TX_RST | MAC_CFG1_RX_RST));
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1, (MAC_CFG1_RXE | MAC_CFG1_TXE));
 
-	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
-	//rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
-	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_10_100);
-	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
-
-	/* config FIFOs */
-	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
-
 	if (cfg->init_mii)
 		cfg->init_mii(priv);
 
@@ -602,8 +610,7 @@ static int ag71xx_probe(struct device_d *dev)
 
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG4, 0x3ffff);
 	/* bit 19 should be set to 1 for GE0 */
-	//ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, (0x66b82) | (1 << 19));
-	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, 0x7eccf);
+	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG5, (0x66b82) | (1 << 19));
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG3, 0x1f00140);
 
 	priv->rx_buffer = xmemalign(PAGE_SIZE, NO_OF_RX_FIFOS * MAX_RBUFF_SZ);
