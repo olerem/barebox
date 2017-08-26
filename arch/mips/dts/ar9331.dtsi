@@ -1,7 +1,7 @@
 / {
 	ahb {
 		mac0: mac@19000000 {
-			compatible = "qca,ar7100-gmac", "qca,ar9331-gmac";
+			compatible = "qca,ar9331-ge0";
 			reg = <0x18070000 0x00000100>,
 			      <0x19000000 0x01000000>;
 			reg-names = "gmac", "ge0";
