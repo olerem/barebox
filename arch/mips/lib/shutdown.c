@@ -7,6 +7,6 @@
 
 static void arch_shutdown(void)
 {
-	flush_cache_all();
+	//flush_cache_all();
 }
 archshutdown_exitcall(arch_shutdown);
