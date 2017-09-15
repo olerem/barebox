@@ -840,6 +840,9 @@ do {									\
 #define read_c0_taghi()		__read_32bit_c0_register($29, 0)
 #define write_c0_taghi(val)	__write_32bit_c0_register($29, 0, val)
 
+#define read_c0_dtaghi()	__read_32bit_c0_register($29, 2)
+#define write_c0_dtaghi(val)	__write_32bit_c0_register($29, 2, val)
+
 #define read_c0_errorepc()	__read_ulong_c0_register($30, 0)
 #define write_c0_errorepc(val)	__write_ulong_c0_register($30, 0, val)
 
