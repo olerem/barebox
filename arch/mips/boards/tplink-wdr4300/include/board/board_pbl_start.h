@@ -31,7 +31,7 @@
 
 	debug_ll_outc '1'
 
-	hornet_mips24k_cp0_setup
+	wasp_mips74k_cp0_setup
 	debug_ll_outc '2'
 
 	/* test if we are in the SRAM */
@@ -50,8 +50,13 @@ skip_flash_test:
 
 	pbl_ar9344_v11_ddr2_config
 
-skip_pll_ram_config:
 	debug_ll_outc '6'
+	/* Initialize caches... */
+	wasp_mips74k_cache_reset
+
+	dcache_enable
+skip_pll_ram_config:
+	debug_ll_outc '7'
 	debug_ll_outnl
 
 	mips_nmon
