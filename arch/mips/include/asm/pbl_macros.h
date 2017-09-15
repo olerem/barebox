@@ -308,7 +308,9 @@ copy_loop_exit:
 	 * TagLo selects 0 & 2 covering supported cases.
 	 */
 	mtc0	zero, CP0_TAGLO
+	mtc0	zero, CP0_TAGHI
 	mtc0	zero, CP0_TAGLO, 2
+	mtc0	zero, CP0_TAGHI, 2
 
 	/*
 	 * The caches are probably in an indeterminate state, so we force good
