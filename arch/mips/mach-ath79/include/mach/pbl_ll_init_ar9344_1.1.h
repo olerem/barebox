@@ -537,4 +537,213 @@ setup_16bit_2:
 	.set	pop
 .endm
 
+.macro	wasp_mips74k_cp0_setup
+	.set push
+	.set noreorder
+
+	/*
+	 * Clearing CP0 registers - This is generally required for the MIPS-24k
+	 * core used by Atheros.
+	 */
+	mtc0	zero, CP0_INDEX
+	mtc0	zero, CP0_ENTRYLO0
+	mtc0	zero, CP0_ENTRYLO1
+	mtc0	zero, CP0_CONTEXT
+	mtc0	zero, CP0_PAGEMASK
+	mtc0	zero, CP0_WIRED
+	mtc0	zero, CP0_INFO
+	mtc0	zero, CP0_COUNT
+	mtc0	zero, CP0_ENTRYHI
+	mtc0	zero, CP0_COMPARE
+
+	li	t0, ST0_CU0 | ST0_ERL
+	mtc0	t0, CP0_STATUS
+
+	mtc0	zero, CP0_CAUSE
+	mtc0	zero, CP0_EPC
+
+	li	t0, CONF_CM_UNCACHED
+	mtc0	t0, CP0_CONFIG
+
+	mtc0	zero, CP0_WATCHLO
+	mtc0	zero, CP0_WATCHHI
+	mtc0	zero, CP0_DEBUG
+	mtc0	zero, CP0_DEPC
+	mtc0	zero, CP0_PERFORMANCE
+	mtc0	zero, CP0_ECC
+	mtc0	zero, CP0_CACHEERR
+	mtc0	zero, CP0_TAGLO
+	mtc0	zero, CP0_TAGHI
+	mtc0	zero, CP0_TAGLO, 2
+	mtc0	zero, CP0_TAGHI, 2
+
+	.set	pop
+.endm
+
+#define CFG_DCACHE_SIZE         32768
+#define CFG_ICACHE_SIZE         65536
+#define CFG_CACHELINE_SIZE      32
+#define MIPS_MAX_CACHE_SIZE    65536
+
+#define K0BASE     KSEG0
+
+/*
+ * cacheop macro to automate cache operations
+ * first some helpers...
+ */
+#define _mincache(size, maxsize) \
+   bltu  size,maxsize,9f ; \
+   move  size,maxsize ;    \
+9:
+
+#define _align(minaddr, maxaddr, linesize) \
+   .set noat ; \
+   subu  AT,linesize,1 ;   \
+   not   AT ;        \
+   and   minaddr,AT ;      \
+   addu  maxaddr,-1 ;      \
+   and   maxaddr,AT ;      \
+   .set at
+
+/* general operations */
+#define doop1(op1) \
+   cache op1,0(a0)
+#define doop2(op1, op2) \
+   cache op1,0(a0) ;    \
+   nop ;          \
+   cache op2,0(a0)
+
+/* specials for cache initialisation */
+#define doop1lw(op1) \
+   lw zero,0(a0)
+#define doop1lw1(op1) \
+   cache op1,0(a0) ;    \
+   lw zero,0(a0) ;      \
+   cache op1,0(a0)
+#define doop121(op1,op2) \
+   cache op1,0(a0) ;    \
+   nop;           \
+   cache op2,0(a0) ;    \
+   nop;           \
+   cache op1,0(a0)
+
+#define _oploopn(minaddr, maxaddr, linesize, tag, ops) \
+   .set  noreorder ;    \
+10:   doop##tag##ops ;  \
+   bne     minaddr,maxaddr,10b ; \
+   add      minaddr,linesize ;   \
+   .set  reorder
+
+/* finally the cache operation macros */
+#define vcacheopn(kva, n, cacheSize, cacheLineSize, tag, ops) \
+   blez  n,11f ;        \
+   addu  n,kva ;        \
+   _align(kva, n, cacheLineSize) ; \
+   _oploopn(kva, n, cacheLineSize, tag, ops) ; \
+11:
+
+#define icacheopn(kva, n, cacheSize, cacheLineSize, tag, ops) \
+   _mincache(n, cacheSize);   \
+   blez  n,11f ;        \
+   addu  n,kva ;        \
+   _align(kva, n, cacheLineSize) ; \
+   _oploopn(kva, n, cacheLineSize, tag, ops) ; \
+11:
+
+#define vcacheop(kva, n, cacheSize, cacheLineSize, op) \
+   vcacheopn(kva, n, cacheSize, cacheLineSize, 1, (op))
+
+#define icacheop(kva, n, cacheSize, cacheLineSize, op) \
+   icacheopn(kva, n, cacheSize, cacheLineSize, 1, (op))
+
+.macro	wasp_mips74k_cache_reset
+	.set push
+	.set noreorder
+
+
+	li	t2, CFG_ICACHE_SIZE
+	li	t3, CFG_DCACHE_SIZE
+	li	t4, CFG_CACHELINE_SIZE
+	move	t5, t4
+
+
+	li	v0, MIPS_MAX_CACHE_SIZE
+
+	/* Now clear that much memory starting from zero.
+	 */
+
+	li	a0, KSEG1
+	addu	a1, a0, v0
+
+2:	sw	zero, 0(a0)
+	sw	zero, 4(a0)
+	sw	zero, 8(a0)
+	sw	zero, 12(a0)
+	sw	zero, 16(a0)
+	sw	zero, 20(a0)
+	sw	zero, 24(a0)
+	sw	zero, 28(a0)
+	addu	a0, 32
+	bltu	a0, a1, 2b
+
+	/* Set invalid tag.
+	 */
+
+
+	mtc0	zero, CP0_TAGLO
+	mtc0	zero, $29	# C0_TagHi
+	mtc0	zero, $28, 2	# C0_DTagLo
+	mtc0	zero, $29, 2	# C0_DTagHi
+
+
+   /*
+    * The caches are probably in an indeterminate state,
+    * so we force good parity into them by doing an
+    * invalidate, load/fill, invalidate for each line.
+    */
+
+	/* Assume bottom of RAM will generate good parity for the cache.
+	 */
+
+	li	a0, K0BASE
+	move	a2, t2		# icacheSize
+	move	a3, t4		# icacheLineSize
+	move	a1, a2
+	icacheopn(a0,a1,a2,a3,121,(Index_Store_Tag_I,Hit_Writeback_Inv))
+
+	/* To support Orion/R4600, we initialise the data cache in 3 passes.
+	 */
+
+	/* 1: initialise dcache tags.
+	 */
+
+	li	a0, K0BASE
+	move	a2, t3		# dcacheSize
+	move	a3, t5		# dcacheLineSize
+	move	a1, a2
+	icacheop(a0,a1,a2,a3,Index_Store_Tag_D)
+
+
+	/* 2: fill dcache.
+	 */
+
+	li	a0, K0BASE
+	move	a2, t3		# dcacheSize
+	move	a3, t5		# dcacheLineSize
+	move	a1, a2
+	icacheopn(a0,a1,a2,a3,1lw,(dummy))
+
+
+	/* 3: clear dcache tags.
+	 */
+
+	li	a0, K0BASE
+	move	a2, t3		# dcacheSize
+	move	a3, t5		# dcacheLineSize
+	move	a1, a2
+	icacheop(a0,a1,a2,a3,Index_Store_Tag_D)
+
+	.set	pop
+.endm
+
 #endif /* __ASM_MACH_ATH79_PBL_LL_INIT_AR9344_1_1_H */
