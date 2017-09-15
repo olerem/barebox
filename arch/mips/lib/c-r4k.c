@@ -56,6 +56,11 @@ void flush_cache_all(void)
 	unsigned long aend;
 	unsigned int icache_size, dcache_size;
 
+	write_c0_taglo(0);
+	write_c0_taghi(0);
+	write_c0_dtaglo(0);
+	write_c0_dtaghi(0);
+
 	dcache_size = c->dcache.waysize * c->dcache.ways;
 	lsize = c->dcache.linesz;
 	aend = (KSEG0 + dcache_size - 1) & ~(lsize - 1);
