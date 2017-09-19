@@ -580,10 +580,10 @@ setup_16bit_2:
 	.set	pop
 .endm
 
-#define CFG_DCACHE_SIZE         32768
-#define CFG_ICACHE_SIZE         65536
-#define CFG_CACHELINE_SIZE      32
-#define MIPS_MAX_CACHE_SIZE    65536
+#define CFG_DCACHE_SIZE		32768
+#define CFG_ICACHE_SIZE		65536
+#define CFG_CACHELINE_SIZE	32
+#define MIPS_MAX_CACHE_SIZE	65536
 
 #define K0BASE     KSEG0
 
@@ -687,20 +687,19 @@ setup_16bit_2:
 	bltu	a0, a1, 2b
 
 	/* Set invalid tag.
-	 */
-
-
+	 * for icache */
 	mtc0	zero, CP0_TAGLO
-	mtc0	zero, $29	# C0_TagHi
-	mtc0	zero, $28, 2	# C0_DTagLo
-	mtc0	zero, $29, 2	# C0_DTagHi
+	mtc0	zero, CP0_TAGHI
+	/* for dcache */
+	mtc0	zero, CP0_TAGLO, 2
+	mtc0	zero, CP0_TAGHI, 2
 
 
-   /*
-    * The caches are probably in an indeterminate state,
-    * so we force good parity into them by doing an
-    * invalidate, load/fill, invalidate for each line.
-    */
+	/*
+	 * The caches are probably in an indeterminate state,
+	 * so we force good parity into them by doing an
+	 * invalidate, load/fill, invalidate for each line.
+	 */
 
 	/* Assume bottom of RAM will generate good parity for the cache.
 	 */
