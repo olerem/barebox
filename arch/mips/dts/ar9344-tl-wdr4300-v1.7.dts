@@ -26,6 +26,11 @@
 			compatible = "barebox,environment";
 			device-path = &spiflash, "partname:barebox-environment";
 		};
+
+		art@0 {
+			compatible = "qca,art", "qca,art-ar9344";
+			device-path = &spiflash, "partname:art";
+		};
 	};
 };
 
@@ -58,6 +63,11 @@
 		partition@80000 {
 			label = "barebox-environment";
 			reg = <0x80000 0x10000>;
+		};
+
+		partition@80000 {
+			label = "art";
+			reg = <0x7f0000 0x10000>;
 		};
 	};
 };
