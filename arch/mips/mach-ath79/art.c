@@ -26,12 +26,43 @@
 #include <libfile.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <net.h>
+
+#define MAC_ADDRESS_PROPLEN	(2 * sizeof(__be32))
 
 struct ar9300_eeprom {
 	u8 eeprom_version;
 	u8 template_version;
 	u8 mac_addr[6];
 };
+
+static void art_set_mac(struct device_d *dev, struct ar9300_eeprom *eeprom)
+{
+	char mac[6];
+	const __be32 *prop;
+	struct device_node *node = dev->device_node;
+	int len;
+
+	if (!node)
+		return;
+
+	prop = of_get_property(node, "barebox,provide-mac-address", &len);
+	if (!prop)
+		return;
+
+	while (len >= MAC_ADDRESS_PROPLEN) {
+		struct device_node *rnode;
+		uint32_t phandle, offset;
+
+		phandle = be32_to_cpup(prop++);
+
+		rnode = of_find_node_by_phandle(phandle);
+
+		of_eth_register_ethaddr(rnode, eeprom->mac_addr);
+
+		len -= MAC_ADDRESS_PROPLEN;
+	}
+}
 
 static int art_read_mac(struct device_d *dev, const char *file)
 {
@@ -60,6 +91,8 @@ static int art_read_mac(struct device_d *dev, const char *file)
 	       eeprom.mac_addr[3],
 	       eeprom.mac_addr[4],
 	       eeprom.mac_addr[5]);
+
+	art_set_mac(dev, &eeprom);
 
 	return 0;
 }
