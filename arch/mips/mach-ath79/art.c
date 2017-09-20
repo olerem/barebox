@@ -34,20 +34,22 @@ struct ar9300_eeprom {
 	u8 mac_addr[6];
 };
 
-static void art_set_mac(struct device_d *dev, struct ar9300_eeprom *eeprom)
+static int art_set_mac(struct device_d *dev, struct ar9300_eeprom *eeprom)
 {
 	struct device_node *node = dev->device_node;
 	struct device_node *rnode;
 
 	if (!node)
-		return;
+		return -ENOENT;
 
 	rnode = of_parse_phandle_from(node, NULL,
 				     "barebox,provide-mac-address", 0);
 	if (!rnode)
-		return;
+		return -ENOENT;
 
 	of_eth_register_ethaddr(rnode, &eeprom->mac_addr[0]);
+
+	return 0;
 }
 
 static int art_read_mac(struct device_d *dev, const char *file)
@@ -57,7 +59,7 @@ static int art_read_mac(struct device_d *dev, const char *file)
 
 	fd = open_and_lseek(file, O_RDONLY, 0x1000);
 	if (fd < 0) {
-		pr_err("Failed to open %s to read uploaded serial number %d\n",
+		dev_err(dev, "Failed to open eeprom path %s %d\n",
 		       file, -errno);
 		return -errno;
 	}
@@ -65,12 +67,13 @@ static int art_read_mac(struct device_d *dev, const char *file)
 	rbytes = read_full(fd, &eeprom, sizeof(eeprom));
 	close(fd);
 	if (rbytes <= 0 || rbytes < sizeof(eeprom)) {
-		pr_err("Failed to read %s\n", file);
+		dev_err(dev, "Failed to read %s\n", file);
 		return -EIO;
 	}
 
-	printk("eeprom %x.%x\n", eeprom.eeprom_version, eeprom.template_version);
-	printk("mac: %02x:%02x:%02x:%02x:%02x:%02x",
+	dev_dbg(dev, "ART version: %x.%x\n",
+		 eeprom.eeprom_version, eeprom.template_version);
+	dev_dbg(dev, "mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       eeprom.mac_addr[0],
 	       eeprom.mac_addr[1],
 	       eeprom.mac_addr[2],
@@ -78,12 +81,12 @@ static int art_read_mac(struct device_d *dev, const char *file)
 	       eeprom.mac_addr[4],
 	       eeprom.mac_addr[5]);
 
-	if (!is_valid_ether_addr(&eeprom.mac_addr[0]))
-		printk("!!!!!! invalid addr\n");
+	if (!is_valid_ether_addr(&eeprom.mac_addr[0])) {
+		dev_err(dev, "bad MAC addr\n");
+		return -EILSEQ;
+	}
 
-	art_set_mac(dev, &eeprom);
-
-	return 0;
+	return art_set_mac(dev, &eeprom);
 }
 
 static int art_probe(struct device_d *dev)
@@ -91,16 +94,15 @@ static int art_probe(struct device_d *dev)
 	char *path;
 	int ret;
 
-	printk("%s:%i\n", __func__, __LINE__);
+	dev_dbg(dev, "found ART partition\n");
 
 	ret = of_find_path(dev->device_node, "device-path", &path, 0);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "can't find path\n");
 		return ret;
+	}
 
-	ret = art_read_mac(dev, path);
-	printk("%s:%i %s\n", __func__, __LINE__, path);
-
-	return ret;
+	return art_read_mac(dev, path);
 }
 
 static struct of_device_id art_dt_ids[] = {
