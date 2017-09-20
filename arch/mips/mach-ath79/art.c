@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <net.h>
 
-#define MAC_ADDRESS_PROPLEN	(2 * sizeof(__be32))
-
 struct ar9300_eeprom {
 	u8 eeprom_version;
 	u8 template_version;
@@ -39,29 +37,19 @@ struct ar9300_eeprom {
 static void art_set_mac(struct device_d *dev, struct ar9300_eeprom *eeprom)
 {
 	char mac[6];
-	const __be32 *prop;
 	struct device_node *node = dev->device_node;
+	struct device_node *rnode;
 	int len;
 
 	if (!node)
 		return;
 
-	prop = of_get_property(node, "barebox,provide-mac-address", &len);
-	if (!prop)
+	rnode = of_parse_phandle_from(node, NULL,
+				     "barebox,provide-mac-address", 0);
+	if (!rnode)
 		return;
 
-	while (len >= MAC_ADDRESS_PROPLEN) {
-		struct device_node *rnode;
-		uint32_t phandle, offset;
-
-		phandle = be32_to_cpup(prop++);
-
-		rnode = of_find_node_by_phandle(phandle);
-
-		of_eth_register_ethaddr(rnode, eeprom->mac_addr);
-
-		len -= MAC_ADDRESS_PROPLEN;
-	}
+	of_eth_register_ethaddr(rnode, &eeprom->mac_addr[0]);
 }
 
 static int art_read_mac(struct device_d *dev, const char *file)
@@ -83,14 +71,17 @@ static int art_read_mac(struct device_d *dev, const char *file)
 		return -EIO;
 	}
 
-	printk("eeprom %x.%x", eeprom.eeprom_version, eeprom.template_version);
-	printk("mac: %x:%x:%x:%x:%x:%x",
+	printk("eeprom %x.%x\n", eeprom.eeprom_version, eeprom.template_version);
+	printk("mac: %02x:%02x:%02x:%02x:%02x:%02x",
 	       eeprom.mac_addr[0],
 	       eeprom.mac_addr[1],
 	       eeprom.mac_addr[2],
 	       eeprom.mac_addr[3],
 	       eeprom.mac_addr[4],
 	       eeprom.mac_addr[5]);
+
+	if (!is_valid_ether_addr(&eeprom.mac_addr[0]))
+		printk("!!!!!! invalid addr\n");
 
 	art_set_mac(dev, &eeprom);
 
