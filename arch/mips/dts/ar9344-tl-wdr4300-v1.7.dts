@@ -30,6 +30,7 @@
 		art@0 {
 			compatible = "qca,art", "qca,art-ar9344";
 			device-path = &spiflash, "partname:art";
+			barebox,provide-mac-address = <&mac0>;
 		};
 	};
 };
