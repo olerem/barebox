@@ -36,10 +36,8 @@ struct ar9300_eeprom {
 
 static void art_set_mac(struct device_d *dev, struct ar9300_eeprom *eeprom)
 {
-	char mac[6];
 	struct device_node *node = dev->device_node;
 	struct device_node *rnode;
-	int len;
 
 	if (!node)
 		return;
