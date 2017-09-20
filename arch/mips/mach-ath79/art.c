@@ -1,7 +1,5 @@
 /*
- * barebox.c
- *
- * Copyright (c) 2013 Sascha Hauer <s.hauer@pengutronix.de>, Pengutronix
+ * Copyright (c) 2017 Oleksij Rempel <linux@rempel-privat.de>
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -121,18 +119,6 @@ static struct driver_d art_driver = {
 
 static int art_of_driver_init(void)
 {
-	struct device_node *node;
-
-	node = of_get_root_node();
-	if (!node)
-		return 0;
-
-	node = of_find_node_by_path("/chosen");
-	if (!node)
-		return 0;
-
-	of_platform_populate(node, of_default_bus_match_table, NULL);
-
 	platform_driver_register(&art_driver);
 
 	return 0;
