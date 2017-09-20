@@ -23,6 +23,46 @@
 #include <of.h>
 #include <malloc.h>
 #include <partition.h>
+#include <libfile.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+struct ar9300_eeprom {
+	u8 eeprom_version;
+	u8 template_version;
+	u8 mac_addr[6];
+};
+
+static int art_read_mac(struct device_d *dev, const char *file)
+{
+	int fd, rbytes;
+	struct ar9300_eeprom eeprom;
+
+	fd = open_and_lseek(file, O_RDONLY, 0x1000);
+	if (fd < 0) {
+		pr_err("Failed to open %s to read uploaded serial number %d\n",
+		       file, -errno);
+		return -errno;
+	}
+
+	rbytes = read_full(fd, &eeprom, sizeof(eeprom));
+	close(fd);
+	if (rbytes <= 0 || rbytes < sizeof(eeprom)) {
+		pr_err("Failed to read %s\n", file);
+		return -EIO;
+	}
+
+	printk("eeprom %x.%x", eeprom.eeprom_version, eeprom.template_version);
+	printk("mac: %x:%x:%x:%x:%x:%x",
+	       eeprom.mac_addr[0],
+	       eeprom.mac_addr[1],
+	       eeprom.mac_addr[2],
+	       eeprom.mac_addr[3],
+	       eeprom.mac_addr[4],
+	       eeprom.mac_addr[5]);
+
+	return 0;
+}
 
 static int art_probe(struct device_d *dev)
 {
@@ -35,9 +75,10 @@ static int art_probe(struct device_d *dev)
 	if (ret)
 		return ret;
 
-	printk("%s:%i\n", __func__, __LINE__);
+	ret = art_read_mac(dev, path);
+	printk("%s:%i %s\n", __func__, __LINE__, path);
 
-	return 0;
+	return ret;
 }
 
 static struct of_device_id art_dt_ids[] = {
