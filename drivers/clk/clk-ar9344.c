@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
- *
- * Based on the Linux ath79 clock code
+ * Copyright (C) 2017 Oleksij Rempel <linux@rempel-privat.de>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -11,9 +9,6 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <common.h>
