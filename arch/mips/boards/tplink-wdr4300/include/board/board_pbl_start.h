@@ -54,6 +54,7 @@ skip_flash_test:
 	/* Initialize caches... */
 	wasp_mips74k_cache_reset
 
+	dcache_enable
 skip_pll_ram_config:
 	debug_ll_outc '7'
 	debug_ll_outnl
