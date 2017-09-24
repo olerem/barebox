@@ -263,18 +263,23 @@ static inline void ar7240_reg_wr(u32 reg, u32 val)
 
 static inline u32 ag71xx_gmac_rr(struct ag71xx *dev, int reg)
 {
+	dma_sync_single_for_device((unsigned long)dev->regs_gmac + reg, 4,
+					DMA_FROM_DEVICE);
 	return __raw_readl(dev->regs_gmac + reg);
 }
 
 static inline void ag71xx_gmac_wr(struct ag71xx *dev, int reg, u32 val)
 {
 	__raw_writel(val, dev->regs_gmac + reg);
+	dma_sync_single_for_device((unsigned long)dev->regs_gmac + reg, 4, DMA_TO_DEVICE);
 }
 
 static inline u32 ag71xx_rr(struct ag71xx *priv, int reg)
 {
 	ag71xx_check_reg_offset(priv, reg);
 
+	dma_sync_single_for_device((unsigned long)priv->regs + reg, 4,
+					DMA_FROM_DEVICE);
 	return __raw_readl(priv->regs + reg);
 }
 
@@ -283,8 +288,7 @@ static inline void ag71xx_wr(struct ag71xx *priv, int reg, u32 val)
 	ag71xx_check_reg_offset(priv, reg);
 
 	__raw_writel(val, priv->regs + reg);
-	/* flush write */
-	(void)__raw_readl(priv->regs + reg);
+	dma_sync_single_for_device((unsigned long)priv->regs + reg, 4, DMA_TO_DEVICE);
 }
 
 
@@ -472,7 +476,6 @@ static int ag71xx_ether_open(struct eth_device *edev)
 	if (AG71XX_TYPE_AR9344_GMAC0 == cfg->type)
 		return phy_device_connect(edev, &priv->miibus, 0,
 			NULL, 0, PHY_INTERFACE_MODE_RGMII_TXID);
-
 	return 0;
 }
 
