@@ -1436,6 +1436,23 @@ int of_count_phandle_with_args(const struct device_node *np,
 EXPORT_SYMBOL(of_count_phandle_with_args);
 
 /**
+ * of_get_machine_compatible - get first compatible string from the root node.
+ *
+ * Returns the string or NULL.
+ */
+const char *of_get_machine_compatible(void)
+{
+	struct property *prop;
+
+	if (!root_node)
+		return NULL;
+
+	prop = of_find_property(root_node, "compatible", NULL);
+	return of_prop_next_string(prop, NULL);
+}
+EXPORT_SYMBOL(of_get_machine_compatible);
+
+/**
  * of_machine_is_compatible - Test root of device tree for a given compatible value
  * @compat: compatible string to look for in root node's compatible property.
  *
