@@ -8,10 +8,15 @@
 
 #include <common.h>
 #include <init.h>
+#include <of.h>
 
 static int model_hostname_init(void)
 {
-	barebox_set_hostname("dpt-module");
+	const char *hostname;
+
+	hostname = of_get_machine_compatible();
+	if (hostname)
+		barebox_set_hostname(hostname);
 
 	return 0;
 }
