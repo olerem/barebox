@@ -1440,14 +1440,14 @@ EXPORT_SYMBOL(of_count_phandle_with_args);
  *
  * Returns the string or NULL.
  */
-const char *of_get_machine_compatilbe(void)
+const char *of_get_machine_compatible(void)
 {
 	struct property *prop;
 
 	if (!root_node)
 		return NULL;
 
-	prop = of_find_property(device, "compatible", NULL);
+	prop = of_find_property(root_node, "compatible", NULL);
 	return of_prop_next_string(prop, NULL);
 }
 EXPORT_SYMBOL(of_get_machine_compatible);
