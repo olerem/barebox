@@ -170,6 +170,13 @@ config CPU_MIPS32_R2
 	  specific type of processor in your system, choose those that one
 	  otherwise CPU_MIPS32_R1 is a safe bet for any MIPS32 system.
 
+config CPU_MIPS_24KC
+	bool "MIPS 24Kc"
+	depends on SYS_HAS_CPU_MIPS_24KC
+	select CPU_SUPPORTS_32BIT_KERNEL
+	help
+	  FIXME Choose this option to build a barebox for release  or later of the
+
 config CPU_MIPS64_R1
 	bool "MIPS64 Release 1"
 	depends on SYS_HAS_CPU_MIPS64_R1
@@ -206,6 +213,12 @@ config CPU_LOONGSON1
 	select CPU_MIPSR2
 	select CPU_SUPPORTS_32BIT_KERNEL
 
+config CPU_MIPS_24KC
+	bool
+	select CPU_MIPS32
+	select CPU_MIPSR2
+	select CPU_SUPPORTS_32BIT_KERNEL
+
 config SYS_HAS_CPU_LOONGSON1B
 	bool
 
@@ -213,6 +226,9 @@ config SYS_HAS_CPU_MIPS32_R1
 	bool
 
 config SYS_HAS_CPU_MIPS32_R2
+	bool
+
+config SYS_HAS_CPU_MIPS_24KC
 	bool
 
 config SYS_HAS_CPU_MIPS64_R1

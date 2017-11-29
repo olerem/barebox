@@ -52,6 +52,7 @@ cflags-$(CONFIG_CPU_MIPS64_R2) += $(call cc-option,-march=mips64r2,-mips64r2 -U_
 cflags-$(CONFIG_CPU_LOONGSON1)	+= \
 	$(call cc-option,-march=mips32r2,-mips32r2 -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32) \
 	-Wa,-mips32r2 -Wa,--trap
+cflags-$(CONFIG_CPU_MIPS_24KC) += $(call cc-option,-march=24kc,-mfix-24k -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32) -Wa,-mfix-24k -Wa,--trap
 
 CPPFLAGS += -DTEXT_BASE=$(CONFIG_TEXT_BASE)
 

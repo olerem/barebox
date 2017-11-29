@@ -5,6 +5,7 @@ config ARCH_TEXT_BASE
 	default 0xa0800000
 
 config SOC_QCA_AR9331
+	select SYS_HAS_CPU_MIPS_24KC
 	bool
 
 config SOC_QCA_AR9344
