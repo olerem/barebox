@@ -15,7 +15,7 @@ static int model_hostname_init(void)
 	const char *name;
 
 	name = of_get_machine_compatible();
-	barebox_set_hostname(name ? name : "qca-ar9331-generic");
+	barebox_set_hostname(name ?: "qca-ar9331-generic");
 
 	return 0;
 }
