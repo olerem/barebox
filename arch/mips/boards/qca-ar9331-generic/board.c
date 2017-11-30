@@ -12,11 +12,10 @@
 
 static int model_hostname_init(void)
 {
-	const char *hostname;
+	const char *name;
 
-	hostname = of_get_machine_compatible();
-	if (hostname)
-		barebox_set_hostname(hostname);
+	name = of_get_machine_compatible();
+	barebox_set_hostname(name ? name : "qca-ar9331-generic");
 
 	return 0;
 }
