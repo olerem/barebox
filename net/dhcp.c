@@ -574,14 +574,14 @@ int dhcp_set_result(struct eth_device *edev, struct dhcp_result *res)
 	if (res->domainname)
 		net_set_domainname(res->domainname);
 
-	if (res->serverip) {
-		net_set_serverip_empty(res->serverip);
-	} else if (res->tftp_server_name) {
+	if (res->tftp_server_name) {
 		IPaddr_t ip;
 
 		ip = resolv(res->tftp_server_name);
 		if (ip)
 			net_set_serverip_empty(ip);
+	} else if (res->serverip) {
+		net_set_serverip_empty(res->serverip);
 	}
 
 	return 0;
