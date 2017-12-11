@@ -18,11 +18,17 @@
 
 #include <asm-generic/barebox.lds.h>
 
+#if defined(CONFIG_64BIT)
+#define PTR_COUNT_SHIFT 3
+#else
+#define PTR_COUNT_SHIFT 2
+#endif
+
 OUTPUT_ARCH(mips)
 ENTRY(_start)
 SECTIONS
 {
-	. = TEXT_BASE;
+	. = 0x0;
 
 	. = ALIGN(4);
 	.text      :
@@ -47,6 +53,12 @@ SECTIONS
 
 	. = ALIGN(4);
 	.data : { *(.data*) }
+
+	.got : {
+		*(.got)
+	}
+
+	num_got_entries = SIZEOF(.got) >> PTR_COUNT_SHIFT;
 
 	.barebox_imd : { BAREBOX_IMD }
 
@@ -75,10 +87,55 @@ SECTIONS
 
 	.dtb : { BAREBOX_DTB() }
 
+	.rel.dyn : {
+		__rel_dyn_start = .;
+		*(.rel.dyn)
+		__rel_dyn_end = .;
+	}
+
+	.padding : {
+		/*
+		 * Workaround for a binutils feature (or bug?).
+		 *
+		 * The GNU ld from binutils puts the dynamic relocation
+		 * entries into the .rel.dyn section. Sometimes it
+		 * allocates more dynamic relocation entries than it needs
+		 * and the unused slots are set to R_MIPS_NONE entries.
+                 *
+                 * However the size of the .rel.dyn section in the ELF
+                 * section header does not cover the unused entries, so
+                 * objcopy removes those during stripping.
+                 *
+                 * Create a small section here to avoid that.
+                 */
+                LONG(0xFFFFFFFF)
+        }
+
 	_edata = .;
-	. = ALIGN(4);
-	__bss_start = .;
-	.bss : { *(.bss*) }
-	__bss_stop = .;
 	_end = .;
+
+	.bss __rel_dyn_start (OVERLAY) : {
+                __bss_start = .;
+                *(.sbss.*)
+                *(.bss.*)
+                *(COMMON)
+                . = ALIGN(4);
+                __bss_stop = .;
+        }
+
+        .dynsym _end : {
+                *(.dynsym)
+        }
+
+        .dynbss : {
+                *(.dynbss)
+        }
+
+        .dynstr : {
+                *(.dynstr)
+        }
+
+        .dynamic : {
+                *(.dynamic)
+        }
 }
