@@ -11,7 +11,7 @@ endif
 
 CPPFLAGS += -D__MIPS__ -fno-strict-aliasing -fno-merge-constants
 
-cflags-y += -G 0 -mno-abicalls -fno-pic -pipe
+cflags-y += -G 0 -pipe
 cflags-y += -Wall -Wmissing-prototypes -Wstrict-prototypes \
 	-Wno-uninitialized -Wno-format -Wno-main
 
@@ -57,8 +57,8 @@ CPPFLAGS += -DTEXT_BASE=$(CONFIG_TEXT_BASE)
 
 ifndef CONFIG_MODULES
 # Add cleanup flags
-CPPFLAGS += -fdata-sections -ffunction-sections
-LDFLAGS_barebox += -static --gc-sections
+CPPFLAGS += -fdata-sections -ffunction-sections -fpic -mabicalls -mxgot
+LDFLAGS_barebox += -static --gc-sections $(LDFLAGS) -pie -mxgot
 endif
 
 ifdef CONFIG_IMAGE_COMPRESSION
