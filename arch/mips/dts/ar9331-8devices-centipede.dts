@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include <mips/qca/ar9331.dtsi>
+#include "ar9331.dtsi"
+
+/ {
+	model = "8device Centipede";
+	compatible = "8devices,centipede";
+
+	aliases {
+		serial0 = &uart;
+		spiflash = &spiflash;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+
+	chosen {
+		environment@0 {
+			compatible = "barebox,environment";
+			device-path = &spiflash, "partname:barebox-environment";
+		};
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi {
+	num-chipselects = <1>;
+	status = "okay";
+
+	/* Winbond 25Q128FVSG SPI flash */
+	spiflash: w25q128@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "winbond,w25q128", "jedec,spi-nor";
+		spi-max-frequency = <104000000>;
+		reg = <0>;
+
+		partition@0 {
+			label = "barebox";
+			reg = <0 0x80000>;
+		};
+
+		partition@80000 {
+			label = "barebox-environment";
+			reg = <0x80000 0x10000>;
+		};
+	};
+};
+
+&mac0 {
+	status = "okay";
+};
