@@ -27,6 +27,7 @@
 #include <asm/barebox-arm-head.h>
 #include <asm-generic/memory_layout.h>
 #include <asm/sections.h>
+#include <asm/secure.h>
 #include <asm/pgtable.h>
 #include <asm/cache.h>
 #include <asm/unaligned.h>
@@ -108,6 +109,9 @@ void __noreturn barebox_multi_pbl_start(unsigned long membase,
 		barebox = (void *)barebox_base;
 
 	pr_debug("jumping to uncompressed image at 0x%p\n", barebox);
+
+	if (__boot_cpu_mode == HYP_MODE)
+		armv7_switch_to_hyp();
 
 	barebox(membase, memsize, boarddata);
 }

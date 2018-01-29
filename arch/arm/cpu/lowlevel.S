@@ -8,6 +8,9 @@ ENTRY(arm_cpu_lowlevel_init)
 	/* save lr, since it may be banked away with a processor mode change */
 	mov	r2, lr
 
+	/* careful: the hyp install corrupts r0 and r1 */
+	bl	__hyp_install
+
 	/* set the cpu to SVC32 mode, mask irq and fiq */
 	mrs	r12 , cpsr
 	eor	r12, r12, #HYP_MODE
