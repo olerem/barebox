@@ -18,7 +18,7 @@
 #include <mach/debug_ll_ar9344.h>
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
-#include <mach/pbl_ll_init_ar9344_1.1.h>
+#include <mach/pbl_ll_init_qca4531.h>
 #include <asm/pbl_nmon.h>
 
 	.macro	board_pbl_start
@@ -45,10 +45,7 @@
 	debug_ll_outc '4'
 skip_flash_test:
 
-	pbl_ar9344_v11_pll_config
-	debug_ll_outc '5'
-
-	pbl_ar9344_v11_ddr2_config
+	pbl_qca4531_pll_config
 
 skip_pll_ram_config:
 	debug_ll_outc '6'
