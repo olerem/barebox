@@ -5,7 +5,7 @@
 #include <asm/regdef.h>
 
 
-.macro	pbl_ar9344_v11_pll_config
+.macro	pbl_qca4531_pll_config
 	.set	push
 	.set	noreorder
 
