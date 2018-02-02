@@ -47,6 +47,12 @@ skip_flash_test:
 
 	pbl_qca4531_pll_config
 
+	debug_ll_outc '5'
+	/* Initialize caches... */
+	mips_cache_reset
+
+	/* ... and enable them */
+	dcache_enable
 skip_pll_ram_config:
 	debug_ll_outc '6'
 	debug_ll_outnl
