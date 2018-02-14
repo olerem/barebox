@@ -101,6 +101,8 @@ static int ar9344_wdt_probe(struct device_d *dev)
 	dev->priv = priv;
 
 	ar9344_watchdog_detect_reset_source(priv);
+	/* disable watchdog on probe */
+	iowrite32be(0, priv->base + AR9344_WD_REG_CTRL);
 
 	priv->clk = clk_get(dev, NULL);
 	if (IS_ERR(priv->clk)) {
