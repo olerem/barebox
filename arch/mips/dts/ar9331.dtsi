@@ -13,6 +13,8 @@
 			reg-names = "gmac", "ge0";
 			phy-mode = "mii";
 			status = "disabled";
+			reset-names = "mac", "mdio", "switch";
+			resets = <&rst 9>, <&rst 22>, <&rst 8>;
                };
 	};
 };
