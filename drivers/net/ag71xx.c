@@ -19,6 +19,7 @@
 #include <io.h>
 #include <linux/err.h>
 #include <linux/phy.h>
+#include <linux/reset.h>
 #include <of_net.h>
 #include <of_address.h>
 
@@ -220,6 +221,9 @@ struct ag71xx {
 	void __iomem *regs_gmac;
 	struct mii_bus miibus;
 	const struct ag71xx_cfg *cfg;
+	struct reset_control *rst_mac;
+	struct reset_control *rst_mdio;
+	struct reset_control *rst_switch;
 
 	void *rx_buffer;
 
@@ -555,12 +559,13 @@ static struct ag71xx_cfg ag71xx_cfg_ar9344_gmac0 = {
 static int ag71xx_probe(struct device_d *dev)
 {
 	void __iomem *regs, *regs_gmac;
+	struct reset_control *rst_mac, *rst_mdio, *rst_switch;
 	struct mii_bus *miibus;
 	struct eth_device *edev;
 	struct ag71xx_cfg *cfg;
 	struct ag71xx *priv;
 	u32 mac_h, mac_l;
-	u32 rd, mask;
+	u32 rd;
 	int ret;
 
 	ret = dev_get_drvdata(dev, (const void **)&cfg);
@@ -574,6 +579,17 @@ static int ag71xx_probe(struct device_d *dev)
 	regs = dev_request_mem_region_by_name(dev, "ge0");
 	if (IS_ERR(regs))
 		return PTR_ERR(regs);
+
+	rst_mac = reset_control_get(dev, "mac");
+	if (IS_ERR(rst_mac))
+		return PTR_ERR(rst_mac);
+
+	rst_mdio = reset_control_get(dev, "mdio");
+	if (IS_ERR(rst_mdio))
+		return PTR_ERR(rst_mdio);
+
+	/* optional resets */
+	rst_switch = reset_control_get(dev, "switch");
 
 	priv = xzalloc(sizeof(struct ag71xx));
 	edev = &priv->netdev;
@@ -594,6 +610,9 @@ static int ag71xx_probe(struct device_d *dev)
 	priv->regs = regs;
 	priv->regs_gmac = regs_gmac;
 	priv->cfg = cfg;
+	priv->rst_mac = rst_mac;
+	priv->rst_mdio = rst_mdio;
+	priv->rst_switch = rst_switch;
 
 	miibus->read = ag71xx_ether_mii_read;
 	miibus->write = ag71xx_ether_mii_write;
@@ -608,22 +627,13 @@ static int ag71xx_probe(struct device_d *dev)
 		rd |= 0x1;
 	ar7240_reg_wr((AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG), rd);
 
-	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
-		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
-
-	/* reset GE0 MAC and MDIO */
-	mask = AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO
-		| AR933X_RESET_SWITCH;
-
-	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd |= mask;
-	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
-	mdelay(100);
-
-	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd &= ~(mask);
-	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
-	mdelay(100);
+	mdelay(10);
+	/* switch reset can be asserted in one shot with other eth parts.
+	 * It means, we can only assert MAC, MDIO and switch in PBL. */
+	reset_control_deassert(priv->rst_mac);
+	reset_control_deassert(priv->rst_mdio);
+	reset_control_deassert(priv->rst_switch);
+	mdelay(10);
 
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1,
 		  (MAC_CFG1_SR | MAC_CFG1_TX_RST | MAC_CFG1_RX_RST));
@@ -665,6 +675,7 @@ static int ag71xx_probe(struct device_d *dev)
 static void ag71xx_remove(struct device_d *dev)
 {
 	struct eth_device *edev = dev->priv;
+	struct ag71xx *priv = edev->priv;
 
 	ag71xx_ether_halt(edev);
 }

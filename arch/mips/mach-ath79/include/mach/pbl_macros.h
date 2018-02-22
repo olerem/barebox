@@ -305,6 +305,25 @@ normal_path:
 	.set	pop
 .endm
 
+.macro	pbl_ar9331_ethx_reset
+	.set push
+	.set noreorder
+
+	li      t0, CKSEG1ADDR(AR71XX_RESET_BASE)
+	lw      t1, AR933X_RESET_REG_RESET_MODULE(t0)
+	li      t2, 0x00C02300
+	or      t1, t1, t2
+	sw      t1, AR933X_RESET_REG_RESET_MODULE(t0)
+	nop
+	lw      t1, AR933X_RESET_REG_RESET_MODULE(t0)
+	li      t2, 0xFF3FDCFF
+	and     t1, t1, t2
+	sw      t1, AR933X_RESET_REG_RESET_MODULE(t0)
+	nop
+
+	.set	pop
+.endm
+
 .macro	pbl_ar9331_wmac_enable
 	.set push
 	.set noreorder
@@ -386,6 +405,7 @@ normal_path:
 	pbl_ar9331_ram_generic_config
 
 skip_pll_ram_config:
+	pbl_ar9331_ethx_reset
 	/* Initialize caches... */
 	mips_cache_reset
 
