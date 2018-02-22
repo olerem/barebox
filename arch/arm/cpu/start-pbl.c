@@ -29,6 +29,7 @@
 #include <asm/pgtable.h>
 #include <asm/cache.h>
 #include <asm/unaligned.h>
+#include <asm/secure.h>
 
 #include "mmu-early.h"
 
@@ -99,6 +100,9 @@ __noreturn void barebox_single_pbl_start(unsigned long membase,
 		barebox = (void *)(barebox_base + 1);
 	else
 		barebox = (void *)barebox_base;
+
+	if (__boot_cpu_mode == HYP_MODE)
+		armv7_switch_to_hyp();
 
 	barebox(membase, memsize, boarddata);
 }

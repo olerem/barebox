@@ -9,6 +9,10 @@ obj-$(CONFIG_ARM_EXCEPTIONS) += exceptions.o
 obj-$(CONFIG_MMU) += mmu.o mmu-early.o
 pbl-$(CONFIG_MMU) += mmu-early.o
 lwl-y += lowlevel.o
+obj-y += hyp.o
+AFLAGS_hyp.o :=-Wa,-march=armv7-a -Wa,-mcpu=all
+pbl-y += hyp.o
+AFLAGS_pbl-hyp.o :=-Wa,-march=armv7-a -Wa,-mcpu=all
 endif
 
 obj-$(CONFIG_ARM_EXCEPTIONS) += interrupts.o
