@@ -6,9 +6,11 @@ config ARCH_TEXT_BASE
 
 config SOC_QCA_AR9331
 	bool
+	select ARCH_HAS_RESET_CONTROLLER
 
 config SOC_QCA_AR9344
 	bool
+	select ARCH_HAS_RESET_CONTROLLER
 
 choice
 	prompt "Board type"
