@@ -627,13 +627,11 @@ static int ag71xx_probe(struct device_d *dev)
 		rd |= 0x1;
 	ar7240_reg_wr((AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG), rd);
 
-	mdelay(10);
 	/* switch reset can be asserted in one shot with other eth parts.
 	 * It means, we can only assert MAC, MDIO and switch in PBL. */
 	reset_control_deassert(priv->rst_mac);
 	reset_control_deassert(priv->rst_mdio);
 	reset_control_deassert(priv->rst_switch);
-	mdelay(10);
 
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1,
 		  (MAC_CFG1_SR | MAC_CFG1_TX_RST | MAC_CFG1_RX_RST));
@@ -675,7 +673,6 @@ static int ag71xx_probe(struct device_d *dev)
 static void ag71xx_remove(struct device_d *dev)
 {
 	struct eth_device *edev = dev->priv;
-	struct ag71xx *priv = edev->priv;
 
 	ag71xx_ether_halt(edev);
 }
