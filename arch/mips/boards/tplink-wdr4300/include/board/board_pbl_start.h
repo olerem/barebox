@@ -56,6 +56,7 @@ skip_flash_test:
 
 	dcache_enable
 skip_pll_ram_config:
+	pbl_ar9331_ethx_reset
 	debug_ll_outc '7'
 	debug_ll_outnl
 
