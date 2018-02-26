@@ -242,7 +242,7 @@ struct ag71xx_cfg {
 	void (*init_mii)(struct ag71xx *priv);
 };
 
-static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
+static void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
 {
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
@@ -255,40 +255,42 @@ static inline void ag71xx_check_reg_offset(struct ag71xx *priv, int reg)
 	}
 }
 
-static inline u32 ar7240_reg_rd(u32 reg)
+static u32 ar7240_reg_rd(u32 reg)
 {
-	return __raw_readl(KSEG1ADDR(reg));
+	return ioread32be(KSEG1ADDR(reg));
 }
 
-static inline void ar7240_reg_wr(u32 reg, u32 val)
+static void ar7240_reg_wr(u32 reg, u32 val)
 {
-	__raw_writel(val, KSEG1ADDR(reg));
+	iowrite32be(val, KSEG1ADDR(reg));
+	(void)ioread32be(KSEG1ADDR(reg));
 }
 
-static inline u32 ag71xx_gmac_rr(struct ag71xx *dev, int reg)
+static u32 ag71xx_gmac_rr(struct ag71xx *dev, int reg)
 {
-	return __raw_readl(dev->regs_gmac + reg);
+	return ioread32be(dev->regs_gmac + reg);
 }
 
-static inline void ag71xx_gmac_wr(struct ag71xx *dev, int reg, u32 val)
+static void ag71xx_gmac_wr(struct ag71xx *dev, int reg, u32 val)
 {
-	__raw_writel(val, dev->regs_gmac + reg);
+	iowrite32be(val, dev->regs_gmac + reg);
+	(void)ioread32be(dev->regs_gmac + reg);
 }
 
-static inline u32 ag71xx_rr(struct ag71xx *priv, int reg)
+static u32 ag71xx_rr(struct ag71xx *priv, int reg)
 {
 	ag71xx_check_reg_offset(priv, reg);
 
-	return __raw_readl(priv->regs + reg);
+	return ioread32be(priv->regs + reg);
 }
 
-static inline void ag71xx_wr(struct ag71xx *priv, int reg, u32 val)
+static void ag71xx_wr(struct ag71xx *priv, int reg, u32 val)
 {
 	ag71xx_check_reg_offset(priv, reg);
 
-	__raw_writel(val, priv->regs + reg);
+	iowrite32be(val, priv->regs + reg);
 	/* flush write */
-	(void)__raw_readl(priv->regs + reg);
+	(void)ioread32be(priv->regs + reg);
 }
 
 
@@ -435,7 +437,7 @@ static int ag71xx_ether_send(struct eth_device *edev, void *packet, int length)
 	struct device_d *dev = priv->dev;
 	ag7240_desc_t *f = &priv->fifo_tx[priv->next_tx];
 	uint64_t start;
-	int ret = 0;
+	int ret = 0, count = 0;
 
 	/* flush */
 	dma_sync_single_for_device((unsigned long)packet, length, DMA_TO_DEVICE);
@@ -444,18 +446,21 @@ static int ag71xx_ether_send(struct eth_device *edev, void *packet, int length)
 	f->res1 = 0;
 	f->pkt_size = length;
 	f->is_empty = 0;
+	dma_sync_single_for_device(f, sizeof(*f), DMA_TO_DEVICE);
+
 	ag71xx_wr(priv, AG71XX_REG_TX_DESC, virt_to_phys(f));
 	ag71xx_wr(priv, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
 
-	/* flush again?! */
-	dma_sync_single_for_cpu((unsigned long)packet, length, DMA_TO_DEVICE);
-
 	start = get_time_ns();
+	dma_sync_single_for_cpu(f, sizeof(*f), DMA_FROM_DEVICE);
 	while (!f->is_empty) {
-		if (!is_timeout_non_interruptible(start, 100 * USECOND))
+		if (!is_timeout_non_interruptible(start, 10 * MSECOND)) {
+			dma_sync_single_for_cpu(f, sizeof(*f), DMA_FROM_DEVICE);
+			count++;
 			continue;
+		}
 
-		dev_err(dev, "error: tx timed out\n");
+		dev_err(dev, "error: tx timed out %i\n", count);
 		ret = -ETIMEDOUT;
 		break;
 	}
