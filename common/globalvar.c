@@ -571,6 +571,8 @@ int globalvar_add_simple_ip(const char *name, IPaddr_t *ip)
 	return 0;
 }
 
+static char *kernel_arg_bootloader_version;
+
 static int globalvar_init(void)
 {
 	register_device(&global_device);
@@ -579,6 +581,13 @@ static int globalvar_init(void)
 		register_device(&nv_device);
 
 	globalvar_add_simple("version", UTS_RELEASE);
+
+	if (IS_ENABLED(CONFIG_FLEXIBLE_BOOTARGS)) {
+		kernel_arg_bootloader_version = basprintf("bootloader.version=barebox-%s",
+					       UTS_RELEASE);
+		globalvar_add_simple_string("linux.bootargs.bootloader.version",
+					    &kernel_arg_bootloader_version);
+	}
 
 	return 0;
 }
