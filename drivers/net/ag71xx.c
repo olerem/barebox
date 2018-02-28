@@ -313,9 +313,6 @@ static int ag71xx_ether_mii_read(struct mii_bus *miidev, int phy_addr, int reg)
 	u16 addr = (phy_addr << MII_ADDR_SHIFT) | reg, val;
 	int ret;
 
-	if (AG71XX_TYPE_AR9331_GE0 == cfg->type)
-		return 0xffff;
-
 	ret = ag71xx_mii_wait(priv, 0);
 	if (ret)
 		return ret;
@@ -341,9 +338,6 @@ static int ag71xx_ether_mii_write(struct mii_bus *miidev, int phy_addr,
 	const struct ag71xx_cfg *cfg = priv->cfg;
 	u16 addr = (phy_addr << MII_ADDR_SHIFT) | reg;
 	int ret;
-
-	if (AG71XX_TYPE_AR9331_GE0 == cfg->type)
-		return 0;
 
 	ret = ag71xx_mii_wait(priv, 1);
 	if (ret)
