@@ -13,6 +13,11 @@ config AR8327N_PHY
 	---help---
 	  Currently supports the AR8327N PHY.
 
+config AR9331_PHY
+	bool "Driver for Atheros Ar9331 integrated PHYs"
+	---help---
+	  Supports the Atheros Ar9331 integrated PHYs.
+
 config AT803X_PHY
 	bool "Driver for Atheros AT803X PHYs"
 	---help---
