@@ -216,6 +216,7 @@ int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id)
 		return -EIO;
 
 	*phy_id |= (phy_reg & 0xffff);
+	printk("%i phyid: %x\n", addr, *phy_id);
 
 	return 0;
 }
