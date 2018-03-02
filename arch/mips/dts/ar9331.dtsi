@@ -13,6 +13,14 @@
 			reg-names = "gmac", "ge0";
 			phy-mode = "mii";
 			status = "disabled";
-               };
+		};
+
+		mac1: mac@1a000000 {
+			compatible = "qca,ar9331-ge1";
+			reg = <0x1a000000 0x01000000>;
+			reg-names = "ge0";
+			phy-mode = "mii";
+			status = "disabled";
+		};
 	};
 };
