@@ -183,11 +183,14 @@
 /*
  * GMAC register macros
  */
+#define AG71XX_REG_ETH_CFG		0x0000
+
 #define AG71XX_ETH_CFG_RGMII_GE0        (1<<0)
 #define AG71XX_ETH_CFG_MII_GE0_SLAVE    (1<<4)
 
 enum ag71xx_type {
 	AG71XX_TYPE_AR9331_GE0,
+	AG71XX_TYPE_AR9331_GE1,
 	AG71XX_TYPE_AR9344_GMAC0,
 };
 
@@ -514,9 +517,22 @@ static void ag71xx_ar9331_ge0_mii_init(struct ag71xx *priv)
 	/* config FIFOs */
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
 
-	rd = ag71xx_gmac_rr(priv, AG71XX_REG_MAC_CFG1);
-	rd |= AG71XX_ETH_CFG_MII_GE0_SLAVE;
-	ag71xx_gmac_wr(priv, 0, rd);
+	ag71xx_gmac_wr(priv, AG71XX_REG_ETH_CFG, AG71XX_ETH_CFG_MII_GE0_SLAVE);
+}
+
+static void ag71xx_ar9331_ge1_mii_init(struct ag71xx *priv)
+{
+	u32 rd;
+
+	rd = ag71xx_rr(priv, AG71XX_REG_MAC_CFG2);
+	rd |= (MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK | MAC_CFG2_IF_1000);
+	ag71xx_wr(priv, AG71XX_REG_MAC_CFG2, rd);
+
+	/* config FIFOs */
+	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
+
+	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 0xf | (1 << 31));
+	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 0xf);
 }
 
 static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
@@ -530,7 +546,7 @@ static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
 	/* config FIFOs */
 	ag71xx_wr(priv, AG71XX_REG_FIFO_CFG0, 0x1f00);
 
-	ag71xx_gmac_wr(priv, AG71XX_REG_MAC_CFG1, 1);
+	ag71xx_gmac_wr(priv, AG71XX_REG_ETH_CFG, AG71XX_ETH_CFG_RGMII_GE0);
 	udelay(1000);
 	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 4 | (1 << 31));
 	ag71xx_wr(priv, AG71XX_REG_MII_CFG, 4);
@@ -539,6 +555,11 @@ static void ag71xx_ar9344_gmac0_mii_init(struct ag71xx *priv)
 static struct ag71xx_cfg ag71xx_cfg_ar9331_ge0 = {
 	.type = AG71XX_TYPE_AR9331_GE0,
 	.init_mii = ag71xx_ar9331_ge0_mii_init,
+};
+
+static struct ag71xx_cfg ag71xx_cfg_ar9331_ge1 = {
+	.type = AG71XX_TYPE_AR9331_GE1,
+	.init_mii = ag71xx_ar9331_ge1_mii_init,
 };
 
 static struct ag71xx_cfg ag71xx_cfg_ar9344_gmac0 = {
@@ -556,14 +577,14 @@ static int ag71xx_probe(struct device_d *dev)
 	u32 mac_h, mac_l;
 	u32 rd, mask;
 	int ret;
+	static int reset_done = 0;
 
 	ret = dev_get_drvdata(dev, (const void **)&cfg);
 	if (ret)
 		return ret;
 
+	/* this reg is responsible only for GE0 on ar9331 */
 	regs_gmac = dev_request_mem_region_by_name(dev, "gmac");
-	if (IS_ERR(regs_gmac))
-		return PTR_ERR(regs_gmac);
 
 	regs = dev_request_mem_region_by_name(dev, "ge0");
 	if (IS_ERR(regs))
@@ -594,30 +615,35 @@ static int ag71xx_probe(struct device_d *dev)
 	miibus->priv = priv;
 	miibus->parent = dev;
 
-	/* enable switch core */
-	rd = ar7240_reg_rd(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG);
-	rd &= ~(0x1f);
-	rd |= 0x10;
-	if ((ar7240_reg_rd(WASP_BOOTSTRAP_REG) & WASP_REF_CLK_25) == 0)
-		rd |= 0x1;
-	ar7240_reg_wr((AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG), rd);
+	if (!reset_done) {
+		reset_done = 1;
+		/* enable switch core */
+		rd = ar7240_reg_rd(AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG);
+		rd &= ~(0x1f);
+		rd |= 0x10;
+		if ((ar7240_reg_rd(WASP_BOOTSTRAP_REG) & WASP_REF_CLK_25) == 0)
+			rd |= 0x1;
+		ar7240_reg_wr((AR71XX_PLL_BASE + AR933X_ETHSW_CLOCK_CONTROL_REG), rd);
 
-	if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
-		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
+		if (ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE) != 0)
+			ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, 0);
 
-	/* reset GE0 MAC and MDIO */
-	mask = AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO
-		| AR933X_RESET_SWITCH;
+		/* reset GE0 MAC and MDIO */
+		/* TODO: should avoid to reset it two times */
+		mask = AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO
+			| AR933X_RESET_GE1_MAC | AR933X_RESET_GE1_MDIO
+			| AR933X_RESET_SWITCH;
 
-	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd |= mask;
-	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
-	mdelay(100);
+		rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
+		rd |= mask;
+		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
+		mdelay(100);
 
-	rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
-	rd &= ~(mask);
-	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
-	mdelay(100);
+		rd = ath79_reset_rr(AR933X_RESET_REG_RESET_MODULE);
+		rd &= ~(mask);
+		ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, rd);
+		mdelay(100);
+	}
 
 	ag71xx_wr(priv, AG71XX_REG_MAC_CFG1,
 		  (MAC_CFG1_SR | MAC_CFG1_TX_RST | MAC_CFG1_RX_RST));
@@ -665,6 +691,7 @@ static void ag71xx_remove(struct device_d *dev)
 
 static __maybe_unused struct of_device_id ag71xx_dt_ids[] = {
 	{ .compatible = "qca,ar9331-ge0", .data = &ag71xx_cfg_ar9331_ge0, },
+	{ .compatible = "qca,ar9331-ge1", .data = &ag71xx_cfg_ar9331_ge1, },
 	{ .compatible = "qca,ar9344-gmac0", .data = &ag71xx_cfg_ar9344_gmac0, },
 	{ /* sentinel */ }
 };
