@@ -35,3 +35,7 @@
 &mac0 {
 	status = "okay";
 };
+
+&mac1 {
+	status = "okay";
+};
