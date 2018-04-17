@@ -147,6 +147,32 @@ static void imx6ul_enet_clk_init(void)
 	writel(val, gprbase + IOMUXC_GPR1);
 }
 
+int imx6_cpu_type(void)
+{
+	static int cpu_type = -1;
+
+	if (!cpu_is_mx6())
+		return 0;
+
+	if (cpu_type < 0)
+		cpu_type = __imx6_cpu_type();
+
+	return cpu_type;
+}
+
+int imx6_cpu_revision(void)
+{
+	static int soc_revision = -1;
+
+	if (!cpu_is_mx6())
+		return 0;
+
+	if (soc_revision < 0)
+		soc_revision = __imx6_cpu_revision();
+
+	return soc_revision;
+}
+
 int imx6_init(void)
 {
 	const char *cputypestr;
@@ -160,16 +186,16 @@ int imx6_init(void)
 
 	switch (imx6_cpu_type()) {
 	case IMX6_CPUTYPE_IMX6Q:
-		if (mx6_silicon_revision >= IMX_CHIP_REV_2_0)
-			cputypestr = "i.MX6 Quad Plus";
-		else
-			cputypestr = "i.MX6 Quad";
+		cputypestr = "i.MX6 Quad";
+		break;
+	case IMX6_CPUTYPE_IMX6QP:
+		cputypestr = "i.MX6 Quad Plus";
 		break;
 	case IMX6_CPUTYPE_IMX6D:
-		if (mx6_silicon_revision >= IMX_CHIP_REV_2_0)
-			cputypestr = "i.MX6 Dual Plus";
-		else
-			cputypestr = "i.MX6 Dual";
+		cputypestr = "i.MX6 Dual";
+		break;
+	case IMX6_CPUTYPE_IMX6DP:
+		cputypestr = "i.MX6 Dual Plus";
 		break;
 	case IMX6_CPUTYPE_IMX6DL:
 		cputypestr = "i.MX6 DualLite";
