@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <asm/io.h>
 
+#include <boot.h>
 #include <libfile.h>
 
 #include "kexec.h"
@@ -241,17 +242,18 @@ int kexec_load_bootm_data(struct image_data *data)
 	}
 
 	/* FIXME: we can snprintf to cmdline directly */
-	t = getenv_nonempty("bootargs");
+	t = linux_bootargs_get();
 	if (t)
 		tlen = strlen(t);
 	else
 		tlen = 0;
 
-	cmdline = xzalloc(tlen + sizeof(initrd_cmdline));
+	cmdline = xzalloc(tlen + sizeof(initrd_cmdline) + 6);
+	memcpy(cmdline, "kexec ", strlen("kexec "));
 	if (tlen)
-		memcpy(cmdline, t, tlen);
+		memcpy(cmdline + 6, t, tlen);
 
-	memcpy(cmdline + tlen, initrd_cmdline, sizeof(initrd_cmdline));
+	memcpy(cmdline + 6 +tlen, initrd_cmdline, sizeof(initrd_cmdline));
 
 	if (cmdline) {
 		int cmdlinelen = strlen(cmdline) + 1;

@@ -22,6 +22,7 @@
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
 #include <asm/addrspace.h>
+#include "machine_kexec.h"
 
 LEAF(relocate_new_kernel)
 	.set	push
@@ -77,6 +78,16 @@ kexec_start_address:
 	EXPORT(kexec_start_address)
 	PTR		0x0
 	.size		kexec_start_address, PTRSIZE
+
+kexec_argv_buf:
+	EXPORT(kexec_argv_buf)
+	.skip		KEXEC_COMMAND_LINE_SIZE
+	.size		kexec_argv_buf, KEXEC_COMMAND_LINE_SIZE
+
+kexec_argv:
+	EXPORT(kexec_argv)
+	.skip		KEXEC_ARGV_SIZE
+	.size		kexec_argv, KEXEC_ARGV_SIZE
 
 kexec_segments:
 	EXPORT(kexec_segments)

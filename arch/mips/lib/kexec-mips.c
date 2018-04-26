@@ -19,6 +19,8 @@
 #include <memory.h>
 #include <elf.h>
 #include "../../../lib/kexec/kexec.h"
+#include "machine_kexec.h"
+
 
 static int elf_mips_probe(const char *buf, off_t len)
 {
@@ -103,6 +105,103 @@ extern unsigned long kexec_nr_segments;
 
 unsigned long reboot_code_buffer;
 
+static void machine_kexec_print_args(void)
+{
+	unsigned long argc = (int)kexec_args[0];
+	int i;
+
+	printf("kexec_args[0] (argc): %lu\n", argc);
+	printf("kexec_args[1] (argv): %p\n", (void *)kexec_args[1]);
+	printf("kexec_args[2] (env ): %p\n", (void *)kexec_args[2]);
+	printf("kexec_args[3] (desc): %p\n", (void *)kexec_args[3]);
+
+	for (i = 0; i < argc; i++) {
+		printf("kexec_argv[%d] = %p, %s\n",
+				i, kexec_argv[i], kexec_argv[i]);
+	}
+}
+
+static void machine_kexec_init_argv(struct kexec_segment *segments, unsigned long nr_segments)
+{
+	void __user *buf = NULL;
+	size_t bufsz;
+	size_t size;
+	int i;
+
+	bufsz = 0;
+	for (i = 0; i < nr_segments; i++) {
+		struct kexec_segment *seg;
+
+		seg = &segments[i];
+		if (seg->bufsz < 6)
+			continue;
+
+		if (strncmp((char *) seg->buf, "kexec ", 6)) {
+			continue;
+		}
+
+		buf = seg->buf + 6;
+		bufsz = seg->bufsz - 6;
+		break;
+	}
+
+	if (!buf)
+		return;
+
+	size = KEXEC_COMMAND_LINE_SIZE;
+	size = min(size, bufsz);
+	if (size < bufsz)
+		printf("kexec command line truncated to %zu bytes\n", size);
+
+	/* Copy to kernel space */
+	memcpy(kexec_argv_buf, buf, size);
+	kexec_argv_buf[size - 1] = 0;
+}
+
+static void machine_kexec_parse_argv()
+{
+	char *ptr;
+	int argc;
+
+	ptr = kexec_argv_buf;
+	argc = 0;
+
+	/*
+	 * convert command line string to array of parameters
+	 * (as bootloader does).
+	 */
+	while (ptr && *ptr && (KEXEC_MAX_ARGC > argc)) {
+		if (*ptr == ' ') {
+			*ptr++ = '\0';
+			continue;
+		}
+
+		kexec_argv[argc++] = ptr;
+		ptr = strchr(ptr, ' ');
+	}
+
+	if (!argc)
+		return;
+
+	kexec_args[0] = argc;
+	kexec_args[1] = (unsigned long)kexec_argv;
+	kexec_args[2] = 0;
+	kexec_args[3] = 0;
+}
+
+int machine_kexec_prepare(struct kexec_segment *segments, unsigned long nr_segments)
+{
+	/*
+	 * Whenever arguments passed from kexec-tools, Init the arguments as
+	 * the original ones to try avoiding booting failure.
+	 */
+
+	machine_kexec_init_argv(segments, nr_segments);
+	machine_kexec_parse_argv();
+	machine_kexec_print_args();
+
+	return 0;
+}
 long kexec_load(void *entry, unsigned long nr_segments,
 		struct kexec_segment *segments, unsigned long flags)
 {
@@ -166,6 +265,8 @@ long kexec_load(void *entry, unsigned long nr_segments,
 	request_sdram_region("kexec control segments",
 		(unsigned long)phys_to_virt(start),
 		(unsigned long)nr_segments * sizeof(*segments));
+
+	machine_kexec_prepare(segments, nr_segments);
 
 	return 1;
 }
