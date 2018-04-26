@@ -164,7 +164,7 @@ static void machine_kexec_parse_argv()
 	int argc;
 
 	ptr = kexec_argv_buf;
-	argc = 0;
+	argc = 1;
 
 	/*
 	 * convert command line string to array of parameters
