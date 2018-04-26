@@ -185,7 +185,7 @@ int kexec_load_bootm_data(struct image_data *data)
 	struct kexec_info info;
 	char *cmdline;
 	const char *t;
-	size_t tlen;
+	size_t tlen, klen;
 	size_t fsize;
 	char initrd_cmdline[40];
 	int padded = 0;
@@ -248,12 +248,13 @@ int kexec_load_bootm_data(struct image_data *data)
 	else
 		tlen = 0;
 
-	cmdline = xzalloc(tlen + sizeof(initrd_cmdline) + 6);
-	memcpy(cmdline, "kexec ", strlen("kexec "));
+	klen = strlen("kexec ");
+	cmdline = xzalloc(tlen + sizeof(initrd_cmdline) + klen);
+	memcpy(cmdline, "kexec ", klen);
 	if (tlen)
-		memcpy(cmdline + 6, t, tlen);
+		memcpy(cmdline + klen, t, tlen);
 
-	memcpy(cmdline + 6 +tlen, initrd_cmdline, sizeof(initrd_cmdline));
+	memcpy(cmdline + klen + tlen, initrd_cmdline, sizeof(initrd_cmdline));
 
 	if (cmdline) {
 		int cmdlinelen = strlen(cmdline) + 1;
