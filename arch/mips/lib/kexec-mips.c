@@ -158,7 +158,7 @@ static void machine_kexec_init_argv(struct kexec_segment *segments, unsigned lon
 	kexec_argv_buf[size - 1] = 0;
 }
 
-static void machine_kexec_parse_argv()
+static void machine_kexec_parse_argv(void)
 {
 	char *ptr;
 	int argc;
@@ -189,7 +189,7 @@ static void machine_kexec_parse_argv()
 	kexec_args[3] = 0;
 }
 
-int machine_kexec_prepare(struct kexec_segment *segments, unsigned long nr_segments)
+static int machine_kexec_prepare(struct kexec_segment *segments, unsigned long nr_segments)
 {
 	/*
 	 * Whenever arguments passed from kexec-tools, Init the arguments as
