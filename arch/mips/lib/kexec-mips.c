@@ -123,7 +123,7 @@ static void machine_kexec_print_args(void)
 
 static void machine_kexec_init_argv(struct kexec_segment *segments, unsigned long nr_segments)
 {
-	void __user *buf = NULL;
+	const void __user *buf = NULL;
 	size_t bufsz;
 	size_t size;
 	int i;
