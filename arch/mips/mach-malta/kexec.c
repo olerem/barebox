@@ -80,7 +80,7 @@ static inline void yamon_prom_set(char *fname)
 	prom_set(prom_buf, prom_index++, NULL);
 }
 
-int reboot(int cmd, void *opaque)
+int kexec_arch(int cmd, void *opaque)
 {
 	if (cmd == LINUX_REBOOT_CMD_KEXEC) {
 		extern unsigned long reboot_code_buffer;
@@ -103,4 +103,4 @@ int reboot(int cmd, void *opaque)
 
 	return -1;
 }
-EXPORT_SYMBOL(reboot);
+EXPORT_SYMBOL(kexec_arch);
