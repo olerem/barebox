@@ -19,7 +19,7 @@
 #include <init.h>
 #include <memory.h>
 #include <boot.h>
-#include <linux/reboot.h>
+#include <kexec.h>
 #include <bootm.h>
 #include "../../../lib/kexec/kexec.h"
 #include <asm/io.h>
