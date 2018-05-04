@@ -2,7 +2,7 @@
 #include <init.h>
 #include <binfmt.h>
 #include <errno.h>
-#include <linux/reboot.h>
+#include <kexec.h>
 #include <environment.h>
 
 #include "kexec.h"
