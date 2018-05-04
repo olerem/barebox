@@ -11,7 +11,7 @@ static int do_bootm_elf(struct image_data *data)
 {
 	kexec_load_bootm_data(data);
 
-	reboot(LINUX_REBOOT_CMD_KEXEC, data);
+	kexec_arch(LINUX_REBOOT_CMD_KEXEC, data);
 
 	return -ERESTARTSYS;
 }
