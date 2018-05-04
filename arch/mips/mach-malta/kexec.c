@@ -80,7 +80,7 @@ static inline void yamon_prom_set(char *fname)
 	prom_set(prom_buf, prom_index++, NULL);
 }
 
-int kexec_arch(void *opaque)
+void kexec_arch(void *opaque)
 {
 	extern unsigned long reboot_code_buffer;
 	extern unsigned long kexec_args[4];
