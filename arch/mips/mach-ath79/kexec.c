@@ -23,7 +23,7 @@
 #include <bootm.h>
 #include <asm/io.h>
 
-int kexec_arch(void *opaque)
+void kexec_arch(void *opaque)
 {
 	extern unsigned long reboot_code_buffer;
 	void (*kexec_code_buffer)(void);
