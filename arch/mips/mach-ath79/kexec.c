@@ -24,7 +24,7 @@
 #include "../../../lib/kexec/kexec.h"
 #include <asm/io.h>
 
-int reboot(int cmd, void *opaque)
+int kexec_arch(int cmd, void *opaque)
 {
 	if (cmd == LINUX_REBOOT_CMD_KEXEC) {
 		extern unsigned long reboot_code_buffer;
