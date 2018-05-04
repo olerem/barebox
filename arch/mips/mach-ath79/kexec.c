@@ -21,22 +21,17 @@
 #include <boot.h>
 #include <kexec.h>
 #include <bootm.h>
-#include "../../../lib/kexec/kexec.h"
 #include <asm/io.h>
 
-int kexec_arch(int cmd, void *opaque)
+int kexec_arch(void *opaque)
 {
-	if (cmd == LINUX_REBOOT_CMD_KEXEC) {
-		extern unsigned long reboot_code_buffer;
-		void (*kexec_code_buffer)(void);
+	extern unsigned long reboot_code_buffer;
+	void (*kexec_code_buffer)(void);
 
-		shutdown_barebox();
+	shutdown_barebox();
 
-		kexec_code_buffer = phys_to_virt(reboot_code_buffer);
+	kexec_code_buffer = phys_to_virt(reboot_code_buffer);
 
-		kexec_code_buffer();
-	}
-
-	return -1;
+	kexec_code_buffer();
 }
 EXPORT_SYMBOL(reboot);
