@@ -80,27 +80,23 @@ static inline void yamon_prom_set(char *fname)
 	prom_set(prom_buf, prom_index++, NULL);
 }
 
-int kexec_arch(int cmd, void *opaque)
+int kexec_arch(void *opaque)
 {
-	if (cmd == LINUX_REBOOT_CMD_KEXEC) {
-		extern unsigned long reboot_code_buffer;
-		extern unsigned long kexec_args[4];
-		void (*kexec_code_buffer)(void);
-		struct image_data *data = opaque;
+	extern unsigned long reboot_code_buffer;
+	extern unsigned long kexec_args[4];
+	void (*kexec_code_buffer)(void);
+	struct image_data *data = opaque;
 
-		yamon_prom_set(data->os_file);
+	yamon_prom_set(data->os_file);
 
-		shutdown_barebox();
+	shutdown_barebox();
 
-		kexec_code_buffer = phys_to_virt(reboot_code_buffer);
+	kexec_code_buffer = phys_to_virt(reboot_code_buffer);
 
-		kexec_args[0] = 2; /* number of arguments? */
-		kexec_args[1] = ENVP_ADDR;
-		kexec_args[2] = ENVP_ADDR + 8;
-		kexec_args[3] = 0x10000000; /* no matter */
-		kexec_code_buffer();
-	}
-
-	return -1;
+	kexec_args[0] = 2; /* number of arguments? */
+	kexec_args[1] = ENVP_ADDR;
+	kexec_args[2] = ENVP_ADDR + 8;
+	kexec_args[3] = 0x10000000; /* no matter */
+	kexec_code_buffer();
 }
 EXPORT_SYMBOL(kexec_arch);
