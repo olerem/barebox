@@ -61,44 +61,44 @@ extern int kexec_load_bootm_data(struct image_data *data);
 #define KEXEC_MAX_SEGMENTS 16
 
 struct mem_phdr {
-	unsigned long long p_paddr;
-	unsigned long long p_vaddr;
-	unsigned long long p_filesz;
-	unsigned long long p_memsz;
-	unsigned long long p_offset;
+	u64 p_paddr;
+	u64 p_vaddr;
+	u64 p_filesz;
+	u64 p_memsz;
+	u64 p_offset;
 	const char *p_data;
-	unsigned p_type;
-	unsigned p_flags;
-	unsigned long long p_align;
+	u32 p_type;
+	u32 p_flags;
+	u64 p_align;
 };
 
 struct mem_shdr {
-	unsigned sh_name;
-	unsigned sh_type;
-	unsigned long long sh_flags;
-	unsigned long long sh_addr;
-	unsigned long long sh_offset;
-	unsigned long long sh_size;
-	unsigned sh_link;
-	unsigned sh_info;
-	unsigned long long sh_addralign;
-	unsigned long long sh_entsize;
+	u32 sh_name;
+	u32 sh_type;
+	u64 sh_flags;
+	u64 sh_addr;
+	u64 sh_offset;
+	u64 sh_size;
+	u32 sh_link;
+	u32 sh_info;
+	u64 sh_addralign;
+	u64 sh_entsize;
 	const unsigned char *sh_data;
 };
 
 struct mem_ehdr {
-	unsigned ei_class;
-	unsigned ei_data;
-	unsigned e_type;
-	unsigned e_machine;
-	unsigned e_version;
-	unsigned e_flags;
-	unsigned e_phnum;
-	unsigned e_shnum;
-	unsigned e_shstrndx;
-	unsigned long long e_entry;
-	unsigned long long e_phoff;
-	unsigned long long e_shoff;
+	u32 ei_class;
+	u32 ei_data;
+	u32 e_type;
+	u32 e_machine;
+	u32 e_version;
+	u32 e_flags;
+	u32 e_phnum;
+	u32 e_shnum;
+	u32 e_shstrndx;
+	u64 e_entry;
+	u64 e_phoff;
+	u64 e_shoff;
 	struct mem_phdr *e_phdr;
 	struct mem_shdr *e_shdr;
 };
@@ -109,10 +109,6 @@ int build_elf_exec_info(const char *buf, off_t len,
 				struct mem_ehdr *ehdr, u32 flags);
 
 int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info);
-
-u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 value);
-u32 elf32_to_cpu(const struct mem_ehdr *ehdr, u32 value);
-u64 elf64_to_cpu(const struct mem_ehdr *ehdr, u64 value);
 
 unsigned long elf_max_addr(const struct mem_ehdr *ehdr);
 int check_room_for_elf(struct list_head *elf_segments);
