@@ -9,7 +9,7 @@
 #include <string.h>
 
 int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
-				uint32_t flags)
+				u32 flags)
 {
 	struct mem_phdr *phdr, *end_phdr;
 	int ret;
@@ -35,7 +35,7 @@ int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 		 * to kexec ordinay executables.
 		 */
 		if (phdr->p_type == PT_INTERP) {
-			printf("Requires an ELF interpreter\n");
+			pr_err("Requires an ELF interpreter\n");
 			return -ENOEXEC;
 		}
 	}
@@ -48,7 +48,7 @@ int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info)
 	size_t i;
 
 	if (!ehdr->e_phdr) {
-		printf("No program header?\n");
+		pr_err("No program header?\n");
 		return -ENOENT;
 	}
 
