@@ -104,16 +104,15 @@ struct mem_ehdr {
 };
 
 void free_elf_info(struct mem_ehdr *ehdr);
-int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
-				uint32_t flags);
+int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr, u32 flags);
 int build_elf_exec_info(const char *buf, off_t len,
-				struct mem_ehdr *ehdr, uint32_t flags);
+				struct mem_ehdr *ehdr, u32 flags);
 
 int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info);
 
-uint16_t elf16_to_cpu(const struct mem_ehdr *ehdr, uint16_t value);
-uint32_t elf32_to_cpu(const struct mem_ehdr *ehdr, uint32_t value);
-uint64_t elf64_to_cpu(const struct mem_ehdr *ehdr, uint64_t value);
+u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 value);
+u32 elf32_to_cpu(const struct mem_ehdr *ehdr, u32 value);
+u64 elf64_to_cpu(const struct mem_ehdr *ehdr, u64 value);
 
 unsigned long elf_max_addr(const struct mem_ehdr *ehdr);
 int check_room_for_elf(struct list_head *elf_segments);
