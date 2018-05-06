@@ -9,31 +9,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 value)
+static u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 val)
 {
-	if (ehdr->ei_data == ELFDATA2LSB)
-		return le16_to_cpu(val);
-	else if (ehdr->ei_data == ELFDATA2MSB)
-		return be16_to_cpu(val);
+	return ehdr->ei_data == ELFDATA2LSB ? le16_to_cpu(val)
+		   : be16_to_cpu(val);
 }
 
-u32 elf32_to_cpu(const struct mem_ehdr *ehdr, u32 val)
+static u32 elf32_to_cpu(const struct mem_ehdr *ehdr, u32 val)
 {
-	if (ehdr->ei_data == ELFDATA2LSB)
-		return le32_to_cpu(val);
-	else if (ehdr->ei_data == ELFDATA2MSB)
-		return be32_to_cpu(val);
+	return ehdr->ei_data == ELFDATA2LSB ? le32_to_cpu(val)
+		   : be32_to_cpu(val);
 }
 
-u64 elf64_to_cpu(const struct mem_ehdr *ehdr, u64 val)
+static u64 elf64_to_cpu(const struct mem_ehdr *ehdr, u64 val)
 {
-	if (ehdr->ei_data == ELFDATA2LSB)
-		return le64_to_cpu(val);
-	else if (ehdr->ei_data == ELFDATA2MSB)
-		return be64_to_cpu(val);
+	return ehdr->ei_data == ELFDATA2LSB ? le64_to_cpu(val)
+		   : be64_to_cpu(val);
 }
 
-static int build_mem_elf32_ehdr(const char *buf, size_t len,
+static int build_mem_elf32_ehdr(const void *buf, size_t len,
 				struct mem_ehdr *ehdr)
 {
 	Elf32_Ehdr lehdr;
@@ -90,7 +84,7 @@ static int build_mem_elf32_ehdr(const char *buf, size_t len,
 	return 0;
 }
 
-static int build_mem_elf64_ehdr(const char *buf, size_t len,
+static int build_mem_elf64_ehdr(const void *buf, size_t len,
 				struct mem_ehdr *ehdr)
 {
 	Elf64_Ehdr lehdr;
@@ -132,7 +126,7 @@ static int build_mem_elf64_ehdr(const char *buf, size_t len,
 	return 0;
 }
 
-static int build_mem_ehdr(const char *buf, size_t len, struct mem_ehdr *ehdr)
+static int build_mem_ehdr(const void *buf, size_t len, struct mem_ehdr *ehdr)
 {
 	unsigned char e_ident[EI_NIDENT];
 	int ret;
