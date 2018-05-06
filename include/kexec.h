@@ -104,7 +104,7 @@ struct mem_ehdr {
 };
 
 void free_elf_info(struct mem_ehdr *ehdr);
-int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr, u32 flags);
+int build_elf_info(const char *buf, size_t len, struct mem_ehdr *ehdr, u32 flags);
 int build_elf_exec_info(const char *buf, off_t len,
 				struct mem_ehdr *ehdr, u32 flags);
 
