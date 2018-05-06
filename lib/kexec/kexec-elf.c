@@ -1,12 +1,11 @@
+#include <asm/io.h>
 #include <common.h>
-#include <string.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <kexec.h>
 #include <malloc.h>
 #include <memory.h>
-#include <asm/io.h>
-#include <kexec.h>
-#include "elf.h"
+#include <stdlib.h>
+#include <string.h>
 
 uint16_t elf16_to_cpu(const struct mem_ehdr *ehdr, uint16_t value)
 {
