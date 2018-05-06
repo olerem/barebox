@@ -5,8 +5,6 @@
 #include <kexec.h>
 #include <environment.h>
 
-#include "kexec.h"
-
 static int do_bootm_elf(struct image_data *data)
 {
 	kexec_load_bootm_data(data);
