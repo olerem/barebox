@@ -16,18 +16,16 @@
  *
  */
 
-#define _GNU_SOURCE
+#include <asm/io.h>
+#include <boot.h>
+#include <bootm.h>
 #include <common.h>
 #include <fs.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <asm/io.h>
-
-#include <bootm.h>
-#include <boot.h>
-#include <libfile.h>
 #include <kexec.h>
+#include <libfile.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int sort_segments(struct kexec_info *info)
 {
