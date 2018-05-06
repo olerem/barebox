@@ -1,10 +1,10 @@
 #include <common.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <memory.h>
 #include <elf.h>
+#include <errno.h>
 #include <kexec.h>
+#include <memory.h>
+#include <stdlib.h>
+#include <string.h>
 
 int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 				uint32_t flags)
