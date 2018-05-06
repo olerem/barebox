@@ -223,7 +223,7 @@ int kexec_load_bootm_data(struct image_data *data)
 			pr_info("initrd: rd_start=0x%08x rd_size=0x%08x\n",
 					data->initrd_address, fsize);
 		}
-		snpr_err(initrd_cmdline, sizeof(initrd_cmdline),
+		snprintf(initrd_cmdline, sizeof(initrd_cmdline),
 				" rd_start=0x%08x rd_size=0x%08x",
 					phys_to_virt(data->initrd_address),
 					fsize);
