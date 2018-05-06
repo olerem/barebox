@@ -55,17 +55,17 @@ static int build_mem_elf32_ehdr(const char *buf, off_t len,
 		return -1;
 	}
 
-	if (elf32_to_cpu(ehdr, lehdr.e_entry) > UINT32_MAX) {
+	if (elf32_to_cpu(ehdr, lehdr.e_entry) > U32_MAX) {
 		printf("ELF e_entry is too large\n");
 		return -1;
 	}
 
-	if (elf32_to_cpu(ehdr, lehdr.e_phoff) > UINT32_MAX) {
+	if (elf32_to_cpu(ehdr, lehdr.e_phoff) > U32_MAX) {
 		printf("ELF e_phoff is too large\n");
 		return -1;
 	}
 
-	if (elf32_to_cpu(ehdr, lehdr.e_shoff) > UINT32_MAX) {
+	if (elf32_to_cpu(ehdr, lehdr.e_shoff) > U32_MAX) {
 		printf("ELF e_shoff is too large\n");
 		return -1;
 	}
@@ -196,12 +196,12 @@ static int build_mem_elf32_phdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 	phdr = &ehdr->e_phdr[idx];
 	memcpy(&lphdr, pbuf, sizeof(lphdr));
 
-	if ((elf32_to_cpu(ehdr, lphdr.p_filesz) > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lphdr.p_memsz)  > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lphdr.p_offset) > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lphdr.p_paddr)  > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lphdr.p_vaddr)  > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lphdr.p_align)  > UINT32_MAX)) {
+	if ((elf32_to_cpu(ehdr, lphdr.p_filesz) > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lphdr.p_memsz)  > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lphdr.p_offset) > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lphdr.p_paddr)  > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lphdr.p_vaddr)  > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lphdr.p_align)  > U32_MAX)) {
 		printf("Program segment size out of range\n");
 		return -1;
 	}
@@ -305,12 +305,12 @@ static int build_mem_elf32_shdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 	shdr = &ehdr->e_shdr[idx];
 	memcpy(&lshdr, sbuf, sizeof(lshdr));
 
-	if ((elf32_to_cpu(ehdr, lshdr.sh_flags)     > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lshdr.sh_addr)      > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lshdr.sh_offset)    > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lshdr.sh_size)      > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lshdr.sh_addralign) > UINT32_MAX) ||
-		(elf32_to_cpu(ehdr, lshdr.sh_entsize)   > UINT32_MAX)) {
+	if ((elf32_to_cpu(ehdr, lshdr.sh_flags)     > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lshdr.sh_addr)      > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lshdr.sh_offset)    > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lshdr.sh_size)      > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lshdr.sh_addralign) > U32_MAX) ||
+		(elf32_to_cpu(ehdr, lshdr.sh_entsize)   > U32_MAX)) {
 		printf("Program section size out of range\n");
 		return -1;
 	}
