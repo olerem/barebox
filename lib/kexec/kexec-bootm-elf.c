@@ -1,9 +1,9 @@
-#include <bootm.h>
-#include <init.h>
 #include <binfmt.h>
-#include <errno.h>
-#include <kexec.h>
+#include <bootm.h>
 #include <environment.h>
+#include <errno.h>
+#include <init.h>
+#include <kexec.h>
 
 static int do_bootm_elf(struct image_data *data)
 {
