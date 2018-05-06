@@ -43,7 +43,7 @@ static int sort_segments(struct kexec_info *info)
 	end = 0;
 	for (i = 0; i < info->nr_segments; i++) {
 		if (end > info->segment[i].mem) {
-			printf("Overlapping memory segments at %p\n",
+			pr_err("Overlapping memory segments at %p\n",
 				end);
 			return -1;
 		}
@@ -82,7 +82,7 @@ void add_segment_phys_virt(struct kexec_info *info,
 	info->segment[info->nr_segments].memsz = memsz;
 	info->nr_segments++;
 	if (info->nr_segments > KEXEC_MAX_SEGMENTS) {
-		printf("Warning: kernel segment limit reached. "
+		pr_warn("Warning: kernel segment limit reached. "
 			"This will likely fail\n");
 	}
 }
@@ -104,7 +104,7 @@ static int kexec_load_one_file(struct kexec_info *info, char *fname,
 	}
 
 	if (i == kexec_file_types) {
-		printf("Cannot determine the file type "
+		pr_err("Cannot determine the file type "
 				"of %s\n", fname);
 		return -1;
 	}
@@ -130,11 +130,11 @@ static int print_segments(struct kexec_info *info)
 {
 	int i;
 
-	printf("print_segments\n");
+	pr_info("print_segments\n");
 	for (i = 0; i < info->nr_segments; i++) {
 		struct kexec_segment *seg = &info->segment[i];
 
-		printf("  %d. buf=%#08p bufsz=%#lx mem=%#08p memsz=%#lx\n", i,
+		pr_info("  %d. buf=%#08p bufsz=%#lx mem=%#08p memsz=%#lx\n", i,
 			seg->buf, seg->bufsz, seg->mem, seg->memsz);
 	}
 
@@ -184,7 +184,7 @@ int kexec_load_bootm_data(struct image_data *data)
 
 	result = kexec_load_one_file(&info, data->os_file, 0);
 	if (result < 0) {
-		printf("Cannot load %s\n", data->os_file);
+		pr_err("Cannot load %s\n", data->os_file);
 		return result;
 	}
 
@@ -196,7 +196,7 @@ int kexec_load_bootm_data(struct image_data *data)
 		result = kexec_load_binary_file(&info,
 				data->oftree_file, &fsize, base);
 		if (result < 0) {
-			printf("Cannot load %s\n", data->oftree_file);
+			pr_err("Cannot load %s\n", data->oftree_file);
 			return result;
 		}
 		data->oftree_address = base;
@@ -214,22 +214,22 @@ int kexec_load_bootm_data(struct image_data *data)
 		result = kexec_load_binary_file(&info,
 				data->initrd_file, &fsize, base);
 		if (result < 0) {
-			printf("Cannot load %s\n", data->initrd_file);
+			pr_err("Cannot load %s\n", data->initrd_file);
 			return result;
 		}
 		data->initrd_address = base;
 
 		if (bootm_verbose(data)) {
-			printf("initrd: rd_start=0x%08x rd_size=0x%08x\n",
+			pr_info("initrd: rd_start=0x%08x rd_size=0x%08x\n",
 					data->initrd_address, fsize);
 		}
-		snprintf(initrd_cmdline, sizeof(initrd_cmdline),
+		snpr_err(initrd_cmdline, sizeof(initrd_cmdline),
 				" rd_start=0x%08x rd_size=0x%08x",
 					phys_to_virt(data->initrd_address),
 					fsize);
 	}
 
-	/* FIXME: we can snprintf to cmdline directly */
+	/* FIXME: we can snpr_err to cmdline directly */
 	t = linux_bootargs_get();
 	if (t)
 		tlen = strlen(t);
