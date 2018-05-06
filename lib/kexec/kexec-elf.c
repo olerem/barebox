@@ -9,65 +9,59 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint16_t elf16_to_cpu(const struct mem_ehdr *ehdr, uint16_t value)
+u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 value)
 {
 	if (ehdr->ei_data == ELFDATA2LSB)
-		value = le16_to_cpu(value);
+		return le16_to_cpu(val);
 	else if (ehdr->ei_data == ELFDATA2MSB)
-		value = be16_to_cpu(value);
-
-	return value;
+		return be16_to_cpu(val);
 }
 
-uint32_t elf32_to_cpu(const struct mem_ehdr *ehdr, uint32_t value)
+u32 elf32_to_cpu(const struct mem_ehdr *ehdr, u32 val)
 {
 	if (ehdr->ei_data == ELFDATA2LSB)
-		value = le32_to_cpu(value);
+		return le32_to_cpu(val);
 	else if (ehdr->ei_data == ELFDATA2MSB)
-		value = be32_to_cpu(value);
-
-	return value;
+		return be32_to_cpu(val);
 }
 
-uint64_t elf64_to_cpu(const struct mem_ehdr *ehdr, uint64_t value)
+u64 elf64_to_cpu(const struct mem_ehdr *ehdr, u64 val)
 {
 	if (ehdr->ei_data == ELFDATA2LSB)
-		value = le64_to_cpu(value);
+		return le64_to_cpu(val);
 	else if (ehdr->ei_data == ELFDATA2MSB)
-		value = be64_to_cpu(value);
-
-	return value;
+		return be64_to_cpu(val);
 }
 
-static int build_mem_elf32_ehdr(const char *buf, off_t len,
+static int build_mem_elf32_ehdr(const char *buf, size_t len,
 				struct mem_ehdr *ehdr)
 {
 	Elf32_Ehdr lehdr;
 
-	if ((size_t)len < sizeof(lehdr)) {
-		printf("Buffer is too small to hold ELF header\n");
-		return -1;
+	if (len < sizeof(lehdr)) {
+		pr_err("Buffer is too small to hold ELF header\n");
+		return -ENOEXEC;
 	}
 
 	memcpy(&lehdr, buf, sizeof(lehdr));
 	if (elf16_to_cpu(ehdr, lehdr.e_ehsize) != sizeof(Elf32_Ehdr)) {
-		printf("Bad ELF header size\n");
-		return -1;
+		pr_err("Bad ELF header size\n");
+		return -ENOEXEC;
 	}
 
 	if (elf32_to_cpu(ehdr, lehdr.e_entry) > U32_MAX) {
-		printf("ELF e_entry is too large\n");
-		return -1;
+		pr_err("ELF e_entry is too large\n");
+		return -ENOEXEC;
 	}
 
 	if (elf32_to_cpu(ehdr, lehdr.e_phoff) > U32_MAX) {
-		printf("ELF e_phoff is too large\n");
-		return -1;
+		pr_err("ELF e_phoff is too large\n");
+		return -ENOEXEC;
 	}
 
 	if (elf32_to_cpu(ehdr, lehdr.e_shoff) > U32_MAX) {
-		printf("ELF e_shoff is too large\n");
-		return -1;
+		pr_err("ELF e_shoff is too large\n");
+		return -ENOEXEC;
 	}
 
 	ehdr->e_type      = elf16_to_cpu(ehdr, lehdr.e_type);
@@ -83,33 +77,33 @@ static int build_mem_elf32_ehdr(const char *buf, off_t len,
 
 	if ((ehdr->e_phnum > 0) &&
 		(elf16_to_cpu(ehdr, lehdr.e_phentsize) != sizeof(Elf32_Phdr))) {
-		printf("ELF bad program header size\n");
-		return -1;
+		pr_err("ELF bad program header size\n");
+		return -ENOEXEC;
 	}
 
 	if ((ehdr->e_shnum > 0) &&
 		(elf16_to_cpu(ehdr, lehdr.e_shentsize) != sizeof(Elf32_Shdr))) {
-		printf("ELF bad section header size\n");
-		return -1;
+		pr_err("ELF bad section header size\n");
+		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int build_mem_elf64_ehdr(const char *buf, off_t len,
+static int build_mem_elf64_ehdr(const char *buf, size_t len,
 				struct mem_ehdr *ehdr)
 {
 	Elf64_Ehdr lehdr;
 
-	if ((size_t)len < sizeof(lehdr)) {
-		printf("Buffer is too small to hold ELF header\n");
-		return -1;
+	if (len < sizeof(lehdr)) {
+		pr_err("Buffer is too small to hold ELF header\n");
+		return -ENOEXEC;
 	}
 
 	memcpy(&lehdr, buf, sizeof(lehdr));
 	if (elf16_to_cpu(ehdr, lehdr.e_ehsize) != sizeof(Elf64_Ehdr)) {
-		printf("Bad ELF header size\n");
-		return -1;
+		pr_err("Bad ELF header size\n");
+		return -ENOEXEC;
 	}
 
 	ehdr->e_type      = elf16_to_cpu(ehdr, lehdr.e_type);
@@ -125,30 +119,29 @@ static int build_mem_elf64_ehdr(const char *buf, off_t len,
 
 	if ((ehdr->e_phnum > 0) &&
 		(elf16_to_cpu(ehdr, lehdr.e_phentsize) != sizeof(Elf64_Phdr))) {
-		printf("ELF bad program header size\n");
-		return -1;
+		pr_err("ELF bad program header size\n");
+		return -ENOEXEC;
 	}
 
 	if ((ehdr->e_shnum > 0) &&
 		(elf16_to_cpu(ehdr, lehdr.e_shentsize) != sizeof(Elf64_Shdr))) {
-		printf("ELF bad section header size\n");
-		return -1;
+		pr_err("ELF bad section header size\n");
+		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int build_mem_ehdr(const char *buf, off_t len, struct mem_ehdr *ehdr)
+static int build_mem_ehdr(const char *buf, size_t len, struct mem_ehdr *ehdr)
 {
 	unsigned char e_ident[EI_NIDENT];
-	int result;
+	int ret;
 
 	memset(ehdr, 0, sizeof(*ehdr));
 
-	if ((size_t)len < sizeof(e_ident)) {
-		printf("Buffer is too small to hold ELF e_ident\n");
-
-		return -1;
+	if (len < sizeof(e_ident)) {
+		pr_err("Buffer is too small to hold ELF e_ident\n");
+		return -ENOEXEC;
 	}
 
 	memcpy(e_ident, buf, sizeof(e_ident));
@@ -157,30 +150,28 @@ static int build_mem_ehdr(const char *buf, off_t len, struct mem_ehdr *ehdr)
 	ehdr->ei_data    = e_ident[EI_DATA];
 	if ((ehdr->ei_class != ELFCLASS32) &&
 		(ehdr->ei_class != ELFCLASS64)) {
-		printf("Not a supported ELF class\n");
-		return -1;
+		pr_err("Not a supported ELF class\n");
+		return -ENOEXEC;
 	}
 
 	if ((ehdr->ei_data != ELFDATA2LSB) &&
 		(ehdr->ei_data != ELFDATA2MSB)) {
-		printf("Not a supported ELF data format\n");
-		return -1;
+		pr_err("Not a supported ELF data format\n");
+		return -ENOEXEC;
 	}
 
-	result = -1;
 	if (ehdr->ei_class == ELFCLASS32)
-		result = build_mem_elf32_ehdr(buf, len, ehdr);
+		ret = build_mem_elf32_ehdr(buf, len, ehdr);
+	else
+		ret = build_mem_elf64_ehdr(buf, len, ehdr);
 
-	if (ehdr->ei_class == ELFCLASS64)
-		result = build_mem_elf64_ehdr(buf, len, ehdr);
-
-	if (result < 0)
-		return result;
+	if (IS_ERR_VALUE(ret))
+		return ret;
 
 	if ((e_ident[EI_VERSION] != EV_CURRENT) ||
 		(ehdr->e_version != EV_CURRENT)) {
-		printf("Unknown ELF version\n");
-		return -1;
+		pr_err("Unknown ELF version\n");
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -202,8 +193,8 @@ static int build_mem_elf32_phdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 		(elf32_to_cpu(ehdr, lphdr.p_paddr)  > U32_MAX) ||
 		(elf32_to_cpu(ehdr, lphdr.p_vaddr)  > U32_MAX) ||
 		(elf32_to_cpu(ehdr, lphdr.p_align)  > U32_MAX)) {
-		printf("Program segment size out of range\n");
-		return -1;
+		pr_err("Program segment size out of range\n");
+		return -ENOEXEC;
 	}
 
 	phdr->p_type   = elf32_to_cpu(ehdr, lphdr.p_type);
@@ -240,7 +231,7 @@ static int build_mem_elf64_phdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 }
 
 static int build_mem_phdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
-				uint32_t flags)
+				u32 flags)
 {
 	size_t phdr_size, mem_phdr_size, i;
 
@@ -254,8 +245,8 @@ static int build_mem_phdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
 	} else if (ehdr->ei_class == ELFCLASS64) {
 		phdr_size = sizeof(Elf64_Phdr);
 	} else {
-		printf("Invalid ei_class?\n");
-		return -1;
+		pr_err("Invalid ei_class?\n");
+		return -ENOEXEC;
 	}
 	phdr_size *= ehdr->e_phnum;
 
@@ -283,8 +274,8 @@ static int build_mem_phdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
 		phdr = &ehdr->e_phdr[i];
 		if ((phdr->p_paddr + phdr->p_memsz) < phdr->p_paddr) {
 			/* The memory address wraps */
-			printf("ELF address wrap around\n");
-			return -1;
+			pr_err("ELF address wrap around\n");
+			return -ENOEXEC;
 		}
 
 		/* Remember where the segment lives in the buffer */
@@ -311,8 +302,8 @@ static int build_mem_elf32_shdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 		(elf32_to_cpu(ehdr, lshdr.sh_size)      > U32_MAX) ||
 		(elf32_to_cpu(ehdr, lshdr.sh_addralign) > U32_MAX) ||
 		(elf32_to_cpu(ehdr, lshdr.sh_entsize)   > U32_MAX)) {
-		printf("Program section size out of range\n");
-		return -1;
+		pr_err("Program section size out of range\n");
+		return -ENOEXEC;
 	}
 
 	shdr->sh_name      = elf32_to_cpu(ehdr, lshdr.sh_name);
@@ -357,9 +348,9 @@ static int build_mem_elf32_shdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 	}
 
 	if (!size_ok) {
-		printf("Bad section header(%x) entsize: %lld\n",
+		pr_err("Bad section header(%x) entsize: %lld\n",
 			shdr->sh_type, shdr->sh_entsize);
-		return -1;
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -417,16 +408,16 @@ static int build_mem_elf64_shdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 	}
 
 	if (!size_ok) {
-		printf("Bad section header(%x) entsize: %lld\n",
+		pr_err("Bad section header(%x) entsize: %lld\n",
 			shdr->sh_type, shdr->sh_entsize);
-		return -1;
+		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
 static int build_mem_shdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
-				uint32_t flags)
+				u32 flags)
 {
 	size_t shdr_size, mem_shdr_size, i;
 
@@ -440,8 +431,8 @@ static int build_mem_shdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
 	} else if (ehdr->ei_class == ELFCLASS64) {
 		shdr_size = sizeof(Elf64_Shdr);
 	} else {
-		printf("Invalid ei_class?\n");
-		return -1;
+		pr_err("Invalid ei_class?\n");
+		return -ENOEXEC;
 	}
 	shdr_size *= ehdr->e_shnum;
 
@@ -468,8 +459,8 @@ static int build_mem_shdrs(const char *buf, off_t len, struct mem_ehdr *ehdr,
 		 */
 		shdr = &ehdr->e_shdr[i];
 		if ((shdr->sh_addr + shdr->sh_size) < shdr->sh_addr) {
-			printf("ELF address wrap around\n");
-			return -1;
+			pr_err("ELF address wrap around\n");
+			return -ENOEXEC;
 		}
 
 		/* Remember where the section lives in the buffer */
@@ -486,8 +477,7 @@ void free_elf_info(struct mem_ehdr *ehdr)
 	memset(ehdr, 0, sizeof(*ehdr));
 }
 
-int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
-			uint32_t flags)
+int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr, u32 flags)
 {
 	int result;
 
@@ -538,7 +528,7 @@ int check_room_for_elf(struct list_head *elf_segments)
 		}
 
 		if (!got_bank)
-			return -1;
+			return -ENOEXEC;
 	}
 
 	return 0;
