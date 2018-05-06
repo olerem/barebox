@@ -132,13 +132,13 @@ struct mem_shdr {
 	const unsigned char *sh_data;
 };
 
-extern void free_elf_info(struct mem_ehdr *ehdr);
-extern int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
+void free_elf_info(struct mem_ehdr *ehdr);
+int build_elf_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 				uint32_t flags);
-extern int build_elf_exec_info(const char *buf, off_t len,
+int build_elf_exec_info(const char *buf, off_t len,
 				struct mem_ehdr *ehdr, uint32_t flags);
 
-extern int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info);
+int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info);
 
 uint16_t elf16_to_cpu(const struct mem_ehdr *ehdr, uint16_t value);
 uint32_t elf32_to_cpu(const struct mem_ehdr *ehdr, uint32_t value);
