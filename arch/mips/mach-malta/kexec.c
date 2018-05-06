@@ -21,7 +21,6 @@
 #include <boot.h>
 #include <kexec.h>
 #include <bootm.h>
-#include "../../../lib/kexec/kexec.h"
 #include <asm/io.h>
 
 #define ENVP_ADDR	0x80002000l
