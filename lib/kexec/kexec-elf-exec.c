@@ -12,20 +12,20 @@ int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 				uint32_t flags)
 {
 	struct mem_phdr *phdr, *end_phdr;
-	int result;
+	int ret;
 
-	result = build_elf_info(buf, len, ehdr, flags);
-	if (result < 0)
-		return result;
+	ret = build_elf_info(buf, len, ehdr, flags);
+	if (IS_ERR_VALUE(ret))
+		return ret;
 
 	if (ehdr->e_type != ET_EXEC) {
-		printf("Not ELF type ET_EXEC\n");
-		return -1;
+		pr_err("Not ELF type ET_EXEC\n");
+		return -ENOEXEC;
 	}
 
 	if (!ehdr->e_phdr) {
-		printf("No ELF program header\n");
-		return -1;
+		pr_err("No ELF program header\n");
+		return -ENOEXEC;
 	}
 
 	end_phdr = &ehdr->e_phdr[ehdr->e_phnum];
@@ -36,7 +36,7 @@ int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 		 */
 		if (phdr->p_type == PT_INTERP) {
 			printf("Requires an ELF interpreter\n");
-			return -1;
+			return -ENOEXEC;
 		}
 	}
 
@@ -45,13 +45,11 @@ int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 
 int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info)
 {
-	int result;
 	size_t i;
 
 	if (!ehdr->e_phdr) {
 		printf("No program header?\n");
-		result = -1;
-		goto out;
+		return -ENOENT;
 	}
 
 	/* Read in the PT_LOAD segments */
@@ -74,7 +72,5 @@ int elf_exec_load(struct mem_ehdr *ehdr, struct kexec_info *info)
 			phdr->p_paddr, phdr->p_memsz);
 	}
 
-	result = 0;
- out:
-	return result;
+	return 0;
 }
