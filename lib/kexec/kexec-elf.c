@@ -5,9 +5,8 @@
 #include <malloc.h>
 #include <memory.h>
 #include <asm/io.h>
+#include <kexec.h>
 #include "elf.h"
-#include "kexec.h"
-#include "kexec-elf.h"
 
 uint16_t elf16_to_cpu(const struct mem_ehdr *ehdr, uint16_t value)
 {
