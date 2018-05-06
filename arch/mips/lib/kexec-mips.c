@@ -18,7 +18,7 @@
 #include <asm/addrspace.h>
 #include <memory.h>
 #include <elf.h>
-#include "../../../lib/kexec/kexec.h"
+#include <kexec.h>
 #include "machine_kexec.h"
 
 
