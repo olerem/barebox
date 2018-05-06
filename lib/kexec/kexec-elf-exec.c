@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <elf.h>
-#include "kexec.h"
-#include "kexec-elf.h"
+#include <kexec.h>
 
 int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
 				uint32_t flags)
