@@ -42,35 +42,6 @@ extern void kexec_arch(void *opaque);
 
 extern int kexec_load_bootm_data(struct image_data *data);
 
-/* Limits of integral types. */
-#ifndef INT8_MIN
-#define INT8_MIN               (-128)
-#endif
-#ifndef INT16_MIN
-#define INT16_MIN              (-32767-1)
-#endif
-#ifndef INT32_MIN
-#define INT32_MIN              (-2147483647-1)
-#endif
-#ifndef INT8_MAX
-#define INT8_MAX               (127)
-#endif
-#ifndef INT16_MAX
-#define INT16_MAX              (32767)
-#endif
-#ifndef INT32_MAX
-#define INT32_MAX              (2147483647)
-#endif
-#ifndef UINT8_MAX
-#define UINT8_MAX              (255U)
-#endif
-#ifndef UINT16_MAX
-#define UINT16_MAX             (65535U)
-#endif
-#ifndef UINT32_MAX
-#define UINT32_MAX             (4294967295U)
-#endif
-
 /* These values match the ELF architecture values.
  * Unless there is a good reason that should continue to be the case.
  */
@@ -88,23 +59,6 @@ extern int kexec_load_bootm_data(struct image_data *data);
 #define KEXEC_ARCH_CRIS		(76 << 16)
 
 #define KEXEC_MAX_SEGMENTS 16
-
-struct mem_ehdr {
-	unsigned ei_class;
-	unsigned ei_data;
-	unsigned e_type;
-	unsigned e_machine;
-	unsigned e_version;
-	unsigned e_flags;
-	unsigned e_phnum;
-	unsigned e_shnum;
-	unsigned e_shstrndx;
-	unsigned long long e_entry;
-	unsigned long long e_phoff;
-	unsigned long long e_shoff;
-	struct mem_phdr *e_phdr;
-	struct mem_shdr *e_shdr;
-};
 
 struct mem_phdr {
 	unsigned long long p_paddr;
@@ -130,6 +84,23 @@ struct mem_shdr {
 	unsigned long long sh_addralign;
 	unsigned long long sh_entsize;
 	const unsigned char *sh_data;
+};
+
+struct mem_ehdr {
+	unsigned ei_class;
+	unsigned ei_data;
+	unsigned e_type;
+	unsigned e_machine;
+	unsigned e_version;
+	unsigned e_flags;
+	unsigned e_phnum;
+	unsigned e_shnum;
+	unsigned e_shstrndx;
+	unsigned long long e_entry;
+	unsigned long long e_phoff;
+	unsigned long long e_shoff;
+	struct mem_phdr *e_phdr;
+	struct mem_shdr *e_shdr;
 };
 
 void free_elf_info(struct mem_ehdr *ehdr);
