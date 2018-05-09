@@ -130,6 +130,12 @@ static inline unsigned long resource_type(const struct resource *res)
 	return res->flags & IORESOURCE_TYPE_BITS;
 }
 
+/* True if any part of r1 overlaps r2 */
+static inline bool resource_overlaps(struct resource *r1, struct resource *r2)
+{
+       return (r1->start <= r2->end && r1->end >= r2->start);
+}
+
 struct resource *request_iomem_region(const char *name,
 		resource_size_t start, resource_size_t end);
 struct resource *request_ioport_region(const char *name,
