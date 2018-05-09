@@ -474,12 +474,7 @@ void list_add_used_region(struct list_head *new, struct list_head *head)
 		struct resource *ra = (struct resource *)list_entry(pos,
 						struct resource, sibling);
 
-		if (((rb->end >= ra->start) && (rb->end <= ra->end))
-			|| ((rb->start >= ra->start) && (rb->start <= ra->end))
-			|| ((rb->start >= ra->start) && (rb->end <= ra->end))
-			|| ((ra->start >= rb->start) && (ra->end <= rb->end))
-			|| (ra->start == rb->end + 1)
-			|| (rb->start == ra->end + 1)) {
+		if (resource_overlaps(ra, rb)) {
 			rb->start = min(ra->start, rb->start);
 			rb->end = max(ra->end, rb->end);
 			rb->name = "join";
