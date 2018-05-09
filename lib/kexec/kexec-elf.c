@@ -2,12 +2,8 @@
 
 #include <asm/io.h>
 #include <common.h>
-#include <errno.h>
 #include <kexec.h>
-#include <malloc.h>
 #include <memory.h>
-#include <stdlib.h>
-#include <string.h>
 
 static u16 elf16_to_cpu(const struct mem_ehdr *ehdr, u16 val)
 {
@@ -190,8 +186,7 @@ static void build_mem_elf64_phdr(const char *buf, struct mem_ehdr *ehdr, int idx
 	phdr->p_align  = elf64_to_cpu(ehdr, lphdr->p_align);
 }
 
-static int build_mem_phdrs(const char *buf, size_t len, struct mem_ehdr *ehdr,
-				u32 flags)
+static int build_mem_phdrs(const char *buf, struct mem_ehdr *ehdr)
 {
 	size_t mem_phdr_size, i;
 
@@ -342,8 +337,7 @@ static int build_mem_elf64_shdr(const char *buf, struct mem_ehdr *ehdr, int idx)
 	return -ENOEXEC;
 }
 
-static int build_mem_shdrs(const void *buf, size_t len, struct mem_ehdr *ehdr,
-				u32 flags)
+static int build_mem_shdrs(const void *buf, struct mem_ehdr *ehdr)
 {
 	size_t mem_shdr_size, i;
 
@@ -386,7 +380,7 @@ void free_elf_info(struct mem_ehdr *ehdr)
 	memset(ehdr, 0, sizeof(*ehdr));
 }
 
-int build_elf_info(const char *buf, size_t len, struct mem_ehdr *ehdr, u32 flags)
+int build_elf_info(const char *buf, size_t len, struct mem_ehdr *ehdr)
 {
 	int ret;
 
@@ -395,7 +389,7 @@ int build_elf_info(const char *buf, size_t len, struct mem_ehdr *ehdr, u32 flags
 		return ret;
 
 	if ((ehdr->e_phoff > 0) && (ehdr->e_phnum > 0)) {
-		ret = build_mem_phdrs(buf, len, ehdr, flags);
+		ret = build_mem_phdrs(buf, ehdr);
 		if (IS_ERR_VALUE(ret)) {
 			free_elf_info(ehdr);
 			return ret;
@@ -403,7 +397,7 @@ int build_elf_info(const char *buf, size_t len, struct mem_ehdr *ehdr, u32 flags
 	}
 
 	if ((ehdr->e_shoff > 0) && (ehdr->e_shnum > 0)) {
-		ret = build_mem_shdrs(buf, len, ehdr, flags);
+		ret = build_mem_shdrs(buf, ehdr);
 		if (IS_ERR_VALUE(ret)) {
 			free_elf_info(ehdr);
 			return ret;
