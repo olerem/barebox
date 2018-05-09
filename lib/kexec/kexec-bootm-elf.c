@@ -2,8 +2,6 @@
 
 #include <binfmt.h>
 #include <bootm.h>
-#include <environment.h>
-#include <errno.h>
 #include <init.h>
 #include <kexec.h>
 
