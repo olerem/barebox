@@ -1,20 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <common.h>
-#include <elf.h>
-#include <errno.h>
 #include <kexec.h>
-#include <memory.h>
-#include <stdlib.h>
-#include <string.h>
 
-int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr,
-				u32 flags)
+int build_elf_exec_info(const char *buf, off_t len, struct mem_ehdr *ehdr)
 {
 	struct mem_phdr *phdr, *end_phdr;
 	int ret;
 
-	ret = build_elf_info(buf, len, ehdr, flags);
+	ret = build_elf_info(buf, len, ehdr);
 	if (IS_ERR_VALUE(ret))
 		return ret;
 
