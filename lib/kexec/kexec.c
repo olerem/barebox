@@ -9,14 +9,9 @@
 
 #include <asm/io.h>
 #include <boot.h>
-#include <bootm.h>
 #include <common.h>
-#include <fs.h>
 #include <kexec.h>
 #include <libfile.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 
 static int sort_segments(struct kexec_info *info)
 {
@@ -87,8 +82,7 @@ void add_segment_phys_virt(struct kexec_info *info,
 	}
 }
 
-static int kexec_load_one_file(struct kexec_info *info, char *fname,
-			       unsigned long kexec_flags)
+static int kexec_load_one_file(struct kexec_info *info, char *fname)
 {
 	char *buf;
 	size_t fsize;
@@ -182,7 +176,7 @@ int kexec_load_bootm_data(struct image_data *data)
 
 	initrd_cmdline[0] = 0;
 
-	result = kexec_load_one_file(&info, data->os_file, 0);
+	result = kexec_load_one_file(&info, data->os_file);
 	if (result < 0) {
 		pr_err("Cannot load %s\n", data->os_file);
 		return result;
@@ -229,7 +223,6 @@ int kexec_load_bootm_data(struct image_data *data)
 					fsize);
 	}
 
-	/* FIXME: we can snpr_err to cmdline directly */
 	t = linux_bootargs_get();
 	if (t)
 		tlen = strlen(t);
@@ -250,7 +243,6 @@ int kexec_load_bootm_data(struct image_data *data)
 
 		base = ALIGN(base, 8);
 
-		/* FIXME */
 		add_segment(&info, cmdline, cmdlinelen, base, cmdlinelen);
 		data->cmdline_address = base;
 	}
