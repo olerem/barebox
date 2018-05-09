@@ -27,7 +27,7 @@ static int elf_mips_probe(const char *buf, off_t len)
 	struct mem_ehdr ehdr;
 	int result;
 
-	result = build_elf_exec_info(buf, len, &ehdr, 0);
+	result = build_elf_exec_info(buf, len, &ehdr);
 	if (result < 0) {
 		goto out;
 	}
@@ -53,7 +53,7 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 	int result;
 	size_t i;
 
-	result = build_elf_exec_info(buf, len, &ehdr, 0);
+	result = build_elf_exec_info(buf, len, &ehdr);
 	if (result < 0) {
 		printf("ELF exec parse failed\n");
 		goto out;
