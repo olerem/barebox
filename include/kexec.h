@@ -35,8 +35,8 @@ extern void add_segment_phys_virt(struct kexec_info *info,
 	const void *buf, size_t bufsz, unsigned long base, size_t memsz,
 	int phys);
 
-extern long kexec_load(void *entry, unsigned long nr_segments,
-		       struct kexec_segment *segments, unsigned long flags);
+extern int kexec_load(void *entry, unsigned long nr_segments,
+		       struct kexec_segment *segments);
 
 extern void kexec_arch(void *opaque);
 
