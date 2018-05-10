@@ -7,8 +7,12 @@
 
 static int do_bootm_elf(struct image_data *data)
 {
-	kexec_load_bootm_data(data);
+	int ret;
 
+	ret = kexec_load_bootm_data(data);
+	if (IS_ERR_VALUE(ret))
+		return ret;
+	
 	kexec_arch(data);
 
 	return -ERESTARTSYS;
@@ -27,9 +31,12 @@ static struct binfmt_hook binfmt_elf_hook = {
 
 static int elf_register_image_handler(void)
 {
-	register_image_handler(&elf_handler);
-	binfmt_register(&binfmt_elf_hook);
+	int ret;
 
-	return 0;
+	ret = register_image_handler(&elf_handler);
+	if (IS_ERR_VALUE(ret))
+		return ret;
+	
+	return binfmt_register(&binfmt_elf_hook);
 }
 late_initcall(elf_register_image_handler);
