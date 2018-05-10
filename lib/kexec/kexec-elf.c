@@ -431,7 +431,7 @@ int check_room_for_elf(struct list_head *elf_segments)
 		}
 
 		if (!got_bank)
-			return -ENOEXEC;
+			return -ENOSPC;
 	}
 
 	return 0;
