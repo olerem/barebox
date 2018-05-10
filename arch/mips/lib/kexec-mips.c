@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * kexec-mips.c - kexec for mips
  * Copyright (C) 2007 Francesco Chiechi, Alessandro Rubini
@@ -6,45 +7,35 @@
  * derived from ../ppc/kexec-mips.c
  * Copyright (C) 2004, 2005 Albert Herranz
  *
- * This source code is licensed under the GNU General Public License,
- * Version 2.  See the file COPYING for more details.
  */
 
-#include <linux/stddef.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <asm/io.h>
-#include <asm/addrspace.h>
-#include <memory.h>
+#include <common.h>
 #include <elf.h>
 #include <kexec.h>
+#include <memory.h>
 #include "machine_kexec.h"
-
 
 static int elf_mips_probe(const char *buf, off_t len)
 {
 	struct mem_ehdr ehdr;
-	int result;
+	int ret;
 
-	result = build_elf_exec_info(buf, len, &ehdr);
-	if (result < 0) {
+	ret = build_elf_exec_info(buf, len, &ehdr);
+	if (IS_ERR_VALUE(ret)) {
 		goto out;
 	}
 
-	/* Verify the architecuture specific bits */
 	if (ehdr.e_machine != EM_MIPS) {
-		/* for a different architecture */
-		printf("Not for this architecture.\n");
-		result = -1;
+		pr_err("Not for this architecture.\n");
+		ret = -EFAULT;
 		goto out;
 	}
-	result = 0;
 
  out:
 	free_elf_info(&ehdr);
 
-	return result;
+	return ret;
 }
 
 static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
@@ -55,7 +46,7 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 
 	ret = build_elf_exec_info(buf, len, &ehdr);
 	if (IS_ERR_VALUE(ret)) {
-		printf("ELF exec parse failed\n");
+		pr_err("ELF exec parse failed\n");
 		goto out;
 	}
 
@@ -64,14 +55,14 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 		struct mem_phdr *phdr;
 		phdr = &ehdr.e_phdr[i];
 		if (phdr->p_type == PT_LOAD) {
-			phdr->p_paddr = virt_to_phys((void *)phdr->p_paddr);
+			phdr->p_paddr = virt_to_phys((const void *)phdr->p_paddr);
 		}
 	}
 
 	/* Load the ELF data */
 	ret = elf_exec_load(&ehdr, info);
 	if (IS_ERR_VALUE(ret)) {
-		printf("ELF exec load failed\n");
+		pr_err("ELF exec load failed\n");
 		goto out;
 	}
 
@@ -110,13 +101,13 @@ static void machine_kexec_print_args(void)
 	unsigned long argc = (int)kexec_args[0];
 	int i;
 
-	printf("kexec_args[0] (argc): %lu\n", argc);
-	printf("kexec_args[1] (argv): %p\n", (void *)kexec_args[1]);
-	printf("kexec_args[2] (env ): %p\n", (void *)kexec_args[2]);
-	printf("kexec_args[3] (desc): %p\n", (void *)kexec_args[3]);
+	pr_info("kexec_args[0] (argc): %lu\n", argc);
+	pr_info("kexec_args[1] (argv): %p\n", (void *)kexec_args[1]);
+	pr_info("kexec_args[2] (env ): %p\n", (void *)kexec_args[2]);
+	pr_info("kexec_args[3] (desc): %p\n", (void *)kexec_args[3]);
 
 	for (i = 0; i < argc; i++) {
-		printf("kexec_argv[%d] = %p, %s\n",
+		pr_info("kexec_argv[%d] = %p, %s\n",
 				i, kexec_argv[i], kexec_argv[i]);
 	}
 }
@@ -151,7 +142,7 @@ static void machine_kexec_init_argv(struct kexec_segment *segments, unsigned lon
 	size = KEXEC_COMMAND_LINE_SIZE;
 	size = min(size, bufsz);
 	if (size < bufsz)
-		printf("kexec command line truncated to %zu bytes\n", size);
+		pr_warn("kexec command line truncated to %zu bytes\n", size);
 
 	/* Copy to kernel space */
 	memcpy(kexec_argv_buf, buf, size);
@@ -202,8 +193,8 @@ static int machine_kexec_prepare(struct kexec_segment *segments, unsigned long n
 
 	return 0;
 }
-long kexec_load(void *entry, unsigned long nr_segments,
-		struct kexec_segment *segments, unsigned long flags)
+int kexec_load(void *entry, unsigned long nr_segments,
+		struct kexec_segment *segments)
 {
 	int i;
 	struct resource *elf;
@@ -220,8 +211,8 @@ long kexec_load(void *entry, unsigned long nr_segments,
 	}
 
 	if (check_room_for_elf(&elf_segments)) {
-		printf("ELF can't be loaded!\n");
-		return 0;
+		pr_err("ELF can't be loaded!\n");
+		return -ENOSPC;
 	}
 
 	start = dcheck_res(&elf_segments);
@@ -268,5 +259,5 @@ long kexec_load(void *entry, unsigned long nr_segments,
 
 	machine_kexec_prepare(segments, nr_segments);
 
-	return 1;
+	return 0;
 }
