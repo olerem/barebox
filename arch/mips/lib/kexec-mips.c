@@ -50,11 +50,11 @@ static int elf_mips_probe(const char *buf, off_t len)
 static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 {
 	struct mem_ehdr ehdr;
-	int result;
+	int ret;
 	size_t i;
 
-	result = build_elf_exec_info(buf, len, &ehdr);
-	if (result < 0) {
+	ret = build_elf_exec_info(buf, len, &ehdr);
+	if (IS_ERR_VALUE(ret)) {
 		printf("ELF exec parse failed\n");
 		goto out;
 	}
@@ -69,8 +69,8 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 	}
 
 	/* Load the ELF data */
-	result = elf_exec_load(&ehdr, info);
-	if (result < 0) {
+	ret = elf_exec_load(&ehdr, info);
+	if (IS_ERR_VALUE(ret)) {
 		printf("ELF exec load failed\n");
 		goto out;
 	}
@@ -78,7 +78,7 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 	info->entry = (void *)virt_to_phys((void *)ehdr.e_entry);
 
 out:
-	return result;
+	return ret;
 }
 
 struct kexec_file_type kexec_file_type[] = {
