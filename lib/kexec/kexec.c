@@ -255,5 +255,5 @@ int kexec_load_bootm_data(struct image_data *data)
 		return ret;
 
 	return kexec_load(info.entry,
-		info.nr_segments, info.segment, info.kexec_flags);
+		info.nr_segments, info.segment);
 }
