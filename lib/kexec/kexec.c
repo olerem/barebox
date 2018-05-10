@@ -16,7 +16,7 @@
 static int sort_segments(struct kexec_info *info)
 {
 	int i, j;
-	void *end;
+	void *end = NULL;
 
 	/* Do a stupid insertion sort... */
 	for (i = 0; i < info->nr_segments; i++) {
@@ -35,12 +35,11 @@ static int sort_segments(struct kexec_info *info)
 	}
 
 	/* Now see if any of the segments overlap */
-	end = 0;
 	for (i = 0; i < info->nr_segments; i++) {
 		if (end > info->segment[i].mem) {
 			pr_err("Overlapping memory segments at %p\n",
 				end);
-			return -1;
+			return -EBUSY;
 		}
 		end = ((char *)info->segment[i].mem) + info->segment[i].memsz;
 	}
@@ -100,7 +99,7 @@ static int kexec_load_one_file(struct kexec_info *info, char *fname)
 	if (i == kexec_file_types) {
 		pr_err("Cannot determine the file type "
 				"of %s\n", fname);
-		return -1;
+		return -ENOEXEC;
 	}
 
 	return kexec_file_type[i].load(buf, fsize, info);
@@ -113,14 +112,14 @@ static int kexec_load_binary_file(struct kexec_info *info, char *fname,
 
 	buf = read_file(fname, fsize);
 	if (!buf)
-		return -1;
+		return -ENOENT;
 
 	add_segment(info, buf, *fsize, base, *fsize);
 
 	return 0;
 }
 
-static int print_segments(struct kexec_info *info)
+static void print_segments(struct kexec_info *info)
 {
 	int i;
 
@@ -131,8 +130,6 @@ static int print_segments(struct kexec_info *info)
 		pr_info("  %d. buf=%#08p bufsz=%#lx mem=%#08p memsz=%#lx\n", i,
 			seg->buf, seg->bufsz, seg->mem, seg->memsz);
 	}
-
-	return 0;
 }
 
 static unsigned long find_unused_base(struct kexec_info *info, int *padded)
@@ -163,7 +160,7 @@ static unsigned long find_unused_base(struct kexec_info *info, int *padded)
 
 int kexec_load_bootm_data(struct image_data *data)
 {
-	int result;
+	int ret;
 	struct kexec_info info;
 	char *cmdline;
 	const char *t;
@@ -176,10 +173,10 @@ int kexec_load_bootm_data(struct image_data *data)
 
 	initrd_cmdline[0] = 0;
 
-	result = kexec_load_one_file(&info, data->os_file);
-	if (result < 0) {
+	ret = kexec_load_one_file(&info, data->os_file);
+	if (IS_ERR_VALUE(ret)) {
 		pr_err("Cannot load %s\n", data->os_file);
-		return result;
+		return ret;
 	}
 
 	if (data->oftree_file) {
@@ -187,11 +184,11 @@ int kexec_load_bootm_data(struct image_data *data)
 
 		base = ALIGN(base, 8);
 
-		result = kexec_load_binary_file(&info,
+		ret = kexec_load_binary_file(&info,
 				data->oftree_file, &fsize, base);
-		if (result < 0) {
+		if (IS_ERR_VALUE(ret)) {
 			pr_err("Cannot load %s\n", data->oftree_file);
-			return result;
+			return ret;
 		}
 		data->oftree_address = base;
 	}
@@ -205,11 +202,11 @@ int kexec_load_bootm_data(struct image_data *data)
 		 */
 		base = ALIGN(base, 0x10000);
 
-		result = kexec_load_binary_file(&info,
+		ret = kexec_load_binary_file(&info,
 				data->initrd_file, &fsize, base);
-		if (result < 0) {
+		if (IS_ERR_VALUE(ret)) {
 			pr_err("Cannot load %s\n", data->initrd_file);
-			return result;
+			return ret;
 		}
 		data->initrd_address = base;
 
@@ -253,8 +250,9 @@ int kexec_load_bootm_data(struct image_data *data)
 	/* Verify all of the segments load to a valid location in memory */
 
 	/* Sort the segments and verify we don't have overlaps */
-	if (sort_segments(&info) < 0)
-		return -1;
+	ret = sort_segments(&info);
+	if (IS_ERR_VALUE(ret))
+		return ret;
 
 	return kexec_load(info.entry,
 		info.nr_segments, info.segment, info.kexec_flags);
