@@ -12,9 +12,20 @@
 #include <asm/io.h>
 #include <common.h>
 #include <elf.h>
+#include <environment.h>
+#include <globalvar.h>
+#include <init.h>
 #include <kexec.h>
+#include <magicvar.h>
 #include <memory.h>
 #include "machine_kexec.h"
+
+static unsigned int mips_boot_protocol;
+
+enum mips_boot_names {
+	MIPS_BOOT_FDT,
+	MIPS_BOOT_LEGACY,
+};
 
 static int elf_mips_probe(const char *buf, off_t len)
 {
@@ -96,7 +107,7 @@ extern unsigned long kexec_nr_segments;
 
 unsigned long reboot_code_buffer;
 
-static void machine_kexec_print_args(void)
+static void machine_kexec_print_args(bool have_argv)
 {
 	unsigned long argc = (int)kexec_args[0];
 	int i;
@@ -105,6 +116,9 @@ static void machine_kexec_print_args(void)
 	pr_info("kexec_args[1] (argv): %p\n", (void *)kexec_args[1]);
 	pr_info("kexec_args[2] (env ): %p\n", (void *)kexec_args[2]);
 	pr_info("kexec_args[3] (desc): %p\n", (void *)kexec_args[3]);
+
+	if (!have_argv)
+		return;
 
 	for (i = 0; i < argc; i++) {
 		pr_info("kexec_argv[%d] = %p, %s\n",
@@ -180,21 +194,34 @@ static void machine_kexec_parse_argv(void)
 	kexec_args[3] = 0;
 }
 
-static int machine_kexec_prepare(struct kexec_segment *segments, unsigned long nr_segments)
+static void machine_kexec_fdt(struct image_data *data)
 {
-	/*
-	 * Whenever arguments passed from kexec-tools, Init the arguments as
-	 * the original ones to try avoiding booting failure.
-	 */
+	kexec_args[0] = -2;
+	kexec_args[1] = (unsigned long)data->oftree_address;
+	kexec_args[2] = 0;
+	kexec_args[3] = 0;
+}
 
-	machine_kexec_init_argv(segments, nr_segments);
-	machine_kexec_parse_argv();
-	machine_kexec_print_args();
+
+static int machine_kexec_prepare(struct image_data *data,
+				 struct kexec_segment *segments,
+				 unsigned long nr_segments)
+{
+	if (mips_boot_protocol == MIPS_BOOT_FDT) {
+		machine_kexec_fdt(data);
+		machine_kexec_print_args(0);
+	} else {
+		machine_kexec_init_argv(segments, nr_segments);
+		machine_kexec_parse_argv();
+		machine_kexec_print_args(1);
+	}
 
 	return 0;
 }
-int kexec_load(void *entry, unsigned long nr_segments,
-		struct kexec_segment *segments)
+
+int kexec_load(struct image_data *data, void *entry,
+	       unsigned long nr_segments,
+	       struct kexec_segment *segments)
 {
 	int i;
 	struct resource *elf;
@@ -257,7 +284,24 @@ int kexec_load(void *entry, unsigned long nr_segments,
 		(unsigned long)phys_to_virt(start),
 		(unsigned long)nr_segments * sizeof(*segments));
 
-	machine_kexec_prepare(segments, nr_segments);
+	machine_kexec_prepare(data, segments, nr_segments);
 
 	return 0;
 }
+
+static const char *mips_boot_names[] = {
+	"fdt", "legacy"
+};
+
+static int mips_kexec_globalvars_init(void)
+{
+	globalvar_add_simple_enum("bootm.mips.boot_protocol",
+				   &mips_boot_protocol, mips_boot_names,
+				   ARRAY_SIZE(mips_boot_names));
+	return 0;
+}
+device_initcall(mips_kexec_globalvars_init);
+
+BAREBOX_MAGICVAR_NAMED(global_bootm_mips_boot_protocol,
+		       global_bootm_mips_boot_protocol,
+		       "bootm.mips.boot_protocol: boot protocol used to start kernel");
