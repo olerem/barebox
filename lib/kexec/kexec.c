@@ -254,6 +254,5 @@ int kexec_load_bootm_data(struct image_data *data)
 	if (IS_ERR_VALUE(ret))
 		return ret;
 
-	return kexec_load(info.entry,
-		info.nr_segments, info.segment);
+	return kexec_load(data, info.entry, info.nr_segments, info.segment);
 }
