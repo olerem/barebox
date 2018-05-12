@@ -10,6 +10,7 @@
 #include <asm/io.h>
 #include <boot.h>
 #include <common.h>
+#include <environment.h>
 #include <kexec.h>
 #include <libfile.h>
 
@@ -156,15 +157,13 @@ static unsigned long find_unused_base(struct kexec_info *info, int *padded)
 	return base;
 }
 
-#include <environment.h>
-
 int kexec_load_bootm_data(struct image_data *data)
 {
 	int ret;
 	struct kexec_info info;
 	char *cmdline;
 	const char *t;
-	size_t tlen, klen;
+	size_t tlen;
 	size_t fsize;
 	char initrd_cmdline[40];
 	int padded = 0;
@@ -226,13 +225,11 @@ int kexec_load_bootm_data(struct image_data *data)
 	else
 		tlen = 0;
 
-	klen = strlen("kexec ");
-	cmdline = xzalloc(tlen + sizeof(initrd_cmdline) + klen);
-	memcpy(cmdline, "kexec ", klen);
+	cmdline = xzalloc(tlen + sizeof(initrd_cmdline));
 	if (tlen)
-		memcpy(cmdline + klen, t, tlen);
+		memcpy(cmdline, t, tlen);
 
-	memcpy(cmdline + klen + tlen, initrd_cmdline, sizeof(initrd_cmdline));
+	memcpy(cmdline + tlen, initrd_cmdline, sizeof(initrd_cmdline));
 
 	if (cmdline) {
 		int cmdlinelen = strlen(cmdline) + 1;
