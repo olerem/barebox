@@ -421,8 +421,8 @@ int check_room_for_elf(struct list_head *elf_segments)
 
 			res = bank->res;
 
-			start = virt_to_phys((const void *)res->start);
-			end = virt_to_phys((const void *)res->end);
+			start = res->start;
+			end = res->end;
 
 			if ((start <= r->start) && (end >= r->end)) {
 				got_bank = 1;
@@ -503,9 +503,7 @@ resource_size_t dcheck_res(struct list_head *elf_segments)
 		res = bank->res;
 
 		list_for_each_entry(r, &res->children, sibling) {
-			t = create_resource("tmp",
-				virt_to_phys((void *)r->start),
-				virt_to_phys((void *)r->end));
+			t = create_resource("tmp", r->start, r->end);
 			list_add_used_region(&t->sibling, &used_regions);
 		}
 	}
@@ -519,9 +517,7 @@ resource_size_t dcheck_res(struct list_head *elf_segments)
 		resource_size_t start;
 
 		res = bank->res;
-		res = create_resource("tmp",
-				virt_to_phys((void *)res->start),
-				virt_to_phys((void *)res->end));
+		res = create_resource("tmp", res->start, res->end);
 		start = res->start;
 
 		list_for_each_entry(r, &used_regions, sibling) {

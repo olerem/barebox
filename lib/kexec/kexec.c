@@ -66,9 +66,6 @@ void add_segment_phys_virt(struct kexec_info *info,
 	pagesize = 4096;
 	memsz = (memsz + (pagesize - 1)) & ~(pagesize - 1);
 
-	if (phys)
-		base = virt_to_phys((void *)base);
-
 	size = (info->nr_segments + 1) * sizeof(info->segment[0]);
 	info->segment = xrealloc(info->segment, size);
 	info->segment[info->nr_segments].buf   = buf;
@@ -133,7 +130,7 @@ static void print_segments(struct kexec_info *info)
 	}
 }
 
-static unsigned long find_unused_base(struct kexec_info *info, int *padded)
+static unsigned long find_unused_base(struct kexec_info *info)
 {
 	unsigned long base = 0;
 
@@ -144,15 +141,12 @@ static unsigned long find_unused_base(struct kexec_info *info, int *padded)
 		base = (unsigned long)seg->mem + seg->memsz;
 	}
 
-	if (!*padded) {
-		/*
-		 * Pad it; the kernel scribbles over memory
-		 * beyond its load address.
-		 * see grub-core/loader/mips/linux.c
-		 */
-		base += 0x100000;
-		*padded = 1;
-	}
+	/*
+	 * Pad it; the kernel scribbles over memory
+	 * beyond its load address.
+	 * see grub-core/loader/mips/linux.c
+	 */
+	base += 0x100000;
 
 	return base;
 }
@@ -166,7 +160,7 @@ int kexec_load_bootm_data(struct image_data *data)
 	size_t tlen;
 	size_t fsize;
 	char initrd_cmdline[40];
-	int padded = 0;
+	unsigned long base;
 
 	memset(&info, 0, sizeof(info));
 
@@ -178,22 +172,17 @@ int kexec_load_bootm_data(struct image_data *data)
 		return ret;
 	}
 
-	if (data->oftree_file) {
-		unsigned long base = find_unused_base(&info, &padded);
-
-		base = ALIGN(base, 8);
-
-		ret = kexec_load_binary_file(&info,
-				data->oftree_file, &fsize, base);
-		if (IS_ERR_VALUE(ret)) {
-			pr_err("Cannot load %s\n", data->oftree_file);
-			return ret;
-		}
-		data->oftree_address = base;
+	base = find_unused_base(&info);
+	base = ALIGN(base, 8);
+	ret = bootm_load_devicetree(data, base);
+	if (IS_ERR_VALUE(ret)) {
+		pr_err("Cannot load device tree\n");
+		return ret;
 	}
+	data->oftree_address = base;
 
 	if (data->initrd_file) {
-		unsigned long base = find_unused_base(&info, &padded);
+		unsigned long base = find_unused_base(&info);
 
 		/*
 		 * initrd start must be page aligned,
@@ -233,7 +222,7 @@ int kexec_load_bootm_data(struct image_data *data)
 
 	if (cmdline) {
 		int cmdlinelen = strlen(cmdline) + 1;
-		unsigned long base = find_unused_base(&info, &padded);
+		unsigned long base = find_unused_base(&info);
 
 		base = ALIGN(base, 8);
 
