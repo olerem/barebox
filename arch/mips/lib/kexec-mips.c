@@ -66,7 +66,7 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 		struct mem_phdr *phdr;
 		phdr = &ehdr.e_phdr[i];
 		if (phdr->p_type == PT_LOAD) {
-			phdr->p_paddr = virt_to_phys((const void *)phdr->p_paddr);
+			phdr->p_paddr = phdr->p_paddr;
 		}
 	}
 
@@ -77,7 +77,7 @@ static int elf_mips_load(const char *buf, off_t len, struct kexec_info *info)
 		goto out;
 	}
 
-	info->entry = (void *)virt_to_phys((void *)ehdr.e_entry);
+	info->entry = ehdr.e_entry;
 
 out:
 	return ret;
@@ -94,8 +94,7 @@ int kexec_file_types = sizeof(kexec_file_type) / sizeof(kexec_file_type[0]);
 void add_segment(struct kexec_info *info, const void *buf, size_t bufsz,
 		 unsigned long base, size_t memsz)
 {
-	add_segment_phys_virt(info, buf, bufsz,
-		virt_to_phys((void *)base), memsz, 1);
+	add_segment_phys_virt(info, buf, bufsz, base, memsz, 1);
 }
 
 /* relocator parameters */
@@ -189,7 +188,7 @@ static void machine_kexec_parse_argv(void)
 		return;
 
 	kexec_args[0] = argc;
-	kexec_args[1] = (unsigned long)kexec_argv;
+	kexec_args[1] = virt_to_phys(kexec_argv);
 	kexec_args[2] = 0;
 	kexec_args[3] = 0;
 }
@@ -197,7 +196,7 @@ static void machine_kexec_parse_argv(void)
 static void machine_kexec_fdt(struct image_data *data)
 {
 	kexec_args[0] = -2;
-	kexec_args[1] = (unsigned long)data->oftree_address;
+	kexec_args[1] = virt_to_phys(data->oftree_address);
 	kexec_args[2] = 0;
 	kexec_args[3] = 0;
 }
@@ -249,16 +248,15 @@ int kexec_load(struct image_data *data, void *entry,
 	start = (start + 15) & 0xfffffff0;
 
 	for (i = 0; i < nr_segments; i++) {
-		segments[i].mem = (void *)(phys_to_virt((unsigned long)segments[i].mem));
-		memcpy(phys_to_virt(start), segments[i].buf, segments[i].bufsz);
-		request_sdram_region("kexec relocatable segment",
-			(unsigned long)phys_to_virt(start),
+		segments[i].mem = segments[i].mem;
+		memcpy(start, segments[i].buf, segments[i].bufsz);
+		request_sdram_region("kexec relocatable segment", start,
 			(unsigned long)segments[i].bufsz);
 
 		/* relocate_new_kernel() copy by register (4 or 8 bytes)
 		   so bufsz must be aligned to 4/8 */
 		segments[i].bufsz = (segments[i].bufsz + 15) & 0xfffffff0;
-		segments[i].buf = phys_to_virt(start);
+		segments[i].buf = start;
 		start = start + segments[i].bufsz;
 	}
 
@@ -266,22 +264,20 @@ int kexec_load(struct image_data *data, void *entry,
 
 	reboot_code_buffer = start;
 
-	memcpy(phys_to_virt(start), &relocate_new_kernel,
+	memcpy(start, &relocate_new_kernel,
 		relocate_new_kernel_size);
-	request_sdram_region("kexec relocator",
-		(unsigned long)phys_to_virt(start),
+	request_sdram_region("kexec relocator", start,
 		(unsigned long)relocate_new_kernel_size);
 
 	start = start + relocate_new_kernel_size;
 	start = (start + 15) & 0xfffffff0;
 
-	kexec_start_address = (unsigned long)phys_to_virt((unsigned long)entry);
-	kexec_segments = (unsigned long)phys_to_virt((unsigned long)start);
+	kexec_start_address = entry;
+	kexec_segments = start;
 	kexec_nr_segments = nr_segments;
 
-	memcpy(phys_to_virt(start), segments, nr_segments * sizeof(*segments));
-	request_sdram_region("kexec control segments",
-		(unsigned long)phys_to_virt(start),
+	memcpy(start, segments, nr_segments * sizeof(*segments));
+	request_sdram_region("kexec control segments", start,
 		(unsigned long)nr_segments * sizeof(*segments));
 
 	machine_kexec_prepare(data, segments, nr_segments);
