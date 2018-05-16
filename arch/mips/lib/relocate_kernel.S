@@ -47,7 +47,7 @@ copy_segment:
 	REG_S		s7, (s6)
 	PTR_ADD		s4, s4, SZREG
 	PTR_ADD		s6, s6, SZREG
-	LONG_SUB	s5, s5, 1
+	LONG_SUB	s5, s5, SZREG
 	bne		s5, zero, copy_segment
 
 	LONG_SUB	s1, s1, 1
