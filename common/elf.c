@@ -34,8 +34,10 @@ static int elf_request_region(struct list_head *list,
 
 	r = xzalloc(sizeof(*r));
 	r_new = request_sdram_region("elf_section", start, size);
-	if (!r_new)
+	if (!r_new) {
+		pr_err("filed to request region: %x %x\n", start, size);
 		return -EINVAL;
+	}
 
 	r->r = r_new;
 	list_add_tail(&r->list, list);
@@ -70,6 +72,8 @@ static unsigned long load_elf64_image_phdr(struct elf_image *elf)
 	ehdr = (Elf64_Ehdr *)addr;
 	phdr = (Elf64_Phdr *)(addr + (ulong)ehdr->e_phoff);
 
+	elf->entry = ehdr->e_entry;
+
 	/* Load each program header */
 	for (i = 0; i < ehdr->e_phnum; ++i) {
 		void *dst = (void *)(ulong)phdr->p_paddr;
@@ -92,7 +96,7 @@ static unsigned long load_elf64_image_phdr(struct elf_image *elf)
 		++phdr;
 	}
 
-	return ehdr->e_entry;
+	return 0;
 }
 
 /*
@@ -102,7 +106,7 @@ static unsigned long load_elf64_image_phdr(struct elf_image *elf)
  * The loader firstly reads the EFI class to see if it's a 64-bit image.
  * If yes, call the ELF64 loader. Otherwise continue with the ELF32 loader.
  */
-static unsigned long load_elf_image_phdr(struct elf_image *elf)
+static int load_elf_image_phdr(struct elf_image *elf)
 {
 	unsigned long addr = elf->buf;
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
@@ -115,10 +119,16 @@ static unsigned long load_elf_image_phdr(struct elf_image *elf)
 
 	phdr = (Elf32_Phdr *)(addr + ehdr->e_phoff);
 
+	elf->entry = ehdr->e_entry;
+
 	/* Load each program header */
 	for (i = 0; i < ehdr->e_phnum; ++i) {
 		void *dst = (void *)(uintptr_t)phdr->p_paddr;
 		void *src = (void *)addr + phdr->p_offset;
+
+		/* we care only about PT_LOAD segments */
+		if (phdr->p_type != PT_LOAD)
+			continue;
 
 		printk("Loading phdr %i to 0x%p (%i bytes)\n",
 		      i, dst, phdr->p_filesz);
@@ -136,10 +146,10 @@ static unsigned long load_elf_image_phdr(struct elf_image *elf)
 		++phdr;
 	}
 
-	return ehdr->e_entry;
+	return ret;
 }
 
-static unsigned long load_elf_image_shdr(struct elf_image *elf)
+static int load_elf_image_shdr(struct elf_image *elf)
 {
 	unsigned long addr = elf->buf;
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
@@ -153,6 +163,8 @@ static unsigned long load_elf_image_shdr(struct elf_image *elf)
 	/* Find the section header string table for output info */
 	shdr = (Elf32_Shdr *)(addr + ehdr->e_shoff +
 			     (ehdr->e_shstrndx * sizeof(Elf32_Shdr)));
+
+	elf->entry = ehdr->e_entry;
 
 	if (shdr->sh_type == SHT_STRTAB)
 		strtab = (unsigned char *)(addr + shdr->sh_offset);
@@ -185,7 +197,7 @@ static unsigned long load_elf_image_shdr(struct elf_image *elf)
 		}
 	}
 
-	return ehdr->e_entry;
+	return 0;
 }
 
 /*
@@ -219,8 +231,11 @@ struct elf_image *elf_load_image(struct image_data *data)
 {
 	struct elf_image *elf;
 	size_t size;
+	int ret;
 
 	elf = xzalloc(sizeof(*elf));
+
+	INIT_LIST_HEAD(&elf->list);
 
 	elf->buf = read_file(data->os_file, &size);
 
@@ -228,11 +243,11 @@ struct elf_image *elf_load_image(struct image_data *data)
 		return ERR_PTR(-EINVAL);
 
 	if (1)
-		elf->elf_entry = load_elf_image_phdr(elf);
+		ret = load_elf_image_phdr(elf);
 	else
-		elf->elf_entry = load_elf_image_shdr(elf);
+		ret = load_elf_image_shdr(elf);
 
-	return elf;
+	return ret ? ERR_PTR(ret) : elf;
 }
 
 void elf_release_image(struct elf_image *elf)
