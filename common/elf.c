@@ -144,11 +144,11 @@ static unsigned long load_elf_image_shdr(unsigned long addr)
  * First look at the ELF header magic field, then make sure that it is
  * executable.
  */
-static int valid_elf_image(struct image_data *data)
+static int valid_elf_image(void *buf)
 {
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
 
-	ehdr = (Elf32_Ehdr *)data->os_file;
+	ehdr = (Elf32_Ehdr *)buf;
 
 	if (ehdr->e_ident[EI_MAG0] != ELFMAG0
 	    || ehdr->e_ident[EI_MAG1] != ELFMAG1
@@ -166,15 +166,15 @@ static int valid_elf_image(struct image_data *data)
 	return 1;
 }
 
-int elf_load_image(struct image_data *data, unsigned long *elf_entry)
+int elf_load_image(struct image_data *data, void *buf, unsigned long *elf_entry)
 {
-	if (!valid_elf_image(data))
+	if (!valid_elf_image(buf))
 		return -EINVAL;
 
 	if (1)
-		*elf_entry = load_elf_image_phdr(data->os_file);
+		*elf_entry = load_elf_image_phdr(buf);
 	else
-		*elf_entry = load_elf_image_shdr(data->os_file);
+		*elf_entry = load_elf_image_shdr(buf);
 
 	return 0;
 }
