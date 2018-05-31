@@ -62,11 +62,11 @@ static int do_bootm_elf(struct image_data *data)
 {
 	struct elf_image *elf;
 
-	elf = elf_load_image(data);
+	elf = elf_load_image(data->os_file);
 	if (IS_ERR(elf))
 		return PTR_ERR(elf);
 
-	printf("Starting application at 0x%08lx ...\n", elf->entry);
+	pr_info("Starting application at 0x%08lx ...\n", elf->entry);
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
@@ -74,7 +74,7 @@ static int do_bootm_elf(struct image_data *data)
 	 */
 	do_bootelf_exec((void *)elf->entry, NULL, NULL);
 
-	printf("## Application terminated\n");
+	pr_err("ELF application terminated\n");
 
 	elf_release_image(elf);
 
