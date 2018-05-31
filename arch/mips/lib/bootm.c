@@ -10,6 +10,7 @@
 #include <restart.h>
 
 #include <asm/byteorder.h>
+#include <asm/io.h>
 
 static int do_bootm_barebox(struct image_data *data)
 {
@@ -42,39 +43,29 @@ static struct binfmt_hook binfmt_barebox_hook = {
 	.exec = "bootm",
 };
 
-/* Allow ports to override the default behavior */
-static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
-				     int argc, char * const argv[])
-{
-	unsigned long ret;
-
-	shutdown_barebox();
-	/*
-	 * pass address parameter as argv[0] (aka command name),
-	 * and all remaining args
-	 */
-	ret = entry(argc, argv);
-
-	return ret;
-}
-
 static int do_bootm_elf(struct image_data *data)
 {
 	struct elf_image *elf;
+	unsigned long (*entry)(int, char * const[], int, int);
 
 	elf = elf_load_image(data->os_file);
 	if (IS_ERR(elf))
 		return PTR_ERR(elf);
 
-	pr_info("Starting application at 0x%08lx, dts 0x%08lx...\n",
-		elf->entry, data->of_root_node);
-
 	bootm_get_devicetree(data);
+
+	pr_info("Starting application at 0x%08lx, dts 0x%08lx...\n",
+		phys_to_virt(elf->entry), data->of_root_node);
+
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-	do_bootelf_exec((void *)elf->entry, -2, data->of_root_node);
+	shutdown_barebox();
+
+	entry = elf->entry;
+
+	entry(-2, phys_to_virt(data->oftree), 0, 0);
 
 	pr_err("ELF application terminated\n");
 
