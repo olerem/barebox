@@ -14,16 +14,11 @@
  */
 
 #include <common.h>
+#include <bootm.h>
 #include <command.h>
 #include <elf.h>
 #include <environment.h>
 #include <net.h>
-#include <vxworks.h>
-#ifdef CONFIG_X86
-#include <vbe.h>
-#include <asm/e820.h>
-#include <linux/linkage.h>
-#endif
 
 /*
  * A very simple ELF64 loader, assumes the image is valid, returns the
@@ -53,7 +48,6 @@ static unsigned long load_elf64_image_phdr(unsigned long addr)
 		if (phdr->p_filesz != phdr->p_memsz)
 			memset(dst + phdr->p_filesz, 0x00,
 			       phdr->p_memsz - phdr->p_filesz);
-		flush_cache((unsigned long)dst, phdr->p_filesz);
 		++phdr;
 	}
 
@@ -91,7 +85,6 @@ static unsigned long load_elf_image_phdr(unsigned long addr)
 		if (phdr->p_filesz != phdr->p_memsz)
 			memset(dst + phdr->p_filesz, 0x00,
 			       phdr->p_memsz - phdr->p_filesz);
-		flush_cache((unsigned long)dst, phdr->p_filesz);
 		++phdr;
 	}
 
@@ -141,7 +134,6 @@ static unsigned long load_elf_image_shdr(unsigned long addr)
 			memcpy((void *)(uintptr_t)shdr->sh_addr,
 			       (const void *)image, shdr->sh_size);
 		}
-		flush_cache(shdr->sh_addr, shdr->sh_size);
 	}
 
 	return ehdr->e_entry;
@@ -152,19 +144,22 @@ static unsigned long load_elf_image_shdr(unsigned long addr)
  * First look at the ELF header magic field, then make sure that it is
  * executable.
  */
-static int valid_elf_image(unsigned long addr)
+static int valid_elf_image(struct image_data *data)
 {
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
 
-	ehdr = (Elf32_Ehdr *)addr;
+	ehdr = (Elf32_Ehdr *)data->os_file;
 
-	if (!IS_ELF(*ehdr)) {
-		printf("## No elf image at address 0x%08lx\n", addr);
-		return 0;
-	}
+	if (ehdr->e_ident[EI_MAG0] != ELFMAG0
+	    || ehdr->e_ident[EI_MAG1] != ELFMAG1
+	    || ehdr->e_ident[EI_MAG2] != ELFMAG2
+	    || ehdr->e_ident[EI_MAG3] != ELFMAG3) {
+		printf("## No elf image %x %x %x\n", ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2]);
+                return 0;
+        }
 
 	if (ehdr->e_type != ET_EXEC) {
-		printf("## Not a 32-bit elf image at address 0x%08lx\n", addr);
+		printf("## Not a 32-bit elf image\n");
 		return 0;
 	}
 
@@ -173,7 +168,7 @@ static int valid_elf_image(unsigned long addr)
 
 int elf_load_image(struct image_data *data, unsigned long *elf_entry)
 {
-	if (!valid_elf_image(data->os_file))
+	if (!valid_elf_image(data))
 		return -EINVAL;
 
 	if (1)
@@ -181,5 +176,5 @@ int elf_load_image(struct image_data *data, unsigned long *elf_entry)
 	else
 		*elf_entry = load_elf_image_shdr(data->os_file);
 
-	return 0
+	return 0;
 }
