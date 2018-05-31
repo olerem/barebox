@@ -404,7 +404,7 @@ struct elf_image {
 	void *buf;
 };
 
-struct elf_image *elf_load_image(struct image_data *data);
+struct elf_image *elf_load_image(const char *file);
 void elf_release_image(struct elf_image *elf);
 
 #endif /* _LINUX_ELF_H */
