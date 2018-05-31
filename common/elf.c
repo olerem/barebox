@@ -56,50 +56,6 @@ static void elf_release_regions(struct list_head *list)
 }
 
 /*
- * A very simple ELF64 loader, assumes the image is valid, returns the
- * entry point address.
- *
- * Note if U-Boot is 32-bit, the loader assumes the to segment's
- * physical address and size is within the lower 32-bit address space.
- */
-static unsigned long load_elf64_image_phdr(struct elf_image *elf)
-{
-	unsigned long addr = elf->buf;
-	Elf64_Ehdr *ehdr; /* Elf header structure pointer */
-	Elf64_Phdr *phdr; /* Program header structure pointer */
-	int i, ret;
-
-	ehdr = (Elf64_Ehdr *)addr;
-	phdr = (Elf64_Phdr *)(addr + (ulong)ehdr->e_phoff);
-
-	elf->entry = ehdr->e_entry;
-
-	/* Load each program header */
-	for (i = 0; i < ehdr->e_phnum; ++i) {
-		void *dst = (void *)(ulong)phdr->p_paddr;
-		void *src = (void *)addr + phdr->p_offset;
-
-		debug("Loading phdr %i to 0x%p (%lu bytes)\n",
-		      i, dst, (ulong)phdr->p_filesz);
-		if (phdr->p_filesz) {
-			ret = elf_request_region(&elf->list, dst, phdr->p_filesz);
-			if (ret)
-				return ret;
-
-			memcpy(dst, src, phdr->p_filesz);
-		} else
-			continue;
-
-		if (phdr->p_filesz != phdr->p_memsz)
-			memset(dst + phdr->p_filesz, 0x00,
-			       phdr->p_memsz - phdr->p_filesz);
-		++phdr;
-	}
-
-	return 0;
-}
-
-/*
  * A very simple ELF loader, assumes the image is valid, returns the
  * entry point address.
  *
@@ -147,57 +103,6 @@ static int load_elf_image_phdr(struct elf_image *elf)
 	}
 
 	return ret;
-}
-
-static int load_elf_image_shdr(struct elf_image *elf)
-{
-	unsigned long addr = elf->buf;
-	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
-	Elf32_Shdr *shdr; /* Section header structure pointer */
-	unsigned char *strtab = 0; /* String table pointer */
-	unsigned char *image; /* Binary image pointer */
-	int i; /* Loop counter */
-
-	ehdr = (Elf32_Ehdr *)addr;
-
-	/* Find the section header string table for output info */
-	shdr = (Elf32_Shdr *)(addr + ehdr->e_shoff +
-			     (ehdr->e_shstrndx * sizeof(Elf32_Shdr)));
-
-	elf->entry = ehdr->e_entry;
-
-	if (shdr->sh_type == SHT_STRTAB)
-		strtab = (unsigned char *)(addr + shdr->sh_offset);
-
-	/* Load each appropriate section */
-	for (i = 0; i < ehdr->e_shnum; ++i) {
-		shdr = (Elf32_Shdr *)(addr + ehdr->e_shoff +
-				     (i * sizeof(Elf32_Shdr)));
-
-		if (!(shdr->sh_flags & SHF_ALLOC) ||
-		    shdr->sh_addr == 0 || shdr->sh_size == 0) {
-			continue;
-		}
-
-		if (strtab) {
-			printk("%sing %s @ 0x%08lx (%ld bytes)\n",
-			      (shdr->sh_type == SHT_NOBITS) ? "Clear" : "Load",
-			       &strtab[shdr->sh_name],
-			       (unsigned long)shdr->sh_addr,
-			       (long)shdr->sh_size);
-		}
-
-		if (shdr->sh_type == SHT_NOBITS) {
-			memset((void *)(uintptr_t)shdr->sh_addr, 0,
-			       shdr->sh_size);
-		} else {
-			image = (unsigned char *)addr + shdr->sh_offset;
-			memcpy((void *)(uintptr_t)shdr->sh_addr,
-			       (const void *)image, shdr->sh_size);
-		}
-	}
-
-	return 0;
 }
 
 /*
