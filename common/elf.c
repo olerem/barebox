@@ -82,7 +82,7 @@ static int load_elf_image_phdr(struct elf_image *elf)
 
 		/* we care only about PT_LOAD segments */
 		if (phdr->p_type != PT_LOAD)
-			continue;
+			goto skip;
 
 		pr_debug("Loading phdr %i to 0x%p (%i bytes)\n",
 		      i, dst, phdr->p_filesz);
@@ -92,11 +92,12 @@ static int load_elf_image_phdr(struct elf_image *elf)
 				return ret;
 			memcpy(dst, src, phdr->p_filesz);
 		} else
-			continue;
+			goto skip;
 
 		if (phdr->p_filesz != phdr->p_memsz)
 			memset(dst + phdr->p_filesz, 0x00,
 			       phdr->p_memsz - phdr->p_filesz);
+skip:
 		++phdr;
 	}
 
