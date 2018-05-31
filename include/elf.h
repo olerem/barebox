@@ -400,7 +400,7 @@ static inline void arch_write_notes(struct file *file) { }
 
 struct elf_image {
 	struct list_head list;
-	unsigned long elf_entry;
+	unsigned long entry;
 	void *buf;
 };
 
