@@ -61,9 +61,13 @@ static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
 static int do_bootm_elf(struct image_data *data)
 {
 	unsigned long elf_entry;
+	size_t size;
+	void *buf;
 	int ret;
 
-	ret = elf_load_image(data, &elf_entry);
+	buf = read_file(data->os_file, &size);
+
+	ret = elf_load_image(data, buf, &elf_entry);
 	if (ret)
 		return ret;
 
