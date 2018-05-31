@@ -66,13 +66,13 @@ static int do_bootm_elf(struct image_data *data)
 	if (IS_ERR(elf))
 		return PTR_ERR(elf);
 
-	printf("## Starting application at 0x%08lx ...\n", elf->elf_entry);
+	printf("Starting application at 0x%08lx ...\n", elf->entry);
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-	do_bootelf_exec((void *)elf->elf_entry, NULL, NULL);
+	do_bootelf_exec((void *)elf->entry, NULL, NULL);
 
 	printf("## Application terminated\n");
 
