@@ -398,7 +398,13 @@ static inline void arch_write_notes(struct file *file) { }
 #define ELF_CORE_WRITE_EXTRA_NOTES arch_write_notes(file)
 #endif /* ARCH_HAVE_EXTRA_ELF_NOTES */
 
+struct elf_image {
+	struct list_head list;
+	unsigned long elf_entry;
+	void *buf;
+};
 
-int elf_load_image(struct image_data *data, void *buf, unsigned long *elf_entry);
+struct elf_image *elf_load_image(struct image_data *data);
+void elf_release_image(struct elf_image *elf);
 
 #endif /* _LINUX_ELF_H */
