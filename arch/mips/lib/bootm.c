@@ -66,13 +66,15 @@ static int do_bootm_elf(struct image_data *data)
 	if (IS_ERR(elf))
 		return PTR_ERR(elf);
 
-	pr_info("Starting application at 0x%08lx ...\n", elf->entry);
+	pr_info("Starting application at 0x%08lx, dts 0x%08lx...\n",
+		elf->entry, data->of_root_node);
 
+	bootm_get_devicetree(data);
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-	do_bootelf_exec((void *)elf->entry, NULL, NULL);
+	do_bootelf_exec((void *)elf->entry, -2, data->of_root_node);
 
 	pr_err("ELF application terminated\n");
 
