@@ -42,10 +42,65 @@ static struct binfmt_hook binfmt_barebox_hook = {
 	.exec = "bootm",
 };
 
+/* Allow ports to override the default behavior */
+static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
+				     int argc, char * const argv[])
+{
+	unsigned long ret;
+
+	/*
+	 * pass address parameter as argv[0] (aka command name),
+	 * and all remaining args
+	 */
+	ret = entry(argc, argv);
+
+	return ret;
+}
+
+static int do_bootm_elf(struct image_data *data)
+{
+	unsigned long elf_entry;
+	int ret;
+
+	ret = kexec_load_bootm_data(data);
+	if (IS_ERR_VALUE(ret))
+		return ret;
+
+	elf_load_image(data, &elf_entry);
+
+	printf("## Starting application at 0x%08lx ...\n", addr);
+
+	/*
+	 * pass address parameter as argv[0] (aka command name),
+	 * and all remaining args
+	 */
+	rc = do_bootelf_exec((void *)elf_entry, NULL, NULL);
+	if (rc != 0)
+		rcode = 1;
+
+	printf("## Application terminated, rc = 0x%lx\n", rc);
+
+	return -ERESTARTSYS;
+}
+
+static struct image_handler elf_handler = {
+	.name = "ELF",
+	.bootm = do_bootm_elf,
+	.filetype = filetype_elf,
+};
+
+static struct binfmt_hook binfmt_elf_hook = {
+	.type = filetype_elf,
+	.exec = "bootm",
+};
+
 static int mips_register_image_handler(void)
 {
 	register_image_handler(&barebox_handler);
 	binfmt_register(&binfmt_barebox_hook);
+
+	register_image_handler(&elf_handler);
+	binfmt_register(&binfmt_elf_hook);
 
 	return 0;
 }
