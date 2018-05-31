@@ -70,8 +70,6 @@ static int load_elf_image_phdr(struct elf_image *elf)
 	int i, ret;
 
 	ehdr = (Elf32_Ehdr *)addr;
-	if (ehdr->e_ident[EI_CLASS] == ELFCLASS64)
-		return load_elf64_image_phdr(addr);
 
 	phdr = (Elf32_Phdr *)(addr + ehdr->e_phoff);
 
@@ -86,7 +84,7 @@ static int load_elf_image_phdr(struct elf_image *elf)
 		if (phdr->p_type != PT_LOAD)
 			continue;
 
-		printk("Loading phdr %i to 0x%p (%i bytes)\n",
+		pr_debug("Loading phdr %i to 0x%p (%i bytes)\n",
 		      i, dst, phdr->p_filesz);
 		if (phdr->p_filesz) {
 			ret = elf_request_region(&elf->list, dst, phdr->p_filesz);
@@ -147,10 +145,7 @@ struct elf_image *elf_load_image(struct image_data *data)
 	if (!valid_elf_image(elf->buf))
 		return ERR_PTR(-EINVAL);
 
-	if (1)
-		ret = load_elf_image_phdr(elf);
-	else
-		ret = load_elf_image_shdr(elf);
+	ret = load_elf_image_phdr(elf);
 
 	return ret ? ERR_PTR(ret) : elf;
 }
