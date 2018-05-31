@@ -48,6 +48,7 @@ static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
 {
 	unsigned long ret;
 
+	shutdown_barebox();
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
@@ -62,23 +63,19 @@ static int do_bootm_elf(struct image_data *data)
 	unsigned long elf_entry;
 	int ret;
 
-	ret = kexec_load_bootm_data(data);
-	if (IS_ERR_VALUE(ret))
+	ret = elf_load_image(data, &elf_entry);
+	if (ret)
 		return ret;
 
-	elf_load_image(data, &elf_entry);
-
-	printf("## Starting application at 0x%08lx ...\n", addr);
+	printf("## Starting application at 0x%08lx ...\n", elf_entry);
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-	rc = do_bootelf_exec((void *)elf_entry, NULL, NULL);
-	if (rc != 0)
-		rcode = 1;
+	do_bootelf_exec((void *)elf_entry, NULL, NULL);
 
-	printf("## Application terminated, rc = 0x%lx\n", rc);
+	printf("## Application terminated\n");
 
 	return -ERESTARTSYS;
 }
