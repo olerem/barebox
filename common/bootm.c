@@ -320,20 +320,17 @@ static int bootm_open_oftree_uimage(struct image_data *data, size_t *size,
 }
 
 /*
- * bootm_load_devicetree() - load devicetree
+ * bootm_get_devicetree() - get devicetree
  *
  * @data:		image data context
- * @load_address:	The address where the devicetree should be loaded to
  *
- * This loads the devicetree to a RAM location. load_address must be a valid
- * address. The resulting devicetree will be found at data->oftree.
+ * TODO..
  *
  * Return: 0 on success, negative error code otherwise
  */
-int bootm_load_devicetree(struct image_data *data, unsigned long load_address)
+int bootm_get_devicetree(struct image_data *data)
 {
 	enum filetype type;
-	int fdt_size;
 	struct fdt_header *oftree;
 	int ret;
 
@@ -409,6 +406,36 @@ int bootm_load_devicetree(struct image_data *data, unsigned long load_address)
 	oftree = of_get_fixed_tree(data->of_root_node);
 	if (!oftree)
 		return -EINVAL;
+
+	data->oftree = oftree;
+
+	return 0;
+}
+
+/*
+ * bootm_load_devicetree() - load devicetree
+ *
+ * @data:		image data context
+ * @load_address:	The address where the devicetree should be loaded to
+ *
+ * This loads the devicetree to a RAM location. load_address must be a valid
+ * address. The resulting devicetree will be found at data->oftree.
+ *
+ * Return: 0 on success, negative error code otherwise
+ */
+
+int bootm_load_devicetree(struct image_data *data, unsigned long load_address)
+{
+	struct fdt_header *oftree;
+	int fdt_size;
+	int ret;
+
+	ret = bootm_get_devicetree(data);
+	if (ret)
+		return ret;
+
+	oftree = data->oftree;
+
 
 	fdt_size = be32_to_cpu(oftree->totalsize);
 
