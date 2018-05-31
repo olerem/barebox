@@ -130,7 +130,7 @@ static int valid_elf_image(void *buf)
 	return 1;
 }
 
-struct elf_image *elf_load_image(struct image_data *data)
+struct elf_image *elf_load_image(const char *file)
 {
 	struct elf_image *elf;
 	size_t size;
@@ -140,7 +140,7 @@ struct elf_image *elf_load_image(struct image_data *data)
 
 	INIT_LIST_HEAD(&elf->list);
 
-	elf->buf = read_file(data->os_file, &size);
+	elf->buf = read_file(file, &size);
 
 	if (!valid_elf_image(elf->buf))
 		return ERR_PTR(-EINVAL);
