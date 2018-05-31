@@ -60,26 +60,23 @@ static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
 
 static int do_bootm_elf(struct image_data *data)
 {
-	unsigned long elf_entry;
-	size_t size;
-	void *buf;
-	int ret;
+	struct elf_image *elf;
 
-	buf = read_file(data->os_file, &size);
+	elf = elf_load_image(data);
+	if (IS_ERR(elf))
+		return PTR_ERR(elf);
 
-	ret = elf_load_image(data, buf, &elf_entry);
-	if (ret)
-		return ret;
-
-	printf("## Starting application at 0x%08lx ...\n", elf_entry);
+	printf("## Starting application at 0x%08lx ...\n", elf->elf_entry);
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
 	 * and all remaining args
 	 */
-	do_bootelf_exec((void *)elf_entry, NULL, NULL);
+	do_bootelf_exec((void *)elf->elf_entry, NULL, NULL);
 
 	printf("## Application terminated\n");
+
+	elf_release_image(elf);
 
 	return -ERESTARTSYS;
 }
