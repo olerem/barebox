@@ -91,6 +91,9 @@ board-$(CONFIG_BOARD_DLINK_DIR320)	:= dlink-dir-320
 machine-$(CONFIG_MACH_MIPS_LOONGSON)	:= loongson
 board-$(CONFIG_BOARD_LOONGSON_TECH_LS1B)	:= loongson-ls1b
 
+machine-$(CONFIG_MACH_MIPS_MEDIATEK)	:= mediatek
+board-$(CONFIG_BOARD_SEEED_STUDIO_LINKIT_SMART_7688)	:= seeed_studio-linkit_smart_7688
+
 machine-$(CONFIG_MACH_MIPS_XBURST)	:= xburst
 board-$(CONFIG_BOARD_RZX50)	:= ritmix-rzx50
 board-$(CONFIG_BOARD_CI20)	:= img-ci20
