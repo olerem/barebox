@@ -18,11 +18,9 @@
 #include <common.h>
 #include <init.h>
 #include <restart.h>
-#include <mach/ath79.h>
 
-static void __noreturn ath79_restart_soc(struct restart_handler *rst)
+static void __noreturn mediatek_restart_soc(struct restart_handler *rst)
 {
-	ath79_reset_wr(AR933X_RESET_REG_RESET_MODULE, AR71XX_RESET_FULL_CHIP);
 	/*
 	 * Used to command a full chip reset. This is the software equivalent of
 	 * pulling the reset pin. The system will reboot with PLL disabled.
@@ -34,7 +32,7 @@ static void __noreturn ath79_restart_soc(struct restart_handler *rst)
 
 static int restart_register_feature(void)
 {
-	restart_handler_register_fn(ath79_restart_soc);
+	restart_handler_register_fn(mediatek_restart_soc);
 
 	return 0;
 }
