@@ -1,0 +1,23 @@
+if MACH_MIPS_MEDIATEK
+
+config ARCH_TEXT_BASE
+	hex
+	default 0xa0800000
+
+config SOC_MEDIATEK_MT7688
+	bool
+
+choice
+	prompt "Board type"
+
+config BOARD_SEEED_STUDIO_LINKIT_SMART_7688
+	bool "Seeed Studio - LinkIt Smart 7688"
+	select SOC_MEDIATEK_MT7688
+	select HAVE_PBL_IMAGE
+	select HAVE_IMAGE_COMPRESSION
+	select HAS_NMON
+	select HAS_NO_BOARD_HL_CODE
+
+endchoice
+
+endif
