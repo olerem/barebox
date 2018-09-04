@@ -69,9 +69,10 @@
 
 			reg-shift = <2>;
 		};
+
 		uart2: uartlite@e00 {
 			compatible = "ns16550a";
-			reg = <0xe00 0x100>;
+			reg = <0x10000e00 0x100>;
 
 			reg-shift = <2>;
 		};
