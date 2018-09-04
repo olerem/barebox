@@ -7,21 +7,17 @@
 	compatible = "seeed-studio,linkit-smart-7688";
 
 	aliases {
-		serial0 = &uart0;
+		serial2 = &uart2;
 	};
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x0 0x8000000>;
+		reg = <0x0 0x08000000>;
 	};
 
 	chosen {
 		stdout-path = &uart2;
 	};
-};
-
-&ref {
-	clock-frequency = <40000000>;
 };
 
 &uart2 {
