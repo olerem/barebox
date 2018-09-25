@@ -1,0 +1,3 @@
+pblx-$(CONFIG_BOARD_TPLINK_MR3020) += start_tplink_mr3020
+FILE_barebox-tplink-mr3020.img = start_tplink_mr3020.pblx
+image-$(CONFIG_BOARD_TPLINK_MR3020) += barebox-tplink-mr3020.img
