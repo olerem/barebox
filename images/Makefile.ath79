@@ -1,3 +1,20 @@
+pblx-$(CONFIG_BOARD_8DEVICES_LIMA) += start_8devices_lima
+FILE_barebox-8devices-lima.img = start_8devices_lima.pblx
+image-$(CONFIG_BOARD_8DEVICES_LIMA) += barebox-8devices-lima.img
+
+pblx-$(CONFIG_BLACK_SWIFT) += start_black_swift
+FILE_barebox-black-swift.img = start_black_swift.pblx
+image-$(CONFIG_BOARD_BLACK_SWIFT) += barebox-black-swift.img
+
+pblx-$(CONFIG_BOARD_DPTECHNICS_DPT_MODULE) += start_dptechnics_dpt_module
+FILE_barebox-dptechnics-dpt-module.img = start_dptechnics_dpt_module.pblx
+image-$(CONFIG_BOARD_DPTECHNICS_DPT_MODULE) += barebox-dptechnics-dpt-module.img
+
 pblx-$(CONFIG_BOARD_TPLINK_MR3020) += start_tplink_mr3020
 FILE_barebox-tplink-mr3020.img = start_tplink_mr3020.pblx
 image-$(CONFIG_BOARD_TPLINK_MR3020) += barebox-tplink-mr3020.img
+
+pblx-$(CONFIG_BOARD_TPLINK_WDR4300) += start_tplink_wdr4300
+FILE_barebox-tplink-wdr4300.img = start_tplink_wdr4300.pblx
+image-$(CONFIG_BOARD_TPLINK_WDR4300) += barebox-tplink-wdr4300.img
+
