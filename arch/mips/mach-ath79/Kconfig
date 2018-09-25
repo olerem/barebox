@@ -10,8 +10,11 @@ config SOC_QCA_AR9331
 config SOC_QCA_AR9344
 	bool
 
-choice
-	prompt "Board type"
+config MIPS_ATH79_MULTI_BOARDS
+	bool "Allow multiple boards to be selected"
+	select HAVE_PBL_MULTI_IMAGES
+
+if MIPS_ATH79_MULTI_BOARDS
 
 config BOARD_8DEVICES_LIMA
 	bool "8devices LIMA"
@@ -20,6 +23,13 @@ config BOARD_8DEVICES_LIMA
 	select HAVE_IMAGE_COMPRESSION
 	select HAS_NMON
 	select HAS_NO_BOARD_HL_CODE
+
+config BOARD_BLACK_SWIFT
+	bool "Black Swift"
+	select SOC_QCA_AR9331
+	select HAVE_PBL_IMAGE
+	select HAVE_IMAGE_COMPRESSION
+	select HAS_NMON
 
 config BOARD_DPTECHNICS_DPT_MODULE
 	bool "DPTechnics DPT-Module"
@@ -43,13 +53,6 @@ config BOARD_TPLINK_WDR4300
 	select HAVE_IMAGE_COMPRESSION
 	select HAS_NMON
 
-config BOARD_BLACK_SWIFT
-	bool "Black Swift"
-	select SOC_QCA_AR9331
-	select HAVE_PBL_IMAGE
-	select HAVE_IMAGE_COMPRESSION
-	select HAS_NMON
-
-endchoice
+endif # MIPS_ATH79_MULTI_BOARDS
 
 endif
