@@ -49,18 +49,20 @@ static void barebox_uncompress(void *compressed_start, unsigned int len)
 void __section(.text_entry) pbl_main_entry(void)
 {
 	u32 pg_start, pg_end, pg_len;
+	u32 *image_end;
 	void (*barebox)(void);
+
+	image_end = (void *)__bss_start - (void *)_stext;
 
 	puts_ll("pbl_main_entry()\n");
 
 	/* clear bss */
 	memset(__bss_start, 0, __bss_stop - __bss_start);
 
-	pg_start = (u32)&input_data;
-	pg_end = (u32)&input_data_end;
-	pg_len = pg_end - pg_start;
+	pg_start = image_end + 1 ; // (u32)&input_data;
+	pg_len = *image_end;
 
-	barebox_uncompress(&input_data, pg_len);
+	barebox_uncompress(pg_start, pg_len);
 
 	barebox = (void *)TEXT_BASE;
 	barebox();
