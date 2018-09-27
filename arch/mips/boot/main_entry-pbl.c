@@ -52,7 +52,7 @@ void __section(.text_entry) pbl_main_entry(void)
 	u32 *image_end;
 	void (*barebox)(void);
 
-	image_end = (void *)__bss_start - (void *)_stext;
+	image_end = __bss_start - TEXT_BASE;
 
 	puts_ll("pbl_main_entry()\n");
 
