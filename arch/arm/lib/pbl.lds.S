@@ -79,17 +79,17 @@ SECTIONS
 	.__dynsym_end : { *(.__dynsym_end) }
 
 	. = ALIGN(4);
-	.__bss_start :  { *(.__bss_start) }
-	.bss : { *(.bss*) }
-	.__bss_stop :  { *(.__bss_stop) }
-	_end = .;
-
-	. = ALIGN(4);
 	__piggydata_start = .;
 	.piggydata : {
 		*(.piggydata)
 	}
 	__piggydata_end = .;
+
+	. = ALIGN(4);
+	.__bss_start :  { *(.__bss_start) }
+	.bss : { *(.bss*) }
+	.__bss_stop :  { *(.__bss_stop) }
+	_end = .;
 
 	. = ALIGN(4);
 	.image_end : { *(.__image_end_marker) }
