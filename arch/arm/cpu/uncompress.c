@@ -36,6 +36,9 @@
 unsigned long free_mem_ptr;
 unsigned long free_mem_end_ptr;
 
+extern void *input_data;
+extern void *input_data_end;
+
 void __noreturn barebox_multi_pbl_start(unsigned long membase,
 		unsigned long memsize, void *boarddata)
 {
@@ -44,7 +47,7 @@ void __noreturn barebox_multi_pbl_start(unsigned long membase,
 	unsigned long endmem = membase + memsize;
 	unsigned long barebox_base;
 	uint32_t *image_end;
-	void *pg_start;
+	void *pg_start, *pg_end;
 	unsigned long pc = get_pc();
 
 	image_end = (void *)__image_end_marker + global_variable_offset();
@@ -67,8 +70,10 @@ void __noreturn barebox_multi_pbl_start(unsigned long membase,
 	 * the size of the appended compressed binary followed by the compressed
 	 * binary itself.
 	 */
-	pg_start = image_end + 2;
-	pg_len = *(image_end + 1);
+	pg_start = (unsigned long)&input_data + global_variable_offset();
+	pg_end = (unsigned long)&input_data_end + global_variable_offset();
+	pg_len = pg_end - pg_start;
+
 	uncompressed_len = get_unaligned((const u32 *)(pg_start + pg_len - 4));
 
 	if (IS_ENABLED(CONFIG_RELOCATABLE))
