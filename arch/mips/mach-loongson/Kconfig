@@ -18,6 +18,7 @@ config BOARD_LOONGSON_TECH_LS1B
 	select HAVE_PBL_IMAGE
 	select HAVE_IMAGE_COMPRESSION
 	select HAS_NMON
+	select HAVE_PBL_MULTI_IMAGES
 
 endchoice
 
