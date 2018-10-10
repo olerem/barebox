@@ -16,13 +16,14 @@
  *
  */
 
+#define BOARD_PBL_START start_tplink_mr3020
+
 #include <asm/pbl_macros.h>
+#include <asm/asm.h>
 #include <mach/pbl_macros.h>
 #include <asm/pbl_nmon.h>
 
-	.macro	board_pbl_start
-	.set	push
-	.set	noreorder
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_barebox_10h
 
@@ -54,7 +55,8 @@ skip_pll_ram_config:
 	 */
 	pbl_ar9331_mdio_gpio_enable
 
-	copy_to_link_location	pbl_start
+	copy_to_link_location	BOARD_PBL_START
 
-	.set	pop
-	.endm
+	la	a0, __dtb_tplink_mr3020_start;
+        la      v0, pbl_main_entry;
+        jal     v0;
