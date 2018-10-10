@@ -22,7 +22,6 @@
 #include <asm/asm.h>
 
 #include <asm/pbl_macros.h>
-#include <board/board_pbl_start.h>
 
 	.set noreorder
 	.section ".text_head_entry"

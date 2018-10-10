@@ -398,7 +398,7 @@ skip_pll_ram_config:
 
 	pbl_ar9331_mdio_gpio_enable
 
-	copy_to_link_location	pbl_start
+	copy_to_link_location BOARD_PBL_START
 
 	.set	pop
 	.endm

@@ -10,8 +10,11 @@ config SOC_QCA_AR9331
 config SOC_QCA_AR9344
 	bool
 
-choice
-	prompt "Board type"
+config MIPS_ATH79_MULTI_BOARDS
+	bool "Allow multiple boards to be selected"
+	select HAVE_PBL_MULTI_IMAGES
+
+if MIPS_ATH79_MULTI_BOARDS
 
 config BOARD_8DEVICES_LIMA
 	bool "8devices LIMA"
@@ -50,6 +53,6 @@ config BOARD_BLACK_SWIFT
 	select HAVE_IMAGE_COMPRESSION
 	select HAS_NMON
 
-endchoice
+endif # MIPS_ATH79_MULTI_BOARDS
 
 endif
