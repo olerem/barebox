@@ -65,7 +65,8 @@ __noreturn void barebox_single_pbl_start(unsigned long membase,
 	uncompressed_len = get_unaligned((const u32 *)(pg_start + pg_len - 4));
 
 	if (IS_ENABLED(CONFIG_RELOCATABLE))
-		barebox_base = arm_mem_barebox_image(membase, endmem, uncompressed_len + MAX_BSS_SIZE);
+		barebox_base = arm_mem_barebox_image(membase, endmem,
+						     uncompressed_len + MAX_BSS_SIZE);
 	else
 		barebox_base = TEXT_BASE;
 
@@ -80,13 +81,19 @@ __noreturn void barebox_single_pbl_start(unsigned long membase,
 
 	setup_c();
 
+	pr_debug("memory at 0x%08lx, size 0x%08lx\n", membase, memsize);
+
 	if (IS_ENABLED(CONFIG_MMU_EARLY)) {
 		unsigned long ttb = arm_mem_ttb(membase, endmem);
+		pr_debug("enabling MMU, ttb @ 0x%08lx\n", ttb);
 		mmu_early_enable(membase, memsize, ttb);
 	}
 
 	free_mem_ptr = arm_mem_early_malloc(membase, endmem);
 	free_mem_end_ptr = arm_mem_early_malloc_end(membase, endmem);
+
+	pr_debug("uncompressing barebox binary at 0x%p (size 0x%08x) to 0x%08lx (uncompressed size: 0x%08x)\n",
+			pg_start, pg_len, barebox_base, uncompressed_len);
 
 	pbl_barebox_uncompress((void*)barebox_base, (void *)pg_start, pg_len);
 
@@ -97,6 +104,8 @@ __noreturn void barebox_single_pbl_start(unsigned long membase,
 		barebox = (void *)(barebox_base + 1);
 	else
 		barebox = (void *)barebox_base;
+
+	pr_debug("jumping to uncompressed image at 0x%p\n", barebox);
 
 	barebox(membase, memsize, boarddata);
 }
