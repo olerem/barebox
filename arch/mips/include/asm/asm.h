@@ -80,6 +80,35 @@ symbol:		.frame	sp, framesize, rpc
 symbol:
 
 /*
+ * ENTRY_FUNCTION - mark start of entry function
+ */
+#define ENTRY_FUNCTION(symbol)				\
+	.set noreorder;					\
+	.section .text_head_entry.BOARD_PBL_START;	\
+	.align 4;					\
+							\
+EXPORT(symbol)
+
+/*
+ * ENTRY_FUNCTION_END - mark end of entry function
+ */
+#define ENTRY_FUNCTION_END(symbol,dtb_start,dtb_end)	\
+	mips_nmon;					\
+	copy_to_link_location	symbol;			\
+	stack_setup;					\
+							\
+	la	a0, dtb_start;				\
+	la	a1, dtb_end;				\
+	la	v0, pbl_main_entry;			\
+	jal	v0;					\
+	 nop;						\
+							\
+	/* No return */					\
+__error:						\
+	b	__error;				\
+	 nop;
+
+/*
  * FEXPORT - export definition of a function symbol
  */
 #define FEXPORT(symbol)					\
