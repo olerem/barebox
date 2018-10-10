@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2013, 2015 Antony Pavlov <antonynpavlov@gmail.com>
- * Copyright (C) 2013 Oleksij Rempel <linux@rempel-privat.de>
+ * Copyright (C) 2018 Oleksij Rempel <linux@rempel-privat.de>
  *
  * This file is part of barebox.
  * See file CREDITS for list of people who contributed to this project.
@@ -16,45 +15,40 @@
  *
  */
 
+#define BOARD_PBL_START start_8devices_lima
+
+#include <mach/debug_ll.h>
+#include <asm/asm.h>
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
+#include <mach/pbl_ll_init_qca4531.h>
 #include <asm/pbl_nmon.h>
 
-	.macro	board_pbl_start
-	.set	push
-	.set	noreorder
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_barebox_10h
 
-	pbl_ar9331_wmac_enable
+	debug_ll_ath79_init
 
 	hornet_mips24k_cp0_setup
 
+	/* test if we are in the SRAM */
+	pbl_blt 0xbd000000 1f t8
+	b skip_flash_test
+	nop
+1:
+	/* test if we are in the flash */
 	pbl_blt 0xbf000000 skip_pll_ram_config t8
+skip_flash_test:
 
-	hornet_1_1_war
-
-	pbl_ar9331_pll
-	pbl_ar9331_ddr2_config
+	pbl_qca4531_ddr2_550_550_init
 
 	/* Initialize caches... */
 	mips_cache_reset
 
 	/* ... and enable them */
 	dcache_enable
-
 skip_pll_ram_config:
-	pbl_ar9331_uart_enable
-	debug_ll_ar9331_init
-	mips_nmon
 
-	/*
-	 * It is amazing but we have to enable MDIO on GPIO
-	 * to use GPIO27 for LED1.
-	 */
-	pbl_ar9331_mdio_gpio_enable
-
-	copy_to_link_location	pbl_start
-
-	.set	pop
-	.endm
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_qca4531_8devices_lima_start,
+	__dtb_qca4531_8devices_lima_end)
