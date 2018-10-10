@@ -80,6 +80,31 @@ symbol:		.frame	sp, framesize, rpc
 symbol:
 
 /*
+ * ENTRY_FUNCTION - mark start of entry function
+ */
+#define ENTRY_FUNCTION(symbol)				\
+	.set noreorder;					\
+	.section ".text_head_entry";			\
+	.align 4;					\
+							\
+EXPORT(symbol)
+
+/*
+ * ENTRY_FUNCTION_END - mark end of entry function
+ */
+#define ENTRY_FUNCTION_END				\
+	stack_setup;					\
+							\
+	la	v0, pbl_main_entry;			\
+	jal	v0;					\
+	 nop;						\
+							\
+	/* No return */					\
+__error:						\
+	b	__error;				\
+	 nop;
+
+/*
  * FEXPORT - export definition of a function symbol
  */
 #define FEXPORT(symbol)					\
