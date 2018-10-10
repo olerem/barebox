@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Oleksij Rempel <linux@rempel-privat.de>
+ * Copyright (C) 2018 Oleksij Rempel <linux@rempel-privat.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2
@@ -15,21 +15,8 @@
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
 
-	.set noreorder
-	.section ".text_head_entry"
-	.align 4
-
-EXPORT(BOARD_PBL_START)
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	ar9331_pbl_generic_start
 
-	stack_setup
-
-	la      v0, pbl_main_entry
-	jal     v0
-	 nop
-
-	/* No return */
-__error:
-	b	__error
-	 nop
+ENTRY_FUNCTION_END
