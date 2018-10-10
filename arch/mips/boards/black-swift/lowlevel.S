@@ -1,28 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2013, 2015 Antony Pavlov <antonynpavlov@gmail.com>
  * Copyright (C) 2013 Oleksij Rempel <linux@rempel-privat.de>
- *
- * This file is part of barebox.
- * See file CREDITS for list of people who contributed to this project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
  */
 
+#define BOARD_PBL_START start_black_swift
+
 #include <asm/pbl_macros.h>
+#include <asm/asm.h>
 #include <mach/pbl_macros.h>
 #include <asm/pbl_nmon.h>
 
-	.macro	board_pbl_start
-	.set	push
-	.set	noreorder
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_barebox_10h
 
@@ -54,7 +43,6 @@ skip_pll_ram_config:
 	 */
 	pbl_ar9331_mdio_gpio_enable
 
-	copy_to_link_location	pbl_start
+	copy_to_link_location	BOARD_PBL_START
 
-	.set	pop
-	.endm
+ENTRY_FUNCTION_END
