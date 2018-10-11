@@ -16,6 +16,7 @@
  *
  */
 
+#include <init.h>
 #include <common.h>
 #include <string.h>
 #include <memory.h>
@@ -78,7 +79,7 @@ extern void *glob_fdt;
  *
  * @note The C environment isn't initialized yet
  */
-void main_entry(void *fdt)
+void __bare_init main_entry(void *fdt)
 {
 	/* clear the BSS first */
 	memset(__bss_start, 0x00, __bss_stop - __bss_start);
