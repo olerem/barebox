@@ -42,15 +42,18 @@ void of_add_memory_bank(struct device_node *node, bool dump, int r,
 
 extern char __dtb_start[];
 
+void *glob_fdt;
+
 static int of_mips_init(void)
 {
 	struct device_node *root;
+	void *fdt;
 
-	root = of_get_root_node();
-	if (root)
-		return 0;
+	fdt = glob_fdt;
+	if (!fdt)
+		fdt = __dtb_start;
 
-	root = of_unflatten_dtb(__dtb_start);
+	root = of_unflatten_dtb(fdt);
 	if (!IS_ERR(root)) {
 		pr_debug("using internal DTB\n");
 		of_set_root_node(root);
