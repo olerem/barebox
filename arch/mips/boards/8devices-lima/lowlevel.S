@@ -39,4 +39,6 @@ skip_pll_ram_config:
 
 	copy_to_link_location	BOARD_PBL_START
 
-ENTRY_FUNCTION_END
+	la	a0, __dtb_qca4531_8devices_lima_start;
+        la      v0, pbl_main_entry;
+        jal     v0;
