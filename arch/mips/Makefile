@@ -112,8 +112,6 @@ common-y += arch/mips/lib/
 common-y += arch/mips/boot/
 common-y += arch/mips/boards/
 
-common-$(CONFIG_BUILTIN_DTB) += arch/mips/dts/
-
 CPPFLAGS += $(cflags-y)
 CFLAGS += $(cflags-y)
 
@@ -132,5 +130,7 @@ dts := arch/mips/dts
 
 %.dtb: scripts
 	$(Q)$(MAKE) $(build)=$(dts) $(dts)/$@
+
+common-$(CONFIG_OFTREE) += arch/mips/dts/
 
 KBUILD_IMAGE ?= $(KBUILD_BINARY)
