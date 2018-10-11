@@ -135,7 +135,7 @@ static struct device_node *__of_unflatten_dtb(const void *infdt, bool constprops
 	const struct fdt_header *fdt = infdt;
 
 	if (fdt->magic != cpu_to_fdt32(FDT_MAGIC)) {
-		pr_err("bad magic: 0x%08x\n", fdt32_to_cpu(fdt->magic));
+		pr_err("bad magic: 0x%08x 0x%p\n", fdt32_to_cpu(fdt->magic), infdt);
 		return ERR_PTR(-EINVAL);
 	}
 
