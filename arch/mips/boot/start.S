@@ -24,17 +24,6 @@
 	.align 4
 
 EXPORT(_start)
-
-	mips_barebox_10h
-
-	/* disable watchpoints */
-	mtc0	zero, CP0_WATCHLO
-	mtc0	zero, CP0_WATCHHI
-
-	mips_disable_interrupts
-
-	copy_to_link_location _start
-
 	stack_setup
 
 	la	v0, main_entry
