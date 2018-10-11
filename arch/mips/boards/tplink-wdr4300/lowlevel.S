@@ -36,4 +36,6 @@ skip_pll_ram_config:
 
 	copy_to_link_location	BOARD_PBL_START
 
-ENTRY_FUNCTION_END
+	la	a0, __dtb_ar9344_tl_wdr4300_v1.7_start;
+        la      v0, pbl_main_entry;
+        jal     v0;
