@@ -19,8 +19,10 @@
 #ifndef __AR9344_DEBUG_LL__
 #define __AR9344_DEBUG_LL__
 
+#include <asm/asm.h>
 #include <asm/addrspace.h>
 #include <mach/ar71xx_regs.h>
+#include <asm/regdef.h>
 
 #define DEBUG_LL_UART_ADDR		KSEG1ADDR(AR934X_UART0_BASE)
 #define DEBUG_LL_UART_SHIFT		AR934X_UART0_SHIFT
