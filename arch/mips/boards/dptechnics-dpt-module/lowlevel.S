@@ -8,12 +8,13 @@
 
 #define BOARD_PBL_START start_dptechnics_dpt_module
 
-#include <asm/pbl_nmon.h>
+#include <mach/debug_ll_ar9331.h>
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
 #include <asm/asm.h>
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
+#include <asm/pbl_nmon.h>
 
 ENTRY_FUNCTION(BOARD_PBL_START)
 
