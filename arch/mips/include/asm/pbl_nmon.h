@@ -17,8 +17,6 @@
  *
  */
 
-#include <mach/debug_ll.h>
-
 #define CODE_ESC	0x1b
 
 /*
