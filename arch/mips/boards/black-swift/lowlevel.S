@@ -18,6 +18,7 @@
 
 #define BOARD_PBL_START start_black_swift
 
+#include <mach/debug_ll_ar9331.h>
 #include <asm/pbl_macros.h>
 #include <asm/asm.h>
 #include <mach/pbl_macros.h>
