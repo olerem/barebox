@@ -19,6 +19,7 @@
 
 #define BOARD_PBL_START start_qemu_malta
 
+#include <asm/asm.h>
 #include <asm/pbl_macros.h>
 #include <asm/pbl_nmon.h>
 
