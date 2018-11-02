@@ -58,6 +58,9 @@ config MACH_MIPS_MALTA
 	select HAS_DEBUG_LL
 	select GPIOLIB
 	select HW_HAS_PCI
+	select HAVE_PBL_IMAGE
+	select HAVE_IMAGE_COMPRESSION
+	select HAVE_PBL_MULTI_IMAGES
 
 config MACH_MIPS_AR231X
 	bool "Atheros ar231x-based boards"
