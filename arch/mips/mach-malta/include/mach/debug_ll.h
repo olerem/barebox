@@ -21,7 +21,7 @@
 #ifndef __MACH_MALTA_DEBUG_LL_H__
 #define __MACH_MALTA_DEBUG_LL_H__
 
-#include <board/debug_ll.h>
+//#include <board/debug_ll.h>
 #include <asm/debug_ll_ns16550.h>
 
 #endif /* __MACH_MALTA_DEBUG_LL_H__ */
