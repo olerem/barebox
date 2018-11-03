@@ -98,6 +98,8 @@ __start:
 
 	copy_to_link_location	BOARD_PBL_START
 
+        stack_setup;
+
 	la	a0, __dtb_qemu_malta_start;
         la      v0, pbl_main_entry;
         jal     v0;
