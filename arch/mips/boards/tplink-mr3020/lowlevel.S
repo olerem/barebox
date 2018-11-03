@@ -58,6 +58,8 @@ skip_pll_ram_config:
 
 	copy_to_link_location	BOARD_PBL_START
 
+        stack_setup;
+
 	la	a0, __dtb_tplink_mr3020_start;
         la      v0, pbl_main_entry;
         jal     v0;
