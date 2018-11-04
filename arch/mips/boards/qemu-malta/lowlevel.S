@@ -94,13 +94,4 @@ __start:
 	li	t0, GT_LD(0x1bdfffff)
 	sw	t0, GT_PCI0M1HD_OFS(t1)
 
-	mips_nmon
-
-	copy_to_link_location	BOARD_PBL_START
-
-        stack_setup;
-
-	la	a0, __dtb_qemu_malta_start;
-        la      v0, pbl_main_entry;
-        jal     v0;
-	 nop
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_qemu_malta_start)
