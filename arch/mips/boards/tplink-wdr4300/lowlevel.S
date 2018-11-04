@@ -22,6 +22,7 @@
 #include <asm/pbl_macros.h>
 #include <mach/pbl_macros.h>
 #include <mach/pbl_ll_init_ar9344_1.1.h>
+#include <asm/pbl_nmon.h>
 
 ENTRY_FUNCTION(BOARD_PBL_START)
 
