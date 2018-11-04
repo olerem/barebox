@@ -20,8 +20,4 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 
 	ar9331_pbl_generic_start
 
-        stack_setup;
-
-	la	a0, __dtb_ar9331_dptechnics_dpt_module_start;
-        la      v0, pbl_main_entry;
-        jal     v0;
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_ar9331_dptechnics_dpt_module_start)
