@@ -394,11 +394,8 @@ skip_pll_ram_config:
 
 	pbl_ar9331_uart_enable
 	debug_ll_ar9331_init
-	mips_nmon
 
 	pbl_ar9331_mdio_gpio_enable
-
-	copy_to_link_location BOARD_PBL_START
 
 	.set	pop
 	.endm
