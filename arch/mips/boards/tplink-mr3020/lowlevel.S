@@ -48,7 +48,6 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 skip_pll_ram_config:
 	pbl_ar9331_uart_enable
 	debug_ll_ar9331_init
-	mips_nmon
 
 	/*
 	 * It is amazing but we have to enable MDIO on GPIO
@@ -56,10 +55,4 @@ skip_pll_ram_config:
 	 */
 	pbl_ar9331_mdio_gpio_enable
 
-	copy_to_link_location	BOARD_PBL_START
-
-        stack_setup;
-
-	la	a0, __dtb_tplink_mr3020_start;
-        la      v0, pbl_main_entry;
-        jal     v0;
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_tplink_mr3020_start)
