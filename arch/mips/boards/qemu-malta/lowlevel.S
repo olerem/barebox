@@ -103,3 +103,4 @@ __start:
 	la	a0, __dtb_qemu_malta_start;
         la      v0, pbl_main_entry;
         jal     v0;
+	 nop
