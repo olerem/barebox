@@ -15,14 +15,14 @@
  *
  */
 
+#define BOARD_PBL_START start_loongson_ls1b
+
 #include <asm/pbl_macros.h>
 #include <mach/loongson1.h>
 #include <mach/debug_ll.h>
 #include <asm/pbl_nmon.h>
 
-	.macro	board_pbl_start
-	.set	push
-	.set	noreorder
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_barebox_10h
 
@@ -33,9 +33,5 @@
 	debug_ll_outc '.'
 	debug_ll_ns16550_outnl
 
-	mips_nmon
-
-	copy_to_link_location	pbl_start
-
-	.set	pop
-	.endm
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_loongson_ls1b_start,
+	__dtb_loongson_ls1b_end)
