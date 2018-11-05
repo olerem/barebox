@@ -99,6 +99,7 @@ include $(srctree)/images/Makefile.ar231x
 include $(srctree)/images/Makefile.ath79
 include $(srctree)/images/Makefile.bcm283x
 include $(srctree)/images/Makefile.imx
+include $(srctree)/images/Makefile.loongson
 include $(srctree)/images/Makefile.malta
 include $(srctree)/images/Makefile.mvebu
 include $(srctree)/images/Makefile.mxs
