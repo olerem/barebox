@@ -17,7 +17,7 @@
  *
  */
 
-#define BOARD_PBL_START start_img_ci20
+#define BOARD_PBL_START start_ritmix_rzx50
 
 #include <asm/pbl_macros.h>
 #include <mach/debug_ll.h>
@@ -35,9 +35,4 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 	debug_ll_outc '.'
 	debug_ll_ns16550_outnl
 
-	mips_nmon
-
-	copy_to_link_location	pbl_start
-
-	.set	pop
-	.endm
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_rzx50_start)
