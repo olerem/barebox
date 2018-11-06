@@ -27,6 +27,17 @@ config BOARD_CI20
 
 if DEBUG_LL
 choice
+	prompt "DEBUG_LL driver"
+
+config DEBUG_JZ4750D_UART
+	bool "JZ4750D Debug UART"
+
+config DEBUG_JZ4780_UART
+	bool "JZ4780 Debug UART"
+
+endchoice
+
+choice
 	prompt "DEBUG_LL port"
 
 config JZ47XX_DEBUG_LL_UART0
