@@ -21,7 +21,15 @@
 /** @file
  *  This File contains declaration for early output support
  */
-//#include <board/debug_ll.h>
+
+#ifdef CONFIG_DEBUG_JZ4750D_UART
+#include <mach/debug_ll_jz4750d.h>
+#elif defined CONFIG_DEBUG_JZ4780_UART
+#include <mach/debug_ll_jz4780.h>
+#else
+#error "unknown xburst debug uart soc type"
+#endif
+
 #include <asm/debug_ll_ns16550.h>
 
 #endif  /* __MACH_XBURST_DEBUG_LL__ */
