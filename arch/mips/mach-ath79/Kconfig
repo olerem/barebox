@@ -10,6 +10,19 @@ config SOC_QCA_AR9331
 config SOC_QCA_AR9344
 	bool
 
+if DEBUG_LL
+choice
+	prompt "DEBUG_LL driver"
+
+config DEBUG_AR9331_UART
+	bool "AR9331 Debug UART"
+
+config DEBUG_AR9344_UART
+	bool "AR9334 Debug UART"
+
+endchoice
+endif # DEBUG_LL
+
 config MIPS_ATH79_MULTI_BOARDS
 	bool "Allow multiple boards to be selected"
 	select HAVE_PBL_MULTI_IMAGES
