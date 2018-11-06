@@ -16,9 +16,6 @@ config CPU_JZ4780
 	select WATCHDOG
 	select WATCHDOG_JZ4740
 
-choice
-	prompt "Board type"
-
 config BOARD_RZX50
 	bool "Ritmix RZX-50"
 	select CPU_JZ4755
@@ -27,8 +24,6 @@ config BOARD_CI20
 	bool "Imagination Creator CI20"
 	select CPU_JZ4780
 	select HAS_DM9000
-
-endchoice
 
 if DEBUG_LL
 choice
