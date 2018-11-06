@@ -1,4 +1,6 @@
 /*
+ * Startup Code for Imagination Creator CI20 board
+ *
  * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
  *
  * This file is part of barebox.
@@ -10,14 +12,28 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  */
 
-#ifndef __INCLUDE_CI20_BOARD_DEBUG_LL_H__
-#define __INCLUDE_CI20_BOARD_DEBUG_LL_H__
+#define BOARD_PBL_START start_img_ci20
 
-#include <mach/debug_ll_jz4780.h>
+#include <asm/pbl_macros.h>
+#include <mach/debug_ll.h>
+#include <asm/pbl_nmon.h>
 
-#endif  /* __INCLUDE_CI20_BOARD_DEBUG_LL_H__ */
+ENTRY_FUNCTION(BOARD_PBL_START)
+
+	mips_disable_interrupts
+
+	/* CPU/SoC specific setup ... */
+	/* ... absent */
+
+	debug_ll_ns16550_init
+
+	debug_ll_outc '.'
+	debug_ll_ns16550_outnl
+
+ENTRY_FUNCTION_END(BOARD_PBL_START, __dtb_img_ci20_start,
+	__dtb_img_ci20_end)
