@@ -30,8 +30,6 @@
 #define DEBUG_LL_UART_BPS       CONFIG_BAUDRATE
 #define DEBUG_LL_UART_DIVISOR   (DEBUG_LL_UART_CLK / DEBUG_LL_UART_BPS)
 
-
-//#include <board/debug_ll.h>
 #include <asm/debug_ll_ns16550.h>
 
 #endif /* __MACH_MALTA_DEBUG_LL_H__ */
