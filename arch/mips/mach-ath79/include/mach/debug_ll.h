@@ -18,10 +18,12 @@
 #ifndef __MACH_ATH79_DEBUG_LL__
 #define __MACH_ATH79_DEBUG_LL__
 
-#if defined(CONFIG_SOC_QCA_AR9331)
+#ifdef CONFIG_DEBUG_AR9331_UART
 #include <mach/debug_ll_ar9331.h>
-#elif defined(CONFIG_SOC_QCA_AR9344)
+#elif defined CONFIG_DEBUG_AR9344_UART
 #include <mach/debug_ll_ar9344.h>
+#else
+#error "unknown ath79 debug uart soc type"
 #endif
 
 #endif /* __MACH_AR9344_DEBUG_LL_H__ */
