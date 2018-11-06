@@ -17,13 +17,13 @@
  *
  */
 
+#define BOARD_PBL_START start_img_ci20
+
 #include <asm/pbl_macros.h>
 #include <mach/debug_ll.h>
 #include <asm/pbl_nmon.h>
 
-	.macro	board_pbl_start
-	.set	push
-	.set	noreorder
+ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_disable_interrupts
 
