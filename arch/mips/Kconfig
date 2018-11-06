@@ -104,6 +104,7 @@ config MACH_MIPS_XBURST
 	select HAS_DEBUG_LL
 	select HAVE_PBL_IMAGE
 	select HAVE_IMAGE_COMPRESSION
+	select HAVE_PBL_MULTI_IMAGES
 	select HAS_NMON
 	select GPIOLIB
 endchoice
