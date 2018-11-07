@@ -84,7 +84,7 @@ symbol:
  */
 #define ENTRY_FUNCTION(symbol)				\
 	.set noreorder;					\
-	.section ".text_head_entry";			\
+	.section .text_head_entry.BOARD_PBL_START;	\
 	.align 4;					\
 							\
 EXPORT(symbol)
