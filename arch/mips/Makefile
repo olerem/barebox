@@ -41,6 +41,7 @@ ldflags-y += $(shell $(CC) -dumpmachine |grep -q 'mips.*el-.*' || echo -EL )
 endif
 
 LDFLAGS += $(ldflags-y) -m $(ld-emul)
+LDFLAGS_barebox += $(ldflags-y)
 
 #
 # CPU-dependent compiler/assembler options for optimization.
