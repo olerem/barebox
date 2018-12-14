@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2011 Antony Pavlov <antonynpavlov@gmail.com>
- * Copyright (C) 2012 Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+ * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
  *
  * This file is part of barebox.
  * See file CREDITS for list of people who contributed to this project.
@@ -11,19 +10,27 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  */
 
-#include <common.h>
-#include <init.h>
-#include <linux/sizes.h>
+#define BOARD_PBL_START start_loongson_ls1b
 
-static int malta_core_init(void)
-{
-	barebox_set_hostname("malta");
+#include <asm/pbl_macros.h>
+#include <mach/loongson1.h>
+#include <mach/debug_ll.h>
+#include <asm/pbl_nmon.h>
 
-	return 0;
-}
-core_initcall(malta_core_init);
+ENTRY_FUNCTION(BOARD_PBL_START)
+
+	mips_barebox_10h
+
+	mips_disable_interrupts
+
+	debug_ll_ns16550_init
+
+	debug_ll_outc '.'
+	debug_ll_ns16550_outnl
+
+ENTRY_FUNCTION_END(BOARD_PBL_START, loongson_ls1b)
