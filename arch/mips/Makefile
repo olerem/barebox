@@ -11,7 +11,7 @@ endif
 
 CPPFLAGS += -D__MIPS__ -fno-strict-aliasing -fno-merge-constants
 
-cflags-y += -G 0 -mno-abicalls -fno-pic -pipe
+cflags-y += -G 0 -mno-abicalls -pipe
 cflags-y += -Wall -Wstrict-prototypes \
 	-Wno-uninitialized -Wno-format -Wno-main
 
@@ -59,7 +59,7 @@ CPPFLAGS += -DTEXT_BASE=$(CONFIG_TEXT_BASE)
 ifndef CONFIG_MODULES
 # Add cleanup flags
 CPPFLAGS += -fdata-sections -ffunction-sections
-LDFLAGS_barebox += -static --gc-sections
+LDFLAGS_barebox += -static --gc-sections --emit-relocs
 endif
 
 ifdef CONFIG_IMAGE_COMPRESSION
@@ -115,6 +115,13 @@ CPPFLAGS += $(cflags-y)
 CFLAGS += $(cflags-y)
 
 lds-$(CONFIG_GENERIC_LINKER_SCRIPT)   := arch/mips/lib/barebox.lds
+
+cmd_barebox__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_barebox) -o $@ \
+      -T $(barebox-lds)                         \
+      --start-group $(barebox-common) --end-group                  \
+      $(filter-out $(barebox-lds) $(barebox-common) FORCE ,$^);	\
+	$(srctree)/scripts/mips-relocs $@
+
 
 CLEAN_FILES    += arch/mips/lib/barebox.lds barebox.map barebox.S
 

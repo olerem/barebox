@@ -183,7 +183,7 @@ HOST_LFS_LIBS := $(shell getconf LFS_LIBS)
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer $(HOST_LFS_CFLAGS)
+HOSTCFLAGS   = -Wall -ggdb -Wstrict-prototypes -O2 -fomit-frame-pointer $(HOST_LFS_CFLAGS)
 HOSTCXXFLAGS = -O2 $(HOST_LFS_CFLAGS)
 HOSTLDFLAGS = $(HOST_LFS_LDFLAGS)
 HOST_LOADLIBES = $(HOST_LFS_LIBS)
