@@ -3,6 +3,8 @@ obj-$(CONFIG_CSRC_R4K_LIB) += csrc-r4k.o
 obj-y += cpu-probe.o
 obj-y += traps.o
 obj-y += genex.o
+obj-y  += reloc.o
+obj-y += sections.o 
 obj-y += shutdown.o
 obj-y += dma-default.o
 

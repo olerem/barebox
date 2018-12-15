@@ -37,6 +37,7 @@ EXPORT(_start)
 
 	mips_disable_interrupts
 
+//	relocate_code
 	copy_to_link_location _start
 
 	stack_setup
@@ -44,7 +45,8 @@ EXPORT(_start)
 	/* restore dtb pointer */
 	move	a0, s0
 	move	a1, s1
-	la	v0, main_entry
+	la	a2, 0x82000000
+	la	v0, relocate_code
 	jal	v0
 	 nop
 
