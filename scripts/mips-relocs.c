@@ -127,9 +127,7 @@ static int add_reloc(unsigned int type, uint64_t off)
 		break;
 	}
 
-	printf("%s:%i relocs: %p %i %i\n", __func__, __LINE__, relocs, relocs_idx, relocs_sz);
 	if (relocs_idx == relocs_sz) {
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		new_sz = relocs_sz ? relocs_sz * 2 : 128;
 		new = realloc(relocs, new_sz * sizeof(*relocs));
 		if (!new) {
@@ -137,7 +135,6 @@ static int add_reloc(unsigned int type, uint64_t off)
 			return -ENOMEM;
 		}
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		relocs = new;
 		relocs_sz = new_sz;
 	}
@@ -351,14 +348,11 @@ int main(int argc, char *argv[])
 		if (skip)
 			continue;
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		sh_offset = shdr_field(i, sh_offset);
 		sh_entsize = shdr_field(i, sh_entsize);
 		sh_entries = shdr_field(i, sh_size) / sh_entsize;
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		if (sh_type == SHT_REL) {
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 			if (is_64) {
 				fprintf(stderr, "REL-style reloc in MIPS64 ELF?\n");
 				err = -EINVAL;
@@ -367,7 +361,6 @@ int main(int argc, char *argv[])
 				parse_fn = parse_mips32_rel;
 			}
 		} else {
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 			if (is_64) {
 				parse_fn = parse_mips64_rela;
 			} else {
@@ -377,7 +370,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		for (j = 0; j < sh_entries; j++) {
 			err = parse_fn(elf + sh_offset + (j * sh_entsize));
 			if (err)
@@ -385,13 +377,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!relocs) {
+		fprintf(stderr, "No relocs was found. Try to configure linker with --emit-relocs\n");
+		err = -EINVAL;
+		goto out_free_relocs;
+	}
+
 	/* Sort relocs in ascending order of offset */
 	qsort(relocs, relocs_idx, sizeof(*relocs), compare_relocs);
 
 	/* Make reloc offsets relative to their predecessor */
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 	for (i = relocs_idx - 1; i > 0; i--) {
-		printf("%s:%i i=%i, \n", __func__, __LINE__, i, relocs[i].offset);
 		relocs[i].offset -= relocs[i - 1].offset;
 	}
 
