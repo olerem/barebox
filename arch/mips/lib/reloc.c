@@ -149,7 +149,6 @@ void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
 	}
 
 	/* Ensure the icache is coherent */
-	//flush_cache(relocaddr, length);
 	flush_cache_all();
 
 	/* Clear the .bss section */
@@ -157,24 +156,16 @@ void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
 	bss_len = (unsigned long)&__bss_stop - (unsigned long)__bss_start;
 	memset(bss_start, 0, bss_len);
 
-//	main_entry(fdt, fdt_size);
-#if 1
-	/* Jump to the relocated Barebox */
-		//: "r"(start_addr_sp),
-//		       "move	$29, %0\n"
-	//asm volatile(
 	 __asm__ __volatile__ (
 			"move	$a0, %0\n"
 		"	move	$a1, %1\n"
 		"	move	$31, $0\n"
-		"	move	$k0, %2\n"
-		"	jr	$k0\n"
+		"	jr	$%2\n"
 		: /* no outputs */
 		: "r"(fdt),
 		  "r"(fdt_size),
 		  "r"((unsigned long)main_entry + off));
 
-#endif
 	/* Since we jumped to the new Barebox above, we won't get here */
 	unreachable();
 }
