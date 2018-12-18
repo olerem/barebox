@@ -315,21 +315,17 @@ int main(int argc, char *argv[])
 
 	rel_pfx = is_64 ? ".rela." : ".rel.";
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 	for (i = 0; i < ehdr_field(e_shnum); i++) {
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		sh_type = shdr_field(i, sh_type);
 		if ((sh_type != SHT_REL) && (sh_type != SHT_RELA))
 			continue;
 
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 		sh_name = shstr(shdr_field(i, sh_name));
 		if (strncmp(sh_name, rel_pfx, strlen(rel_pfx))) {
 			if (strcmp(sh_name, ".rel") && strcmp(sh_name, ".rel.dyn"))
 				fprintf(stderr, "WARNING: Unexpected reloc section name '%s'\n", sh_name);
 			continue;
 		}
-		printf("%s:%i relocs: %p\n", __func__, __LINE__, relocs);
 
 		/*
 		 * Skip reloc sections which either don't correspond to another
