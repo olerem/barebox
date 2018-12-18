@@ -160,7 +160,7 @@ void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
 			"move	$a0, %0\n"
 		"	move	$a1, %1\n"
 		"	move	$31, $0\n"
-		"	jr	$%2\n"
+		"	jr	%2\n"
 		: /* no outputs */
 		: "r"(fdt),
 		  "r"(fdt_size),
