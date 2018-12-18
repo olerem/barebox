@@ -27,9 +27,16 @@
  */
 
 #include <common.h>
+
+#include <asm/bitops.h>
+#include <asm/cache.h>
+#include <asm/cacheops.h>
+#include <asm/cpu.h>
+#include <asm/cpu-info.h>
+#include <asm/io.h>
+#include <asm/mipsregs.h>
 #include <asm/relocs.h>
 #include <asm/sections.h>
-#include <asm/cache.h>
 
 void main_entry(void *fdt, u32 fdt_size);
 void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr);
@@ -150,20 +157,22 @@ void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
 	bss_len = (unsigned long)&__bss_stop - (unsigned long)__bss_start;
 	memset(bss_start, 0, bss_len);
 
-	main_entry(fdt, fdt_size);
-#if 0
+//	main_entry(fdt, fdt_size);
+#if 1
 	/* Jump to the relocated Barebox */
-	asm volatile(
-		       "move	$29, %0\n"
-		"	move	$4, %1\n"
-		"	move	$5, %2\n"
+		//: "r"(start_addr_sp),
+//		       "move	$29, %0\n"
+	//asm volatile(
+	 __asm__ __volatile__ (
+			"move	$a0, %0\n"
+		"	move	$a1, %1\n"
 		"	move	$31, $0\n"
-		"	jr	%3"
+		"	move	$k0, %2\n"
+		"	jr	$k0\n"
 		: /* no outputs */
-		: "r"(start_addr_sp),
-		  "r"(new_gd),
-		  "r"(relocaddr),
-		  "r"((unsigned long)board_init_r + off));
+		: "r"(fdt),
+		  "r"(fdt_size),
+		  "r"((unsigned long)main_entry + off));
 
 #endif
 	/* Since we jumped to the new Barebox above, we won't get here */
