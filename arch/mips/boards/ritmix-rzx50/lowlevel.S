@@ -1,4 +1,6 @@
 /*
+ * Startup Code for Ritmix RZX-50 board
+ *
  * Copyright (C) 2013 Antony Pavlov <antonynpavlov@gmail.com>
  *
  * This file is part of barebox.
@@ -10,26 +12,27 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  */
 
-#ifndef __MACH_ATH79_DEBUG_LL__
-#define __MACH_ATH79_DEBUG_LL__
+#define BOARD_PBL_START start_ritmix_rzx50
 
-#ifdef CONFIG_DEBUG_LL
+#include <asm/pbl_macros.h>
+#include <mach/debug_ll.h>
+#include <asm/pbl_nmon.h>
 
-#ifdef CONFIG_DEBUG_AR9331_UART
-#include <mach/debug_ll_ar9331.h>
-#elif defined CONFIG_DEBUG_AR9344_UART
-#include <mach/debug_ll_ar9344.h>
-#else
-#error "unknown ath79 debug uart soc type"
-#endif
+ENTRY_FUNCTION(BOARD_PBL_START)
 
-#else
-#define debug_ll_ath79_init
-#endif  /* CONFIG_DEBUG_LL */
+	mips_disable_interrupts
 
-#endif /* __MACH_AR9344_DEBUG_LL_H__ */
+	/* CPU/SoC specific setup ... */
+	/* ... absent */
+
+	debug_ll_ns16550_init
+
+	debug_ll_outc '.'
+	debug_ll_ns16550_outnl
+
+ENTRY_FUNCTION_END(BOARD_PBL_START, rzx50)

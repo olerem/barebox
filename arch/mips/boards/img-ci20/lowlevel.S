@@ -1,4 +1,6 @@
 /*
+ * Startup Code for Imagination Creator CI20 board
+ *
  * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
  *
  * This file is part of barebox.
@@ -10,17 +12,27 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  */
 
-#ifndef __MACH_LOONGSON_DEBUG_LL__
-#define __MACH_LOONGSON_DEBUG_LL__
+#define BOARD_PBL_START start_img_ci20
 
-/** @file
- *  This File contains declaration for early output support
- */
-#include <asm/debug_ll_ns16550.h>
+#include <asm/pbl_macros.h>
+#include <mach/debug_ll.h>
+#include <asm/pbl_nmon.h>
 
-#endif /* __MACH_LOONGSON_DEBUG_LL__ */
+ENTRY_FUNCTION(BOARD_PBL_START)
+
+	mips_disable_interrupts
+
+	/* CPU/SoC specific setup ... */
+	/* ... absent */
+
+	debug_ll_ns16550_init
+
+	debug_ll_outc '.'
+	debug_ll_ns16550_outnl
+
+ENTRY_FUNCTION_END(BOARD_PBL_START, img_ci20)
