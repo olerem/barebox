@@ -106,6 +106,17 @@ __error:						\
 	 nop;
 
 /*
+ * ENTRY_FUNCTION_SRAM_END - mark end of sram entry function
+ */
+#define ENTRY_FUNCTION_SRAM_END				\
+	mips_nmon;					\
+							\
+	/* No return */					\
+__error:						\
+	b	__error;				\
+	 nop;
+
+/*
  * FEXPORT - export definition of a function symbol
  */
 #define FEXPORT(symbol)					\
