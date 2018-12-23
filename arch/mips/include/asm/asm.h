@@ -106,6 +106,21 @@ __error:						\
 	 nop;
 
 /*
+ * ENTRY_FUNCTION_SRAM_END - mark end of sram entry function
+ */
+#define ENTRY_FUNCTION_SRAM_END				\
+	/* trigger a soft breakpoint for OpenOCD */	\
+	SDBBP;						\
+	/* position independent variant of dead loop */	\
+	__error:					\
+	b	__error;				\
+	 nop;						\
+	/* call some code from .text section */		\
+	la	v0, mips_dead_end;			\
+	jal	v0;					\
+	 nop;
+
+/*
  * FEXPORT - export definition of a function symbol
  */
 #define FEXPORT(symbol)					\
