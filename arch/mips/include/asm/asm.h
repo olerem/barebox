@@ -101,8 +101,8 @@ EXPORT(symbol)
 	 nop;						\
 							\
 	/* No return */					\
-__error:						\
-	b	__error;				\
+	la	v0, mips_dead_end;			\
+	jal	v0;					\
 	 nop;
 
 /*
@@ -112,8 +112,8 @@ __error:						\
 	mips_nmon;					\
 							\
 	/* No return */					\
-__error:						\
-	b	__error;				\
+	la	v0, mips_dead_end;			\
+	jal	v0;					\
 	 nop;
 
 /*
