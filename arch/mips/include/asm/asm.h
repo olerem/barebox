@@ -100,13 +100,9 @@ EXPORT(symbol)
 	jal	v0;					\
 	 nop;						\
 							\
-	/* No return PIC */				\
+	/* No return */					\
 	__error:					\
 	b	__error;				\
-	 nop;						\
-	/* No return */					\
-	la	v0, mips_dead_end;			\
-	jal	v0;					\
 	 nop;
 
 /*
@@ -114,6 +110,7 @@ EXPORT(symbol)
  */
 #define ENTRY_FUNCTION_SRAM_END				\
 	mips_nmon;					\
+	SDBBP;						\
 	/* No return PIC */				\
 	__error:					\
 	b	__error;				\
