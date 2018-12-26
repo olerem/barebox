@@ -13,6 +13,6 @@
 
 ENTRY_FUNCTION(BOARD_PBL_START)
 
-	ar9331_pbl_generic_start
+	ar9331_pbl_generic_sram_start
 
 ENTRY_FUNCTION_SRAM_END
