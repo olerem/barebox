@@ -37,6 +37,9 @@
 #include <asm/mipsregs.h>
 #include <asm/relocs.h>
 #include <asm/sections.h>
+#include <linux/sizes.h>
+
+#define MAX_BSS_SIZE SZ_1M
 
 void main_entry(void *fdt, u32 fdt_size);
 void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr);
@@ -115,12 +118,17 @@ static void apply_reloc(unsigned int type, void *addr, long off)
  * relocations as necessary, then jump to board_init_r in the new build of
  * Barebox. As such, this function does not return.
  */
-void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
+void relocate_code(void *fdt, u32 fdt_size, u32 ram_size)
 {
 	unsigned long addr, length, bss_len;
+	u32 relocaddr;
 	uint8_t *buf, *bss_start;
 	unsigned int type;
 	long off;
+
+	length = barebox_image_size + MAX_BSS_SIZE;
+	relocaddr = ALIGN_DOWN(ram_size - barebox_image_size, SZ_64K);
+	relocaddr = KSEG0ADDR(relocaddr);
 
 	/*
 	 * Ensure that we're relocating by an offset which is a multiple of
@@ -133,7 +141,6 @@ void relocate_code(void *fdt, u32 fdt_size, u32 relocaddr)
 		panic("Mis-aligned relocation\n");
 
 	/* Copy Barebox to RAM */
-	length = barebox_image_size;
 	memcpy((void *)relocaddr, __image_start, length);
 
 	/* Now apply relocations to the copy in RAM */
