@@ -73,7 +73,7 @@ static int rpi_get_arm_mem(u32 *size)
 	return 0;
 }
 
-static struct clk *rpi_register_firmare_clock(u32 clock_id, const char *name)
+static struct clk *rpi_register_firmware_clock(u32 clock_id, const char *name)
 {
 	BCM2835_MBOX_STACK_ALIGN(struct msg_get_clock_rate, msg);
 	int ret;
@@ -121,7 +121,7 @@ struct gpio_led rpi_leds[] = {
 	},
 };
 
-void rpi_add_led(void)
+static void rpi_add_led(void)
 {
 	int i;
 	struct gpio_led *l;
@@ -138,14 +138,14 @@ void rpi_add_led(void)
 		led_set_trigger(LED_TRIGGER_HEARTBEAT, &l->led);
 }
 
-void rpi_b_init(void)
+static void rpi_b_init(void)
 {
 	rpi_leds[0].gpio = 16;
 	rpi_leds[0].active_low = 1;
 	rpi_set_usbethaddr();
 }
 
-void rpi_b_plus_init(void)
+static void rpi_b_plus_init(void)
 {
 	rpi_leds[0].gpio = 47;
 	rpi_leds[1].gpio = 35;
@@ -286,7 +286,7 @@ static int rpi_clock_init(void)
 {
 	struct clk *clk;
 
-	clk = rpi_register_firmare_clock(BCM2835_MBOX_CLOCK_ID_EMMC,
+	clk = rpi_register_firmware_clock(BCM2835_MBOX_CLOCK_ID_EMMC,
 					 "bcm2835_mci0");
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
@@ -297,6 +297,36 @@ static int rpi_clock_init(void)
 	return 0;
 }
 postconsole_initcall(rpi_clock_init);
+
+#define BCM2835_PL011_BASE 0x20201000
+#define BCM2836_PL011_BASE 0x3f201000
+#define BCM2836_MINIUART_BASE 0x3f215040
+
+static int rpi_console_clock_init(void)
+{
+	struct clk *clk;
+
+	clk = clk_fixed("apb_pclk", 0);
+	clk_register_clkdev(clk, "apb_pclk", NULL);
+
+	clk = clk_fixed("uart0-pl0110", 3 * 1000 * 1000);
+	clk_register_clkdev(clk, NULL, "uart0-pl0110");
+	clkdev_add_physbase(clk, BCM2835_PL011_BASE, NULL);
+	clkdev_add_physbase(clk, BCM2836_PL011_BASE, NULL);
+
+	clk = rpi_register_firmware_clock(BCM2835_MBOX_CLOCK_ID_CORE,
+					  "uart1-8250");
+	if (IS_ERR(clk))
+		return PTR_ERR(clk);
+
+	clkdev_add_physbase(clk, BCM2836_MINIUART_BASE, NULL);
+
+	clk = clk_fixed("bcm2835-cs", 1 * 1000 * 1000);
+	clk_register_clkdev(clk, NULL, "bcm2835-cs");
+
+	return 0;
+}
+postcore_initcall(rpi_console_clock_init);
 
 static int rpi_env_init(void)
 {
