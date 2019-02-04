@@ -38,6 +38,7 @@
 #include <asm/relocs.h>
 #include <asm/sections.h>
 #include <linux/sizes.h>
+#include <asm-generic/memory_layout.h>
 
 #define MAX_BSS_SIZE SZ_1M
 
@@ -121,7 +122,7 @@ static void apply_reloc(unsigned int type, void *addr, long off)
 void relocate_code(void *fdt, u32 fdt_size, u32 ram_size)
 {
 	unsigned long addr, length, bss_len;
-	u32 relocaddr;
+	u32 relocaddr, new_stack;
 	uint8_t *buf, *bss_start;
 	unsigned int type;
 	long off;
@@ -129,6 +130,7 @@ void relocate_code(void *fdt, u32 fdt_size, u32 ram_size)
 	length = barebox_image_size + MAX_BSS_SIZE;
 	relocaddr = ALIGN_DOWN(ram_size - barebox_image_size, SZ_64K);
 	relocaddr = KSEG0ADDR(relocaddr);
+	new_stack = relocaddr - MALLOC_SIZE - 16;
 
 	/*
 	 * Ensure that we're relocating by an offset which is a multiple of
@@ -167,10 +169,12 @@ void relocate_code(void *fdt, u32 fdt_size, u32 ram_size)
 			"move	$a0, %0\n"
 		"	move	$a1, %1\n"
 		"	move	$31, $0\n"
-		"	jr	%2\n"
+		"	move	$sp, %2\n"
+		"	jr	%3\n"
 		: /* no outputs */
 		: "r"(fdt),
 		  "r"(fdt_size),
+		  "r"(new_stack),
 		  "r"((unsigned long)main_entry + off));
 
 	/* Since we jumped to the new Barebox above, we won't get here */
