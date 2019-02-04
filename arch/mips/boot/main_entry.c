@@ -62,6 +62,7 @@ static void trap_init(void)
 
 extern void *glob_fdt;
 extern u32 glob_fdt_size;
+extern unsigned long mips_stack_top;
 
 /**
  * Called plainly from assembler code
@@ -95,7 +96,7 @@ void __bare_init main_entry(void *fdt, u32 fdt_size)
 			malloc_start, malloc_end - malloc_start);
 
 	mem_malloc_init((void *)malloc_start, (void *)_stext - 1);
-
+	mips_stack_top = malloc_start;
 
 	glob_fdt = fdt;
 	glob_fdt_size = fdt_size;
