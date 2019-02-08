@@ -327,3 +327,33 @@ compile EDK2.
                    mov     %fs, %rax
                    pushq   %rax
 
+(U)EFI Watchdog
+---------------
+
+(U)EFI provides basic watchdog support. Depending on the system implementation
+it can be a software or hardware watchdog. Within the (U)EFI specification it
+is described as following:
+"If the watchdog timer expires, the event is logged by the firmware. The system
+may then either reset with the Runtime Service ResetSystem(), or perform a
+platform specific action that must eventually cause the platform to be reset.
+The watchdog timer is armed before the firmware's boot manager invokes an EFI
+boot option.  The watchdog must be set to a period of 5 minutes. The EFI Image
+may reset or disable the watchdog timer as needed. If control is returned to
+the firmware's boot manager, the watchdog timer must be disabled.  The watchdog
+timer is only used during boot services. On successful completion of
+ExitBootServices() the watchdog timer is disabled." See page 186:
+https://uefi.org/sites/default/files/resources/UEFI_Spec_2_1_D.pdf
+
+Current linux kernel (v5.0) will execute ExitBootServices() during the early
+boot stage and thus will automatically disable the (U)EFI watchdog. Since it is
+a proper behavior according to the (U)EFI specification, it is impossible to
+protect full boot chain by using this watchdog. It is recommended to use
+alternative hardware watchdog, preferably started before bootloader. If (U)EFI
+firmware lacks this feature, bootloader should be able to start an alternative
+hardware watchdog on its own. Before implementing this kind of workaround
+please make sure (U)EFI watchdog is not using the same hardware as alternative
+watchdog.
+
+Nevertheless, barebox is providing access to the (U)EFI SetWatchdogTimer()
+interface over internal watchdog framework.
+
