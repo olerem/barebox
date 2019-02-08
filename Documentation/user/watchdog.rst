@@ -14,6 +14,7 @@ In case the bootloader is responsible for watchdog activation, the system can
 be considered as failed by design. Following threads can affect the system
 which are mostly addressable by properly designed watchdog and watchdog
 strategy:
+
 - Software based miss-configurations or bugs prevent the system from starting.
 - Glitches caused by under-voltage, not proper power-on sequence or noisy power 
   supply.
@@ -39,7 +40,7 @@ bootloader. For this scenarios barebox is providing the watchdog framework with
 following functionality and at least CONFIG_WATCHDOG should be enabled:
 
 Polling
--------
+~~~~~~~
 Watchdog polling/feeding. It allows to feed watchdog and keep it running on one 
 side and not resetting the system on other side. It is need on hardware with 
 short time watchdogs. For example Atheros ar9331 watchdog has maximal timeout of 
@@ -88,7 +89,7 @@ To make this changes persistent between reboots:
   nv dev.wdog0.timeout_cur=7
 
 Boot watchdog timeout
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 With this functionality barebox may start watchdog or update timeout of running 
 one, just before kicking the boot image. It can be configured temporary:
 
