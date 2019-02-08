@@ -33,6 +33,7 @@ Contents:
    system-reset
    state
    random
+   watchdog
 
 * :ref:`search`
 * :ref:`genindex`
