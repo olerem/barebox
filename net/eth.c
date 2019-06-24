@@ -49,6 +49,7 @@ static LIST_HEAD(ethaddr_list);
 
 int eth_set_ethaddr(struct eth_device *edev, const char *ethaddr)
 {
+	struct pico_device *picodev = edev->picodev;
 	int ret;
 
 	ret = edev->set_ethaddr(edev, ethaddr);
@@ -56,6 +57,8 @@ int eth_set_ethaddr(struct eth_device *edev, const char *ethaddr)
 		return ret;
 
 	memcpy(edev->ethaddr, ethaddr, ETH_ALEN);
+	if (picodev)
+		memcpy(picodev->eth->mac.addr, edev->ethaddr, ETH_ALEN);
 
 	return 0;
 }
@@ -278,9 +281,7 @@ int eth_rx(void)
 static int eth_param_set_ethaddr(struct param_d *param, void *priv)
 {
 	struct eth_device *edev = priv;
-	struct pico_device *picodev = edev->picodev;
 
-	memcpy(picodev->eth->mac.addr, edev->ethaddr, ETH_ALEN);
 	return eth_set_ethaddr(edev, edev->ethaddr);
 }
 
