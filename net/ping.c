@@ -129,7 +129,7 @@ static int ping_done;
 static int ping_code;
 
 /* callback function for receiving ping reply */
-void cb_ping(struct pico_icmp4_stats *s)
+static void cb_ping(struct pico_icmp4_stats *s)
 {
 	char host[30];
 	int time_sec = 0;
@@ -191,8 +191,6 @@ static int do_picoping(char *argv[])
 static int do_ping(int argc, char *argv[])
 {
 	int ret;
-	uint64_t ping_start;
-	unsigned retries = 0;
 
 	if (argc < 2)
 		return COMMAND_ERROR_USAGE;
@@ -204,15 +202,11 @@ static int do_ping(int argc, char *argv[])
 
 	if (!ret)
 		printf("host %s is alive\n", argv[1]);
-
-out_unreg:
-	net_unregister(ping_con);
-out:
-	if (ret)
+	else
 		printf("ping failed: %s\n", strerror(-ret));
-	return ping_state == PING_STATE_SUCCESS ? 0 : 1;
-}
 
+	return ret ? 1 : 0;
+}
 
 BAREBOX_CMD_START(ping)
 	.cmd		= do_ping,
