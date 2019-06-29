@@ -1145,7 +1145,6 @@ config CMD_HOST
 config NET_CMD_IFUP
 	bool
 	prompt "ifup"
-	depends on NET_LEGACY
 	help
 	  Bring up network interfaces based on config files.
 
