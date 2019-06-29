@@ -37,11 +37,6 @@ config CMD_PICOTCP_IFCONFIG
 	depends on NET_PICO_SUPPORT_IPV4
 	prompt "ifconfig command"
 
-config CMD_PICOTCP_PING
-	bool
-	depends on NET_PICO_SUPPORT_ICMP4
-	prompt "ping command"
-
 config CMD_PICOTCP_ROUTE
 	bool
 	depends on NET_PICO_SUPPORT_IPV4
