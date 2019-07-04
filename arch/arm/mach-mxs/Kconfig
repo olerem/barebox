@@ -23,6 +23,8 @@ config ARCH_IMX28
 	bool "i.MX28"
 	select CPU_ARM926T
 	select STMP_DEVICE
+	select OFTREE
+	select COMMON_CLK_OF_PROVIDER
 	select ARCH_HAS_FEC_IMX
 
 endchoice
@@ -55,26 +57,26 @@ endif
 
 if ARCH_IMX28
 
-choice
-	prompt "i.MX28 Board Type"
+config IMX28_MULTI_BOARDS
+	bool "Allow multiple i.MX28 boards to be selected"
+	select HAVE_PBL_MULTI_IMAGES
+
+if IMX28_MULTI_BOARDS
 
 config MACH_TX28
 	bool "KARO tx28"
-	select HAVE_PBL_MULTI_IMAGES
 	help
 	  Say Y here if you are using the KARO TX28 CPU module.
 
 config MACH_MX28EVK
 	bool "mx28-evk"
 	select MXS_OCOTP
-	select HAVE_PBL_MULTI_IMAGES
 	help
 	  Say Y here if you are using the Freescale i.MX28-EVK board
 
 config MACH_DUCKBILL
 	bool "Duckbill"
 	select MXS_OCOTP
-	select HAVE_PBL_MULTI_IMAGES
 	help
 	  Say Y here if you are using the I2SE Duckbill board
 
@@ -86,7 +88,7 @@ config MACH_CFA10036
 	help
 	  Say Y here if you are using the Crystalfontz CFA-10036 module
 
-endchoice
+endif
 
 endif
 
