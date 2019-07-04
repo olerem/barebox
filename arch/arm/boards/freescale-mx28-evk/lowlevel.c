@@ -12,9 +12,17 @@
 #include <mach/iomux.h>
 #include <stmp-device.h>
 
+extern char __dtb_imx28_evk_start[];
+
 ENTRY_FUNCTION(start_barebox_freescale_mx28evk, r0, r1, r2)
 {
-	barebox_arm_entry(IMX_MEMORY_BASE, SZ_128M, NULL);
+	void *fdt;
+
+	pr_debug("here we are!\n");
+
+	fdt = __dtb_imx28_evk_start + get_runtime_offset();
+
+	barebox_arm_entry(IMX_MEMORY_BASE, SZ_128M, fdt);
 }
 
 static const uint32_t iomux_pads[] = {
