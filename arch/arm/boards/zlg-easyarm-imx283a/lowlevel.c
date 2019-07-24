@@ -12,15 +12,15 @@
 #include <mach/iomux.h>
 #include <stmp-device.h>
 
-extern char __dtb_imx28_evk_start[];
+extern char __dtb_zlg_easyarm_imx283a_start[];
 
-ENTRY_FUNCTION(start_barebox_freescale_mx28evk, r0, r1, r2)
+ENTRY_FUNCTION(start_barebox_zlg_easyarm_imx283a, r0, r1, r2)
 {
 	void *fdt;
 
-	fdt = __dtb_imx28_evk_start + get_runtime_offset();
+	fdt = __dtb_zlg_easyarm_imx283a_start + get_runtime_offset();
 
-	barebox_arm_entry(IMX_MEMORY_BASE, SZ_128M, fdt);
+	barebox_arm_entry(IMX_MEMORY_BASE, SZ_64M, fdt);
 }
 
 static const uint32_t iomux_pads[] = {
@@ -39,7 +39,7 @@ static const uint32_t iomux_pads[] = {
 	PWM1_DUART_TX | VE_3_3V,
 };
 
-static noinline void freescale_mx28evk_init(void)
+static noinline void zlg_easyarm_imx283a_init(void)
 {
 	int i;
 
@@ -62,14 +62,14 @@ static noinline void freescale_mx28evk_init(void)
 	pr_debug("DONE\n");
 }
 
-ENTRY_FUNCTION(prep_start_barebox_freescale_mx28evk, r0, r1, r2)
+ENTRY_FUNCTION(prep_start_barebox_zlg_easyarm_imx283a, r0, r1, r2)
 {
 	void (*back)(unsigned long) = (void *)get_lr();
 
 	relocate_to_current_adr();
 	setup_c();
 
-	freescale_mx28evk_init();
+	zlg_easyarm_imx283a_init();
 
 	back(0);
 }
