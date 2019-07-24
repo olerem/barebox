@@ -26,6 +26,7 @@ obj-$(CONFIG_MACH_DFI_FS700_M60)		+= dfi-fs700-m60/
 obj-$(CONFIG_MACH_DIGI_CCIMX6ULSBCPRO)		+= digi-ccimx6ulsom/
 obj-$(CONFIG_MACH_DUCKBILL)			+= duckbill/
 obj-$(CONFIG_MACH_DSS11)			+= dss11/
+obj-$(CONFIG_MACH_EASYARM_IMX283A)		+= zlg-easyarm-imx283a/
 obj-$(CONFIG_MACH_EDB93012)			+= edb93xx/
 obj-$(CONFIG_MACH_EDB9301)			+= edb93xx/
 obj-$(CONFIG_MACH_EDB9302A)			+= edb93xx/
