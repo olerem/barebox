@@ -88,9 +88,8 @@ config MACH_CFA10036
 	help
 	  Say Y here if you are using the Crystalfontz CFA-10036 module
 
-endif
-
-endif
+endif /* IMX28_MULTI_BOARDS */
+endif /* ARCH_IMX28 */
 
 menu "i.MX specific settings"
 
