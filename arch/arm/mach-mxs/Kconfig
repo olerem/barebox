@@ -88,6 +88,13 @@ config MACH_CFA10036
 	help
 	  Say Y here if you are using the Crystalfontz CFA-10036 module
 
+config MACH_EASYARM_IMX283A
+	bool "ZLG EasyARM-i.MX283A"
+	select MXS_OCOTP
+	select HAVE_PBL_MULTI_IMAGES
+	help
+	  Say Y here if you are using the ZLG EasyARM-i.MX283A board
+
 endif /* IMX28_MULTI_BOARDS */
 endif /* ARCH_IMX28 */
 
