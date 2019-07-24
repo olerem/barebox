@@ -11,7 +11,7 @@
 #include <net.h>
 #include <mach/ocotp.h>
 
-static void mx28_evk_get_ethaddr(void)
+static void zlg_easyarm_imx283a_get_ethaddr(void)
 {
 	u8 mac_ocotp[3], mac[6];
 	int ret;
@@ -32,10 +32,10 @@ static void mx28_evk_get_ethaddr(void)
 	eth_register_ethaddr(0, mac);
 }
 
-static int mx28_evk_devices_init(void)
+static int zlg_easyarm_imx283a_devices_init(void)
 {
-	mx28_evk_get_ethaddr(); /* must be after registering ocotp */
+	zlg_easyarm_imx283a_get_ethaddr(); /* must be after registering ocotp */
 
 	return 0;
 }
-fs_initcall(mx28_evk_devices_init);
+fs_initcall(zlg_easyarm_imx283a_devices_init);
