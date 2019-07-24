@@ -56,6 +56,15 @@ image-$(CONFIG_MACH_MX28EVK) += barebox-freescale-mx28evk-sd.img
 FILE_barebox-freescale-mx28evk-2nd.img = start_barebox_freescale_mx28evk.pblb
 image-$(CONFIG_MACH_MX28EVK) += barebox-freescale-mx28evk-2nd.img
 
+pblb-$(CONFIG_MACH_EASYARM_IMX283A) += start_barebox_zlg_easyarm_imx283a prep_start_barebox_zlg_easyarm_imx283a
+CFG_start_barebox_zlg_easyarm_imx283a.mxsbs = $(mxs28cfg)
+FILE_barebox-zlg-easyarm-imx283a-bootstream.img = start_barebox_zlg_easyarm_imx283a.mxsbs
+image-$(CONFIG_MACH_EASYARM_IMX283A) += barebox-zlg-easyarm-imx283a-bootstream.img
+FILE_barebox-zlg-easyarm-imx283a-sd.img = start_barebox_zlg_easyarm_imx283a.mxsbs.mxssd
+image-$(CONFIG_MACH_EASYARM_IMX283A) += barebox-zlg-easyarm-imx283a-sd.img
+FILE_barebox-zlg-easyarm-imx283a-2nd.img = start_barebox_zlg_easyarm_imx283a.pblb
+image-$(CONFIG_MACH_EASYARM_IMX283A) += barebox-zlg-easyarm-imx283a-2nd.img
+
 pblb-$(CONFIG_MACH_IMX233_OLINUXINO) += start_barebox_olinuxino_imx23 prep_start_barebox_olinuxino_imx23
 CFG_start_barebox_olinuxino_imx23.mxsbs = $(mxs23cfg)
 FILE_barebox-olinuxino-imx23-bootstream.img = start_barebox_olinuxino_imx23.mxsbs
