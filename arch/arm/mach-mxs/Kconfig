@@ -95,8 +95,8 @@ config MACH_EASYARM_IMX283A
 	help
 	  Say Y here if you are using the ZLG EasyARM-i.MX283A board
 
-endif /* IMX28_MULTI_BOARDS */
-endif /* ARCH_IMX28 */
+endif
+endif
 
 menu "i.MX specific settings"
 
