@@ -1,6 +1,10 @@
+/dts-v1/;
 #include <arm/imx28.dtsi>
 
 / {
+	model = "ZLG EasyARM-i.MX283A";
+	compatible = "zlg,easyarm-imx283a", "fsl,imx28";
+
 	chosen {
 		stdout-path = &duart;
 
@@ -9,9 +13,6 @@
 			device-path = &gpmi, "partname:environment";
 		};
 	};
-
-	model = "ZLG EasyARM-i.MX283A";
-	compatible = "zlg,easyarm-imx283a", "fsl,imx28";
 
 	memory@40000000 {
 		device_type = "memory";
