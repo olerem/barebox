@@ -209,20 +209,6 @@
 					};
 				};
 			};
-
-			can0: can@80032000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&can0_pins_a>;
-				xceiver-supply = <&reg_can_3v3>;
-				status = "okay";
-			};
-
-			can1: can@80034000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&can1_pins_a>;
-				xceiver-supply = <&reg_can_3v3>;
-				status = "okay";
-			};
 		};
 
 		apbx@80040000 {
