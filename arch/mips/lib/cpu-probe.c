@@ -177,6 +177,9 @@ static int mips_request_stack(void)
 	if (!request_sdram_region("stack", mips_stack_top - STACK_SIZE, STACK_SIZE))
 		pr_err("Error: Cannot request SDRAM region for stack\n");
 
+	if (!request_sdram_region("vector", 0x80000000, 0x8000))
+		pr_err("Error: Cannot request SDRAM region for vector\n");
+
 	return 0;
 }
 coredevice_initcall(mips_request_stack);
