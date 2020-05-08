@@ -119,6 +119,15 @@ static int elf_check_image(struct elf_image *elf)
 	return 0;
 }
 
+static int elf_check_init(struct elf_image *elf, void *buf)
+{
+	elf->buf = buf;
+	elf->low_addr = (void *) (unsigned long) -1;
+	elf->high_addr = 0;
+
+	return elf_check_image(elf);
+}
+
 struct elf_image *elf_load_image(void *buf)
 {
 	struct elf_image *elf;
@@ -128,13 +137,11 @@ struct elf_image *elf_load_image(void *buf)
 
 	INIT_LIST_HEAD(&elf->list);
 
-	elf->buf = buf;
-	elf->low_addr = (void *) (unsigned long) -1;
-	elf->high_addr = 0;
-
-	ret = elf_check_image(elf);
-	if (ret)
+	ret = elf_check_init(elf, buf);
+	if (ret) {
+		free(elf);
 		return ERR_PTR(ret);
+	}
 
 	ret = load_elf_image_phdr(elf);
 	if (ret) {
