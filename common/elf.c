@@ -5,7 +5,12 @@
 
 #include <common.h>
 #include <elf.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <libfile.h>
 #include <memory.h>
+#include <unistd.h>
+#include <linux/fs.h>
 
 struct elf_section {
 	struct list_head list;
@@ -85,8 +90,6 @@ static int load_elf_image_phdr(struct elf_image *elf)
 	void *phdr = (void *) (buf + elf_hdr_e_phoff(elf, buf));
 	int i, ret;
 
-	elf->entry = elf_hdr_e_entry(elf, buf);
-
 	for (i = 0; i < elf_hdr_e_phnum(elf, buf) ; ++i) {
 		void *src = buf + elf_phdr_p_offset(elf, phdr);
 
@@ -121,11 +124,19 @@ static int elf_check_image(struct elf_image *elf)
 
 static int elf_check_init(struct elf_image *elf, void *buf)
 {
+	int ret;
+
 	elf->buf = buf;
 	elf->low_addr = (void *) (unsigned long) -1;
 	elf->high_addr = 0;
 
-	return elf_check_image(elf);
+	ret = elf_check_image(elf);
+	if (ret)
+		return ret;
+
+	elf->entry = elf_hdr_e_entry(elf, elf->buf);
+
+	return 0;
 }
 
 struct elf_image *elf_load_image(void *buf)
@@ -157,4 +168,91 @@ void elf_release_image(struct elf_image *elf)
 	elf_release_regions(elf);
 
 	free(elf);
+}
+
+int elf_load(struct elf_image *elf)
+{
+	int ret;
+
+	ret = load_elf_image_phdr(elf);
+	if (ret)
+		elf_release_regions(elf);
+
+	return ret;
+}
+
+static u64 elf_get_size(struct elf_image *elf)
+{
+	u64 sh_size = elf_hdr_e_shentsize(elf, elf->buf) *
+		      elf_hdr_e_shnum(elf, elf->buf);
+
+	/*
+	 * The section header table is located at the end of the elf file thus
+	 * we can take the offset and add the size of this table to obtain the
+	 * file size.
+	 */
+	return elf_hdr_e_shoff(elf, elf->buf) + sh_size;
+}
+
+struct elf_image *elf_open(const char *filename)
+{
+	int fd, ret;
+	u64 size;
+	struct elf64_hdr hdr;
+	struct elf_image *elf;
+	ssize_t read_ret;
+
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		printf("could not open: %s\n", errno_str());
+		return ERR_PTR(-errno);
+	}
+
+	if (read(fd, &hdr, sizeof(hdr)) < 0) {
+		printf("could not read elf header: %s\n", errno_str());
+		ret = -errno;
+		goto err_close_fd;
+	}
+
+	elf = xzalloc(sizeof(*elf));
+
+	ret = elf_check_init(elf, &hdr);
+	if (ret) {
+		ret = -errno;
+		goto err_free_elf;
+	}
+
+	size = elf_get_size(elf);
+
+	elf->buf = malloc(size);
+	if (!elf->buf) {
+		ret = -ENOMEM;
+		goto err_free_elf;
+	}
+
+	lseek(fd, 0, SEEK_SET);
+
+	read_ret = read_full(fd, elf->buf, size);
+	if (read_ret < 0) {
+		printf("could not read elf file: %s\n", errno_str());
+		ret = -errno;
+		goto err_free_buf;
+	}
+
+	return elf;
+
+err_free_buf:
+	free(elf->buf);
+err_free_elf:
+	free(elf);
+err_close_fd:
+	close(fd);
+
+	return ERR_PTR(ret);
+}
+
+void elf_close(struct elf_image *elf)
+{
+	free(elf->buf);
+	elf_release_image(elf);
 }
