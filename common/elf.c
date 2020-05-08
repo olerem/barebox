@@ -94,8 +94,10 @@ static int load_elf_image_phdr(struct elf_image *elf)
 		void *src = buf + elf_phdr_p_offset(elf, phdr);
 
 		ret = load_elf_phdr_segment(elf, src, phdr);
-		/* in case of error elf_load_image() caller should clean up and
-		 * call elf_release_image() */
+		/*
+		 * in case of error elf_load() caller should clean up and
+		 * call elf_release_regions()
+		 */
 		if (ret)
 			return ret;
 
@@ -137,37 +139,6 @@ static int elf_check_init(struct elf_image *elf, void *buf)
 	elf->entry = elf_hdr_e_entry(elf, elf->buf);
 
 	return 0;
-}
-
-struct elf_image *elf_load_image(void *buf)
-{
-	struct elf_image *elf;
-	int ret;
-
-	elf = xzalloc(sizeof(*elf));
-
-	INIT_LIST_HEAD(&elf->list);
-
-	ret = elf_check_init(elf, buf);
-	if (ret) {
-		free(elf);
-		return ERR_PTR(ret);
-	}
-
-	ret = load_elf_image_phdr(elf);
-	if (ret) {
-		elf_release_image(elf);
-		return ERR_PTR(ret);
-	}
-
-	return elf;
-}
-
-void elf_release_image(struct elf_image *elf)
-{
-	elf_release_regions(elf);
-
-	free(elf);
 }
 
 int elf_load(struct elf_image *elf)
@@ -254,5 +225,7 @@ err_close_fd:
 void elf_close(struct elf_image *elf)
 {
 	free(elf->buf);
-	elf_release_image(elf);
+	elf_release_regions(elf);
+
+	free(elf);
 }
