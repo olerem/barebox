@@ -25,6 +25,9 @@ static int elf_request_region(struct elf_image *elf, resource_size_t start,
 	struct elf_section *r;
 
 	r = xzalloc(sizeof(*r));
+	if (!r)
+		return -ENOMEM;
+
 	r_new = request_sdram_region("elf_section", start, size);
 	if (!r_new) {
 		pr_err("Failed to request region: %pa %pa\n", &start, &size);
@@ -104,6 +107,9 @@ static int load_elf_image_phdr(struct elf_image *elf)
 		phdr += elf_size_of_phdr(elf);
 	}
 
+	if (!i)
+		return -EIO;
+
 	return 0;
 }
 
@@ -118,6 +124,11 @@ static int elf_check_image(struct elf_image *elf)
 
 	if (elf_hdr_e_type(elf, elf->buf) != ET_EXEC) {
 		pr_err("Non EXEC ELF image.\n");
+		return -ENOEXEC;
+	}
+
+	if (!elf_hdr_e_phnum(elf, elf->buf)) {
+		pr_err("No phdr found.\n");
 		return -ENOEXEC;
 	}
 
@@ -180,12 +191,16 @@ struct elf_image *elf_open(const char *filename)
 	}
 
 	if (read(fd, &hdr, sizeof(hdr)) < 0) {
-		printf("could not read elf header: %s\n", errno_str());
+		pr_err("could not read elf header: %s\n", errno_str());
 		ret = -errno;
-		goto err_close_fd;
 	}
 
 	elf = xzalloc(sizeof(*elf));
+	if (!elf) {
+		ret = -ENOMEM;
+		goto err_close_fd;
+	}
+	INIT_LIST_HEAD(&elf->list);
 
 	ret = elf_check_init(elf, &hdr);
 	if (ret) {
@@ -194,6 +209,11 @@ struct elf_image *elf_open(const char *filename)
 	}
 
 	size = elf_get_size(elf);
+	if (!size) {
+		pr_err("ELF size is 0?!\n");
+		ret = -ENOEXEC;
+		goto err_free_elf;
+	}
 
 	elf->buf = malloc(size);
 	if (!elf->buf) {
@@ -201,7 +221,12 @@ struct elf_image *elf_open(const char *filename)
 		goto err_free_elf;
 	}
 
-	lseek(fd, 0, SEEK_SET);
+	close(fd);
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		printf("could not open: %s\n", errno_str());
+		return ERR_PTR(-errno);
+	}
 
 	read_ret = read_full(fd, elf->buf, size);
 	if (read_ret < 0) {
