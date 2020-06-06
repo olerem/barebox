@@ -87,10 +87,8 @@ static int bootscript_boot(struct bootentry *entry, int verbose, int dryrun)
 
 	struct bootm_data data = {};
 
-	if (dryrun) {
-		printf("Would run %s\n", bs->scriptpath);
-		return 0;
-	}
+	if (verbose)
+		printf("Run %s\n", bs->scriptpath);
 
 	globalvar_add_simple("linux.bootargs.dyn.ip", NULL);
 	globalvar_add_simple("linux.bootargs.dyn.root", NULL);
