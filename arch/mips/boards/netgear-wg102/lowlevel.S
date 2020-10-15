@@ -6,11 +6,15 @@
 
 #define BOARD_PBL_START start_netgear_wg102
 
+#include <asm/asm.h>
+#include <asm/mipsregs.h>
 #include <asm/pbl_macros.h>
-#include <mach/pbl_macros.h>
+#include <asm/pbl_nmon.h>
+#include <asm/regdef.h>
+#include <linux/sizes.h>
 #include <mach/ar2312_regs.h>
-
 #include <mach/debug_ll.h>
+#include <mach/pbl_macros.h>
 
 ENTRY_FUNCTION(BOARD_PBL_START)
 
@@ -59,4 +63,4 @@ sdram_configured:
 	debug_ll_outc 'b'
 	debug_ll_ns16550_outnl
 
-ENTRY_FUNCTION_END(BOARD_PBL_START, ar2313_netgear_wg102_board, SZ_16M)
+ENTRY_FUNCTION_END(BOARD_PBL_START, ar2313_netgear_wg102, SZ_16M)
