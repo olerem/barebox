@@ -59,15 +59,4 @@ sdram_configured:
 	debug_ll_outc 'b'
 	debug_ll_ns16550_outnl
 
-	copy_to_link_location	BOARD_PBL_START;
-	stack_setup;
-
-	lw	a0, 0;
-	la	v0, pbl_main_entry;
-	jal	v0;
-	 nop;
-
-	/* No return */
-__error:
-	b	__error;
-	 nop;
+ENTRY_FUNCTION_END(BOARD_PBL_START, ar2313_netgear_wg102_board, SZ_16M)
