@@ -48,7 +48,7 @@
 			};
 
 			pll: pll-controller@1c003060 {
-				compatible = "qca,ar2313-pll";
+				compatible = "qca,ar2313-pll", "qca,ar231x-pll";
 				reg = <0x1c003060 0xc>;
 
 				clocks = <&ref>;
