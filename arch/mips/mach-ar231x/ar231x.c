@@ -165,30 +165,3 @@ static int platform_init(void)
 	return 0;
 }
 late_initcall(platform_init);
-
-static struct NS16550_plat serial_plat = {
-	.shift = AR2312_UART_SHIFT,
-};
-
-static int ar2312_console_init(void)
-{
-	u32 reset;
-
-	return 0;
-	/* reset UART0 */
-	reset = __raw_readl((char *)KSEG1ADDR(AR2312_RESET));
-	reset = ((reset & ~AR2312_RESET_APB) | AR2312_RESET_UART0);
-	__raw_writel(reset, (char *)KSEG1ADDR(AR2312_RESET));
-
-	reset &= ~AR2312_RESET_UART0;
-	__raw_writel(reset, (char *)KSEG1ADDR(AR2312_RESET));
-
-	/* Register the serial port */
-	serial_plat.clock = ar2312_sys_frequency();
-	add_ns16550_device(DEVICE_ID_DYNAMIC, KSEG1ADDR(AR2312_UART0),
-			   8 << AR2312_UART_SHIFT,
-			   IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
-			   &serial_plat);
-	return 0;
-}
-console_initcall(ar2312_console_init);
