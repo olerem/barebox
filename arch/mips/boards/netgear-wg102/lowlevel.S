@@ -66,6 +66,14 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 skip_pll_ram_config:
 sdram_configured:
 	debug_ll_outc 'b'
+
+	/* Initialize caches... */
+//	mips_cache_reset
+
+	/* ... and enable them */
+//	dcache_enable
+
+	debug_ll_outc 'c'
 	debug_ll_ns16550_outnl
 
 ENTRY_FUNCTION_END(BOARD_PBL_START, ar2313_netgear_wg102, SZ_16M)
