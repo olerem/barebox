@@ -174,6 +174,7 @@ static int ar2312_console_init(void)
 {
 	u32 reset;
 
+	return 0;
 	/* reset UART0 */
 	reset = __raw_readl((char *)KSEG1ADDR(AR2312_RESET));
 	reset = ((reset & ~AR2312_RESET_APB) | AR2312_RESET_UART0);
