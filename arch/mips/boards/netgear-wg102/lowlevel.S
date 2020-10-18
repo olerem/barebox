@@ -22,10 +22,14 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 
 	mips_disable_interrupts
 
+	debug_ll_outc '>'
+	pbl_blt 0xbf000000 skip_pll_ram_config t8
+	nop
+
 	pbl_ar2312_pll
 
-	pbl_ar2312_rst_uart0
-	debug_ll_ns16550_init
+	//pbl_ar2312_rst_uart0
+	//debug_ll_ns16550_init
 
 	debug_ll_outc 'a'
 	debug_ll_ns16550_outnl
@@ -59,6 +63,7 @@ ENTRY_FUNCTION(BOARD_PBL_START)
 	b	1b /* dead end */
 	 nop
 
+skip_pll_ram_config:
 sdram_configured:
 	debug_ll_outc 'b'
 	debug_ll_ns16550_outnl
