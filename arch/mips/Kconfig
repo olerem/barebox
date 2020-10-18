@@ -91,6 +91,11 @@ config MACH_MIPS_AR231X
 	select HAS_DEBUG_LL
 	select HAVE_IMAGE_COMPRESSION
 	select HAS_NMON
+	select COMMON_CLK
+	select COMMON_CLK_OF_PROVIDER
+	select CLKDEV_LOOKUP
+	select OFTREE
+	select GPIOLIB
 
 config MACH_MIPS_ATH79
 	bool "Atheros AR71XX/AR724X/AR913X/AR933X based boards"
