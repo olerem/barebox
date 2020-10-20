@@ -1,9 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2014 Antony Pavlov <antonynpavlov@gmail.com>
- *
- * Based on the Linux ath79 clock code
- */
 
 #include <common.h>
 #include <init.h>
@@ -12,10 +7,15 @@
 #include <linux/clkdev.h>
 #include <linux/err.h>
 
-#include <mach/ath79.h>
-#include <dt-bindings/clock/ath79-clk.h>
+#include <mach/ar2312_regs.h>
+#include <dt-bindings/clock/ath25-clk.h>
 
-static struct clk *clks[ATH79_CLK_END];
+#define AR2313_PLL_CLOCKCTL0		0x0
+#define AR2313_PLL_CLOCKCTL1		0x4
+#define AR2313_PLL_CLOCKCTL2		0x8
+
+
+static struct clk *clks[ATH25_CLK_END];
 static struct clk_onecell_data clk_data;
 
 struct clk_ar231x {
@@ -26,43 +26,67 @@ struct clk_ar231x {
 	const char *parent;
 };
 
+/*
+ * This table is indexed by bits 5..4 of the CLOCKCTL1 register
+ * to determine the predevisor value.
+ */
+static int CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
+
 static unsigned long clk_ar231x_recalc_rate(struct clk *clk,
 	unsigned long parent_rate)
 {
 	struct clk_ar231x *f = container_of(clk, struct clk_ar231x, clk);
-	unsigned long rate;
-	unsigned long freq;
-	u32 clock_ctrl;
-	u32 cpu_config;
-	u32 t;
+	unsigned int predivide_mask, predivide_shift;
+	unsigned int multiplier_mask, multiplier_shift;
+	unsigned int clock_ctl1, pre_divide_select, pre_divisor, multiplier;
+	unsigned int doubler_mask;
+	u32 devid;
 
-	clock_ctrl = __raw_readl(f->base + AR933X_PLL_CLOCK_CTRL_REG);
-
-	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
-		rate = parent_rate;
-	} else {
-		cpu_config = __raw_readl(f->base + AR933X_PLL_CPU_CONFIG_REG);
-
-		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
-		    AR933X_PLL_CPU_CONFIG_REFDIV_MASK;
-		freq = parent_rate / t;
-
-		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_NINT_SHIFT) &
-		    AR933X_PLL_CPU_CONFIG_NINT_MASK;
-		freq *= t;
-
-		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
-		    AR933X_PLL_CPU_CONFIG_OUTDIV_MASK;
-		if (t == 0)
-			t = 1;
-
-		freq >>= t;
-
-		t = ((clock_ctrl >> f->div_shift) & f->div_mask) + 1;
-		rate = freq / t;
+	devid = __raw_readl((char *)KSEG1ADDR(AR2312_REV));
+	devid &= AR2312_REV_MAJ;
+	devid >>= AR2312_REV_MAJ_S;
+	if (devid == AR2312_REV_MAJ_AR2313) {
+		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
+		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
+		multiplier_mask = AR2313_CLOCKCTL1_MULTIPLIER_MASK;
+		multiplier_shift = AR2313_CLOCKCTL1_MULTIPLIER_SHIFT;
+		doubler_mask = AR2313_CLOCKCTL1_DOUBLER_MASK;
+	} else { /* AR5312 and AR2312 */
+		predivide_mask = AR2312_CLOCKCTL1_PREDIVIDE_MASK;
+		predivide_shift = AR2312_CLOCKCTL1_PREDIVIDE_SHIFT;
+		multiplier_mask = AR2312_CLOCKCTL1_MULTIPLIER_MASK;
+		multiplier_shift = AR2312_CLOCKCTL1_MULTIPLIER_SHIFT;
+		doubler_mask = AR2312_CLOCKCTL1_DOUBLER_MASK;
 	}
 
-	return rate;
+
+	/*
+	 * Clocking is derived from a fixed 40MHz input clock.
+	 *
+	 *  cpuFreq = InputClock * MULT (where MULT is PLL multiplier)
+	 *  sysFreq = cpuFreq / 4	   (used for APB clock, serial,
+	 *				    flash, Timer, Watchdog Timer)
+	 *
+	 *  cntFreq = cpuFreq / 2	   (use for CPU count/compare)
+	 *
+	 * So, for example, with a PLL multiplier of 5, we have
+	 *
+	 *  cpuFreq = 200MHz
+	 *  sysFreq = 50MHz
+	 *  cntFreq = 100MHz
+	 *
+	 * We compute the CPU frequency, based on PLL settings.
+	 */
+
+	clock_ctl1 = __raw_readl(f->base + AR2313_PLL_CLOCKCTL1);
+	pre_divide_select = (clock_ctl1 & predivide_mask) >> predivide_shift;
+	pre_divisor = CLOCKCTL1_PREDIVIDE_TABLE[pre_divide_select];
+	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
+
+	if (clock_ctl1 & doubler_mask)
+		multiplier = multiplier << 1;
+
+	return (parent_rate / pre_divisor) * multiplier;
 }
 
 struct clk_ops clk_ar231x_ops = {
@@ -70,14 +94,12 @@ struct clk_ops clk_ar231x_ops = {
 };
 
 static struct clk *clk_ar231x(const char *name, const char *parent,
-	void __iomem *base, u32 div_shift, u32 div_mask)
+	void __iomem *base)
 {
 	struct clk_ar231x *f = xzalloc(sizeof(*f));
 
 	f->parent = parent;
 	f->base = base;
-	f->div_shift = div_shift;
-	f->div_mask = div_mask;
 
 	f->clk.ops = &clk_ar231x_ops;
 	f->clk.name = name;
@@ -91,17 +113,9 @@ static struct clk *clk_ar231x(const char *name, const char *parent,
 
 static void ar231x_pll_init(void __iomem *base)
 {
-	clks[ATH79_CLK_CPU] = clk_ar231x("cpu", "ref", base,
-		AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT,
-		AR933X_PLL_CLOCK_CTRL_CPU_DIV_MASK);
+	clks[ATH25_CLK_CPU] = clk_ar231x("cpu", "ref", base);
 
-	clks[ATH79_CLK_DDR] = clk_ar231x("ddr", "ref", base,
-		AR933X_PLL_CLOCK_CTRL_DDR_DIV_SHIFT,
-		AR933X_PLL_CLOCK_CTRL_DDR_DIV_MASK);
-
-	clks[ATH79_CLK_AHB] = clk_ar231x("ahb", "ref", base,
-		AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT,
-		AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK);
+	clks[ATH25_CLK_AHB] = clk_fixed_factor("ahb", "cpu", 1, 4, 0);
 }
 
 static int ar231x_clk_probe(struct device_d *dev)
