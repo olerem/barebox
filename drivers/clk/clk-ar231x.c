@@ -115,7 +115,7 @@ static void ar231x_pll_init(void __iomem *base)
 {
 	clks[ATH25_CLK_CPU] = clk_ar231x("cpu", "ref", base);
 
-	clks[ATH25_CLK_AHB] = clk_fixed_factor("ahb", "cpu", 1, 4, 0);
+	clks[ATH25_CLK_APB] = clk_fixed_factor("apb", "cpu", 1, 4, 0);
 }
 
 static int ar231x_clk_probe(struct device_d *dev)
