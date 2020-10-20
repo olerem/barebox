@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_TEGRA)	+= tegra/
 obj-$(CONFIG_ARCH_ZYNQ)		+= zynq/
 obj-$(CONFIG_ARCH_ZYNQMP)	+= zynqmp/
 obj-$(CONFIG_CLK_SOCFPGA)	+= socfpga/
+obj-$(CONFIG_MACH_MIPS_AR231X)	+= clk-ar231x.o
 obj-$(CONFIG_SOC_QCA_AR9331)	+= clk-ar933x.o
 obj-$(CONFIG_SOC_QCA_AR9344)	+= clk-ar9344.o
 obj-$(CONFIG_ARCH_IMX)		+= imx/
