@@ -14,10 +14,10 @@ struct ar2313_fmc {
 
 static int ar2313_fmc_parse_dt(struct ar2313_fmc *priv)
 {
-	struct device_node *child;
 	int ret;
 
-	ret = of_platform_populate(priv->dev->device_node, NULL, priv->dev);
+	printk("%s:%i\n", __func__, __LINE__);
+	ret = of_platform_populate(priv->dev->device_node, of_default_bus_match_table, priv->dev);
 	if (ret)
 		dev_err(priv->dev, "%s fail to create devices.\n",
 			priv->dev->device_node->full_name);
@@ -28,25 +28,28 @@ static int ar2313_fmc_probe(struct device_d *dev)
 {
 	struct ar2313_fmc *priv;
 	struct resource *iores;
-	int ret;
+	int ret = 0;
 
 	priv = xzalloc(sizeof(*priv));
 
+	dev_info(dev, "%s:%i\n", __func__, __LINE__);
 	priv->dev = dev;
 
 	/* get the resource */
 	iores = dev_request_mem_resource(dev, 0);
 	if (IS_ERR(iores)) {
 		ret = PTR_ERR(iores);
-		goto weim_err;
+		return ret;
 	}
 	priv->base = IOMEM(iores->start);
 
+	dev_info(dev, "%s:%i\n", __func__, __LINE__);
 	/* parse the device node */
 	ret = ar2313_fmc_parse_dt(priv);
 	if (ret)
 		return ret;
 
+	dev_info(dev, "%s:%i\n", __func__, __LINE__);
 	dev_info(dev, "AR2313 Flash Memory Controller driver registered.\n");
 
 	return 0;
