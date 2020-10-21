@@ -1,5 +1,9 @@
 menu "Bus devices"
 
+config AR2313_FMC
+	depends on MACH_MIPS_AR231X || COMPILE_TEST
+	bool "Atheros AR2313 Flash Memory Controller driver"
+
 config BUS_OMAP_GPMC
 	depends on ARCH_OMAP
 	depends on OFDEVICE
