@@ -160,8 +160,8 @@ static int platform_init(void)
 			KSEG1ADDR(AR2312_RESET), 0x4,
 			IORESOURCE_MEM, NULL);
 	watchdog_init();
-	flash_init();
-	ether_init();
+//	flash_init();
+//	ether_init();
 	return 0;
 }
 late_initcall(platform_init);
