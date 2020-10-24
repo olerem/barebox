@@ -996,6 +996,11 @@ static int cfi_probe(struct device_d *dev)
 	struct mtd_info *mtd;
 	const char *mtd_name = NULL;
 
+	if (!dev->num_resources) {
+		dev_err(dev, "cfi_probe with dev->num_resources == 0\n");
+		return -ENODEV;
+	}
+
 	priv = xzalloc(sizeof(*priv));
 
 	priv->num_devs = dev->num_resources;
