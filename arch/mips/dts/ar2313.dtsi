@@ -44,15 +44,11 @@
 				reg = <0x18400000 0x4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				nor@1f000000 {
-					compatible = "ncfi-flash";
+					compatible = "cfi-flash";
 					reg = <0x1e000000 0x00400000>;
-
-					bank-width = <1>;
-					device-width = <2>;
-					#address-cells = <1>;
-					#size-cells = <1>;
 
 				};
 			};
