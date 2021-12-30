@@ -280,12 +280,23 @@ static inline u8 flash_read8(void *addr)
 
 static inline u16 flash_read16(void *addr)
 {
-	return __raw_readw(addr);
+	u16 val;
+
+	val = __raw_readb(addr);
+	val |= __raw_readb(addr + 1) << 8;
+	return val;
 }
 
 static inline u32 flash_read32(void *addr)
 {
-	return __raw_readl(addr);
+	u32 val;
+
+	val = __raw_readb(addr);
+	val |= __raw_readb(addr + 1) << 8;
+	val |= __raw_readb(addr + 1) << 16;
+	val |= __raw_readb(addr + 1) << 24;
+
+	return val;
 }
 
 static inline u64 flash_read64(void *addr)
@@ -300,6 +311,8 @@ static inline u64 flash_read64(void *addr)
 static inline u8 *flash_make_addr(struct flash_info *info, flash_sect_t sect,
 		unsigned int offset)
 {
+	offset *= 2;
+
 	return ((u8 *)(info->start[sect] + ((offset * info->portwidth) << info->chip_lsb)));
 }
 
