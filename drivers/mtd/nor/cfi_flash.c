@@ -179,10 +179,10 @@ static unsigned long flash_read_long(struct flash_info *info, flash_sect_t sect,
 
 	addr = flash_make_addr (info, sect, offset);
 
-	dev_dbg(info->dev, "long addr is at %p info->portwidth = %d\n", addr,
+	dev_info(info->dev, "long addr is at %p info->portwidth = %d\n", addr,
 	       info->portwidth);
 	for (x = 0; x < 4 * info->portwidth; x++)
-		dev_dbg(info->dev, "addr[%x] = 0x%x\n", x, flash_read8(addr + x));
+		dev_info(info->dev, "addr[%x] = 0x%x\n", x, flash_read8(addr + x));
 
 #if defined __LITTLE_ENDIAN
 	retval = ((flash_read8(addr) << 16) |
@@ -258,7 +258,7 @@ static int flash_detect_width(struct flash_info *info, struct cfi_qry *qry)
 		}
 	}
 
-	dev_dbg(info->dev, "no flash found\n");
+	dev_info(info->dev, "no flash found\n");
 
 	return -ENODEV;
 
@@ -267,10 +267,10 @@ found:
 			       sizeof(struct cfi_qry));
 	info->interface = get_unaligned_le16(&qry->interface_desc);
 	info->cfi_offset = flash_offset_cfi[cfi_offset];
-	dev_dbg(info->dev, "device interface is %d\n", info->interface);
-	dev_dbg(info->dev, "found port %d chip %d chip_lsb %d ",
+	dev_info(info->dev, "device interface is %d\n", info->interface);
+	dev_info(info->dev, "found port %d chip %d chip_lsb %d ",
 			info->portwidth, info->chipwidth, info->chip_lsb);
-	dev_dbg(info->dev, "port %d bits chip %d bits\n",
+	dev_info(info->dev, "port %d bits chip %d bits\n",
 			info->portwidth << CFI_FLASH_SHIFT_WIDTH,
 			info->chipwidth << CFI_FLASH_SHIFT_WIDTH);
 
@@ -281,7 +281,7 @@ static int flash_detect_cfi(struct flash_info *info, struct cfi_qry *qry)
 {
 	int ret;
 
-	dev_dbg(info->dev, "flash detect cfi\n");
+	dev_info(info->dev, "flash detect cfi\n");
 
 	info->chip_lsb = 0;
 	ret = flash_detect_width (info, qry);
@@ -360,11 +360,11 @@ static int flash_detect_size(struct flash_info *info)
 
 	info->cfi_cmd_set->flash_fixup (info, &qry);
 
-	dev_dbg(info->dev, "manufacturer is %d\n", info->vendor);
-	dev_dbg(info->dev, "manufacturer id is 0x%x\n", info->manufacturer_id);
-	dev_dbg(info->dev, "device id is 0x%x\n", info->device_id);
-	dev_dbg(info->dev, "device id2 is 0x%x\n", info->device_id2);
-	dev_dbg(info->dev, "cfi version is 0x%04x\n", info->cfi_version);
+	dev_info(info->dev, "manufacturer is %d\n", info->vendor);
+	dev_info(info->dev, "manufacturer id is 0x%x\n", info->manufacturer_id);
+	dev_info(info->dev, "device id is 0x%x\n", info->device_id);
+	dev_info(info->dev, "device id2 is 0x%x\n", info->device_id2);
+	dev_info(info->dev, "cfi version is 0x%04x\n", info->cfi_version);
 
 	size_ratio = info->portwidth / info->chipwidth;
 
@@ -375,10 +375,10 @@ static int flash_detect_size(struct flash_info *info)
 		size_ratio >>= 1;
 	}
 
-	dev_dbg(info->dev, "size_ratio %d port %d bits chip %d bits\n",
+	dev_info(info->dev, "size_ratio %d port %d bits chip %d bits\n",
 	       size_ratio, info->portwidth << CFI_FLASH_SHIFT_WIDTH,
 	       info->chipwidth << CFI_FLASH_SHIFT_WIDTH);
-	dev_dbg(info->dev, "found %d erase regions\n", num_erase_regions);
+	dev_info(info->dev, "found %d erase regions\n", num_erase_regions);
 
 	info->eraseregions = xzalloc(sizeof(*info->eraseregions) * num_erase_regions);
 	info->numeraseregions = num_erase_regions;
@@ -395,13 +395,13 @@ static int flash_detect_size(struct flash_info *info)
 		}
 
 		tmp = get_unaligned_le32(&qry.erase_region_info[i]);
-		dev_dbg(info->dev, "erase region %u: 0x%08lx\n", i, tmp);
+		dev_info(info->dev, "erase region %u: 0x%08lx\n", i, tmp);
 
 		erase_region_count = (tmp & 0xffff) + 1;
 		tmp >>= 16;
 		erase_region_size =
 			(tmp & 0xffff) ? ((tmp & 0xffff) * 256) : 128;
-		dev_dbg(info->dev, "erase_region_count = %d erase_region_size = %d\n",
+		dev_info(info->dev, "erase_region_count = %d erase_region_size = %d\n",
 			erase_region_count, erase_region_size);
 
 		region->offset = cur_offset;
@@ -479,7 +479,7 @@ static int cfi_erase(struct flash_info *finfo, size_t count, loff_t offset)
         unsigned long start, end;
         int i, ret = 0;
 
-	dev_dbg(finfo->dev, "%s: erase 0x%08llx (size %zu)\n", __func__, offset, count);
+	dev_info(finfo->dev, "%s: erase 0x%08llx (size %zu)\n", __func__, offset, count);
 
         start = find_sector(finfo, (unsigned long)finfo->base + offset);
         end   = find_sector(finfo, (unsigned long)finfo->base + offset +
